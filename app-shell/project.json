@@ -21,7 +21,9 @@
             "input": "app-shell/public"
           }
         ],
-        "styles": ["app-shell/src/styles.scss"],
+        "styles": [
+        "app-shell/src/styles.scss"
+        ],
         "customWebpackConfig": {
           "path": "app-shell/webpack.config.ts"
         }
