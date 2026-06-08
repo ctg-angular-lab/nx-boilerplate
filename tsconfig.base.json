@@ -1,0 +1,23 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "bundler",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2015",
+    "module": "esnext",
+    "lib": ["es2020", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "paths": {
+      "@nx-boilerplate/shared-contracts": ["./shared-contracts/src/index.ts"],
+      "@nx-boilerplate/ui-charts": ["./libs/ui-charts/src/index.ts"],
+      "@nx-boilerplate/theme": ["./libs/theme/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
+}
