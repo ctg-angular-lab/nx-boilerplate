@@ -1,16 +1,74 @@
-<ul class="remote-menu">
-  <li><a routerLink="/">Home</a></li>
-</ul>
-<section>
-  <div class="example-label">Elevated</div>
-  <div class="example-button-row">
-    <button matButton="elevated">Basic</button>
-    <button matButton="elevated" disabled>Disabled</button>
-    <a matButton="elevated" href="https://www.google.com/" target="_blank">Link</a>
-  </div>
-</section>
+<!-- Contenedor principal: Utilizamos clases semánticas propias -->
+<mat-sidenav-container class="shell-layout">
+  
+  <!-- Menú Lateral (Sidenav) -->
+  <mat-sidenav
+    [opened]="isSidenavOpen()"
+    mode="side"
+    class="shell-sidenav">
+    
+    <mat-toolbar color="primary" class="shell-sidenav-header">
+      <span class="shell-brand">MFE Portal</span>
+    </mat-toolbar>
+    
+    <mat-nav-list class="shell-nav-list">
+      <!-- Control Flow Moderno -->
+      @for (route of mfeRoutes(); track route.path) {
+        <a 
+          mat-list-item 
+          [routerLink]="route.path" 
+          routerLinkActive="is-active"
+          class="shell-nav-item">
+          <mat-icon matListItemIcon class="nav-icon">{{ route.icon }}</mat-icon>
+          <span matListItemTitle class="nav-label">{{ route.label }}</span>
+        </a>
+      } @empty {
+        <div class="shell-empty-state">
+          <p>No hay aplicaciones disponibles.</p>
+        </div>
+      }
+    </mat-nav-list>
 
-<button mat-raised-button>Prueba Tema</button>
-<!--
-  <router-outlet></router-outlet>
--->
+  </mat-sidenav>
+
+  <!-- Área de Contenido Principal -->
+  <mat-sidenav-content class="shell-content">
+    
+    <!-- Toolbar Superior -->
+    <mat-toolbar color="primary" class="shell-topbar">
+      <!-- Agrupación Izquierda: Botón y Título -->
+      <div class="toolbar-action-group">
+        <button
+          mat-icon-button
+          (click)="toggleSidenav()"
+          aria-label="Alternar menú lateral">
+          <mat-icon>menu</mat-icon>
+        </button>
+        <span class="toolbar-title">Panel de Control Principal</span>
+      </div>
+      
+      <!-- Agrupación Derecha: Perfil de Usuario -->
+      <div class="toolbar-user-group">
+          <mat-icon>account_circle</mat-icon>
+          <span class="user-name">Usuario Admin</span>
+      </div>
+    </mat-toolbar>
+
+    <!-- Contenedor del Router -->
+    <main class="shell-main-workspace">
+      
+      <!-- Mock de presentación inicial -->
+      <div class="shell-welcome-card">
+        <h1>Bienvenido al App Shell</h1>
+        <p>
+          Este es el contenedor anfitrión. Selecciona una de las opciones en el menú lateral izquierdo para montar bajo demanda los Micro Frontends remotos.
+        </p>
+      </div>
+
+      <!-- Router Outlet -->
+      <router-outlet></router-outlet>
+      
+    </main>
+
+  </mat-sidenav-content>
+</mat-sidenav-container>

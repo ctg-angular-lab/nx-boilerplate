@@ -14,8 +14,6 @@ $corporate-theme: mat.define-theme((
     theme-type: light,
     primary: vars.$primary-palette,
     tertiary: vars.$tertiary-palette,
-    // Angular Material MD3 calculará automáticamente roles como:
-    // primary-container, on-primary, surface, surface-dim, etc.
   ),
   typography: (
     brand-family: vars.$brand-font-family,
@@ -26,28 +24,20 @@ $corporate-theme: mat.define-theme((
   )
 ));
 
-// 3. Emisión de variables CSS y estilos a nivel global
 html {
   // Inyección de Custom Properties (--sys-color-*, --sys-typescale-*)
   @include mat.system-level-colors($corporate-theme);
   @include mat.system-level-typography($corporate-theme);
   
-  // Emisión de los estilos estructurales de los componentes inyectando el tema
   @include mat.all-component-themes($corporate-theme);
-  
-  // Ejecución de configuraciones tipográficas globales
-  @include typo.typography-setup();
-  
-  // Ejecución de overrides por módulos
-  @include buttons.button-overrides();
 
-  // Reset base corporativo y asignación del color surface (fondo principal MD3)
+  @include typo.typography-setup();
+  @include buttons.button-overrides();
   background-color: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
 }
 
 // 4. Tema Oscuro (Preparación para escalabilidad)
-// Se inyecta sobre un selector de clase o data-attribute para control desde la lógica TS
 html.dark-theme {
   $corporate-dark-theme: mat.define-theme((
     color: (
