@@ -15,8 +15,15 @@
     "skipDefaultLibCheck": true,
     "paths": {
       "@nx-boilerplate/shared-contracts": ["./shared-contracts/src/index.ts"],
-      "@nx-boilerplate/ui-charts": ["./libs/ui-charts/src/index.ts"],
-      "@nx-boilerplate/theme": ["./libs/theme/src/index.ts"]
+      "@nx-boilerplate/ui-charts": ["./libs/shared/ui-charts/src/index.ts"],
+      "@nx-boilerplate/theme": ["./libs/shared/theme/src/index.ts"],
+      "Dashboard/Routes": [
+        "./apps/dashboard/src/app/remote-entry/entry.routes.ts"
+      ],
+      "Login/Routes": ["./apps/login/src/app/remote-entry/entry.routes.ts"],
+      "@nx-boilerplate/api-interfaces": [
+        "./libs/shared/api-interfaces/src/index.ts"
+      ]
     }
   },
   "exclude": ["node_modules", "tmp"]

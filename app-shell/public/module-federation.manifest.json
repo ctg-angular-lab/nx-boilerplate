@@ -1,1 +1,4 @@
-{}
+{
+  "Dashboard": "http://localhost:4201/mf-manifest.json",
+  "Login": "http://localhost:4202/mf-manifest.json"
+}
