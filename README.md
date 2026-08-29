@@ -24,6 +24,42 @@ These targets are either [inferred automatically](https://nx.dev/concepts/inferr
 
 [More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 
+## Comandos utilizados
+
+Estos son algunos comandos utiles para organizar y trabajar con este workspace:
+
+### Iniciar la aplicacion shell
+
+```sh
+npx nx serve app-shell
+```
+
+Inicia el servidor de desarrollo de la aplicacion principal `app-shell` y permite probar el shell junto con sus aplicaciones remotas.
+
+### Crear una libreria compartida
+
+```sh
+npx nx g @nx/js:library api-interfaces --directory=libs/shared/api-interfaces --projectNameAndRootFormat=as-provided
+```
+
+Crea la libreria JavaScript/TypeScript `api-interfaces` dentro de `libs/shared/api-interfaces`. La opcion `--projectNameAndRootFormat=as-provided` hace que Nx respete el nombre y la ruta indicados.
+
+### Eliminar un proyecto de Nx
+
+```sh
+npx nx g @nx/workspace:remove --projectName=users-api
+```
+
+Elimina del workspace el proyecto registrado como `users-api`, junto con su configuracion y los archivos asociados que gestione el generador.
+
+### Crear una aplicacion remota Angular
+
+```sh
+npx nx g @nx/angular:remote --name=Login --directory=apps/login --host=app-shell --standalone
+```
+
+Crea la aplicacion remota Angular `Login` en `apps/login`, la configura para integrarse con `app-shell` como host y utiliza componentes standalone.
+
 ## Add new projects
 
 While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
