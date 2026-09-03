@@ -1,15 +1,20 @@
-// libs/theme/src/lib/theme-modules/_buttons.scss
+// libs/shared/theme/src/lib/theme-modules/_buttons.scss
 @use '@angular/material' as mat;
 
 @mixin button-overrides() {
-  // Ajustes estructurales limpios modificando tokens directamente en el scope del componente
-  // No se utiliza ::ng-deep ni !important
+  // Sobreescritura de tokens de forma para botones rectos (border-radius: 0)
+  --mat-button-filled-container-shape: 0;
+  --mat-button-outlined-container-shape: 0;
+  --mat-button-protected-container-shape: 0;
+  --mat-button-text-container-shape: 0;
+  --mat-button-tonal-container-shape: 0;
+  --mdc-shape-small: 0;
+  --mdc-shape-corner-full: 0;
+
+  .mat-mdc-button,
   .mat-mdc-unelevated-button,
-  .mat-mdc-raised-button {
-    // Ejemplo de ajuste de shape (border-radius) para corporativizar el estilo base
-    --mdc-shape-small: 8px;
-    // Modificación tipográfica específica si el rol lo exige
-    --mdc-typography-button-letter-spacing: 0.5px;
-    --mdc-typography-button-font-weight: 500;
+  .mat-mdc-raised-button,
+  .mat-mdc-outlined-button {
+    border-radius: 0;
   }
 }

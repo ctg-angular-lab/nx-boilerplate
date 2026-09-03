@@ -1,0 +1,106 @@
+.metric-card {
+  background-color: var(--sys-color-surface-container-lowest);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .header-info {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+
+      .icon-container {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--sys-color-surface-container-high);
+        color: var(--sys-color-primary);
+
+        .material-symbols-outlined {
+          font-size: 22px;
+        }
+      }
+
+      .metric-title {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: var(--sys-color-on-surface-variant);
+      }
+    }
+  }
+
+  .card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    .value-container {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+
+      .metric-value {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--sys-color-on-surface);
+        line-height: 1.1;
+      }
+
+      .trend-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 8px;
+
+        .trend-icon {
+          font-size: 16px;
+        }
+
+        &[data-direction='up'] {
+          background-color: rgba(30, 168, 75, 0.12);
+          color: #198754;
+        }
+
+        &[data-direction='down'] {
+          background-color: rgba(186, 26, 26, 0.12);
+          color: var(--sys-color-error, #ba1a1a);
+        }
+
+        &[data-direction='flat'] {
+          background-color: var(--sys-color-surface-container);
+          color: var(--sys-color-on-surface-variant);
+        }
+      }
+    }
+
+    .metric-subtitle {
+      margin: 0;
+      font-size: 0.8125rem;
+      color: var(--sys-color-on-surface-variant);
+    }
+
+    .card-chart-slot {
+      margin-top: 8px;
+    }
+  }
+}

@@ -1,0 +1,50 @@
+<div class="metric-card" [attr.data-variant]="variant()">
+  <div class="card-header">
+    <div class="header-info">
+      @if (icon()) {
+        <div class="icon-container">
+          <span class="material-symbols-outlined">{{ icon() }}</span>
+        </div>
+      }
+      <span class="metric-title">{{ title() }}</span>
+    </div>
+
+    @if (actions().length > 0) {
+      <div class="header-actions">
+        @for (act of actions(); track act.id) {
+          <button
+            mat-icon-button
+            type="button"
+            [matTooltip]="act.tooltip || ''"
+            (click)="actionClick.emit(act.id)"
+          >
+            <span class="material-symbols-outlined">{{ act.icon }}</span>
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="card-body">
+    <div class="value-container">
+      <span class="metric-value">{{ value() }}</span>
+      @if (trend()) {
+        <div class="trend-badge" [attr.data-direction]="trend()?.direction">
+          <span class="material-symbols-outlined trend-icon">
+            {{ trend()?.direction === 'up' ? 'trending_up' : trend()?.direction === 'down' ? 'trending_down' : 'trending_flat' }}
+          </span>
+          <span>{{ trend()?.value }}</span>
+        </div>
+      }
+    </div>
+
+    @if (subtitle()) {
+      <p class="metric-subtitle">{{ subtitle() }}</p>
+    }
+
+    <!-- Slot para inyectar micro-gráficas o contenido adicional -->
+    <div class="card-chart-slot">
+      <ng-content />
+    </div>
+  </div>
+</div>
