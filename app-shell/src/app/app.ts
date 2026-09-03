@@ -38,7 +38,7 @@ export class App {
   readonly isSidenavOpen = signal<boolean>(false);
 
   readonly mfeRoutes = signal<MfeRoute[]>([
-    { path: '/dashboard', label: 'Dashboard General', icon: 'dashboard' },
+    { path: '/agendador-citas', label: 'Agendar Cita', icon: 'calendar_add_on' },
     { path: '/mfe-users', label: 'Gestión de Usuarios', icon: 'people' },
     { path: '/mfe-billing', label: 'Módulo Facturación', icon: 'receipt_long' },
     { path: '/mfe-reports', label: 'Analíticas', icon: 'analytics' },

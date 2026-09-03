@@ -1,9 +1,9 @@
 import { ModuleFederationConfig } from '@nx/module-federation';
 
 const config: ModuleFederationConfig = {
-  name: 'Dashboard',
+  name: 'agendador-citas',
   exposes: {
-    './Routes': 'apps/dashboard/src/app/remote-entry/entry.routes.ts',
+    './Routes': 'apps/agendador-citas/src/app/remote-entry/entry.routes.ts',
   },
 };
 

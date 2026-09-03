@@ -1,0 +1,33 @@
+<div class="tabs-collection-wrapper" [attr.data-variant]="variant()">
+  <mat-tab-group
+    [selectedIndex]="selectedIndex()"
+    (selectedIndexChange)="onSelectedIndexChange($event)"
+    animationDuration="200ms"
+  >
+    @for (tab of tabs(); track tab.id) {
+      <mat-tab [disabled]="tab.disabled">
+        <!-- Tab Label con icono y badge opcional -->
+        <ng-template mat-tab-label>
+          <div class="tab-label-content">
+            @if (tab.icon) {
+              <span class="material-symbols-outlined tab-icon">{{ tab.icon }}</span>
+            }
+            <span class="tab-text">{{ tab.label }}</span>
+            @if (tab.badge !== undefined) {
+              <span class="tab-badge">{{ tab.badge }}</span>
+            }
+          </div>
+        </ng-template>
+
+        <!-- Contenido Lazy con ng-template -->
+        <ng-template matTabContent>
+          <div class="tab-pane-content">
+            @if (tab.contentTemplate) {
+              <ng-container *ngTemplateOutlet="tab.contentTemplate" />
+            }
+          </div>
+        </ng-template>
+      </mat-tab>
+    }
+  </mat-tab-group>
+</div>

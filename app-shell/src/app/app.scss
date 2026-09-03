@@ -1,126 +1,168 @@
-    /* ==========================================================================
-       APP SHELL SCSS STRUCTURE
-       Nota: Puedes mover esto tal cual a tu app.component.scss
-       ========================================================================== */
+/* ==========================================================================
+   APP SHELL SCSS STRUCTURE (Material Design 3 Integration)
+   ========================================================================== */
 
-    /* --- LAYOUT PRINCIPAL --- */
-    .shell-layout {
-      height: 100vh;
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-    }
+/* --- LAYOUT PRINCIPAL --- */
+.shell-layout {
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
 
-    .shell-sidenav {
-      width: 260px;
-      border-right: 1px solid #e0e0e0;
-      box-shadow: 2px 0 8px rgba(0,0,0,0.05);
-    }
+.shell-sidenav {
+  width: 260px;
+  border-right: 1px solid var(--sys-color-outline-variant, #e0e0e0);
+  background-color: var(--sys-color-surface-container-low, #ffffff);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+}
 
-    .shell-content {
-      display: flex;
-      flex-direction: column;
-      background-color: #f8fafc; /* Gris muy claro de fondo */
-    }
+/* --- ÁREA DE CONTENIDO PRINCIPAL CON BACKGROUND Y ORBS --- */
+.shell-content {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--sys-color-surface, #f8fafc);
+}
 
-    /* --- TOOLBARS Y ALINEACIONES (EL FIX DEL PROBLEMA) --- */
-    .shell-topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      z-index: 10;
-    }
+/* Orbs de fondo decorativos con gradientes tonales y blur */
+.shell-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(100px);
+  opacity: 0.35;
+  z-index: 0;
+  will-change: transform;
+}
 
-    /* Regla maestra para alinear iconos y texto en el toolbar */
-    .toolbar-action-group,
-    .toolbar-user-group {
-      display: flex;
-      align-items: center; /* Centrado vertical estricto */
-      gap: 12px; /* Reemplazo nativo para 'gap-2' o 'gap-4' */
-    }
+.shell-orb--one {
+  width: 500px;
+  height: 500px;
+  top: -120px;
+  right: -80px;
+  background: radial-gradient(
+    circle,
+    var(--sys-color-primary, #1e4ba8) 0%,
+    rgba(30, 75, 168, 0.15) 60%,
+    transparent 100%
+  );
+  animation: floatOrbOne 20s ease-in-out infinite alternate;
+}
 
-    .toolbar-user-group {
-      padding: 0 16px;
-      font-size: 14px;
-    }
+.shell-orb--two {
+  width: 440px;
+  height: 440px;
+  bottom: 2%;
+  left: -100px;
+  background: radial-gradient(
+    circle,
+    var(--sys-color-tertiary, #00695c) 0%,
+    rgba(0, 105, 92, 0.2) 60%,
+    transparent 100%
+  );
+  animation: floatOrbTwo 24s ease-in-out infinite alternate;
+}
 
-    .toolbar-title {
-      font-weight: 500;
-    }
+.shell-orb--three {
+  width: 380px;
+  height: 380px;
+  top: 40%;
+  right: 20%;
+  background: radial-gradient(
+    circle,
+    var(--sys-color-secondary, #4f5b75) 0%,
+    rgba(79, 91, 117, 0.15) 60%,
+    transparent 100%
+  );
+  animation: floatOrbThree 28s ease-in-out infinite alternate;
+}
 
-    /* --- SIDENAV COMPONENTS --- */
-    .shell-sidenav-header {
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      z-index: 10;
-      position: relative;
-    }
+@keyframes floatOrbOne {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-40px, 35px) scale(1.06); }
+  100% { transform: translate(25px, -20px) scale(0.95); }
+}
 
-    .shell-brand {
-      font-weight: 700;
-      font-size: 1.125rem;
-      letter-spacing: 0.05em;
-    }
+@keyframes floatOrbTwo {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(35px, -30px) scale(1.05); }
+  100% { transform: translate(-20px, 25px) scale(0.94); }
+}
 
-    .shell-nav-list {
-      margin-top: 8px;
-    }
+@keyframes floatOrbThree {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-30px, -25px) scale(1.08); }
+  100% { transform: translate(30px, 35px) scale(0.96); }
+}
 
-    /* Sobrescritura encapsulada para la separación del icono en la lista */
-    .nav-icon {
-      margin-right: 16px !important;
-      color: #5f6368;
-    }
+/* --- TOOLBARS Y ALINEACIONES --- */
+.shell-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
 
-    .nav-label {
-      font-weight: 500;
-      color: #374151;
-    }
+.toolbar-action-group,
+.toolbar-user-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
-    /* Estado Activo del RouterLink */
-    .is-active {
-      background-color: #f1f5f9;
-      border-right: 4px solid #2563eb; /* Color de acento (azul) */
-    }
+.toolbar-user-group {
+  padding: 0 16px;
+  font-size: 14px;
+}
 
-    .is-active .nav-icon,
-    .is-active .nav-label {
-      color: #2563eb; /* Heredan el color activo */
-    }
+.toolbar-title {
+  font-weight: 500;
+}
 
-    .shell-empty-state {
-      padding: 24px;
-      text-align: center;
-      color: #6b7280;
-      font-size: 0.875rem;
-    }
+/* --- SIDENAV COMPONENTS --- */
+.shell-sidenav-header {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  z-index: 10;
+  position: relative;
+}
 
-    /* --- ÁREA DE TRABAJO (MAIN) --- */
-    .shell-main-workspace {
-      flex: 1;
-      padding: 24px;
-      overflow-y: auto;
-    }
+.shell-brand {
+  font-weight: 700;
+  font-size: 1.125rem;
+  letter-spacing: 0.05em;
+}
 
-    .shell-welcome-card {
-      background-color: #ffffff;
-      padding: 32px;
-      border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-      border: 1px solid #f1f5f9;
-      margin-bottom: 24px;
-      max-width: 800px;
-    }
+.shell-nav-list {
+  margin-top: 8px;
+}
 
-    .shell-welcome-card h1 {
-      font-size: 24px;
-      font-weight: 700;
-      color: #1f2937;
-      margin: 0 0 8px 0;
-    }
+.nav-icon {
+  margin-right: 16px;
+  color: var(--sys-color-on-surface-variant, #5f6368);
+}
 
-    .shell-welcome-card p {
-      color: #4b5563;
-      line-height: 1.6;
-      margin: 0;
-    }
+.nav-label {
+  font-weight: 500;
+  color: var(--sys-color-on-surface, #374151);
+}
+
+
+.shell-empty-state {
+  padding: 24px;
+  text-align: center;
+  color: var(--sys-color-on-surface-variant, #6b7280);
+  font-size: 0.875rem;
+}
+
+/* --- ÁREA DE TRABAJO (MAIN) --- */
+.shell-main-workspace {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}

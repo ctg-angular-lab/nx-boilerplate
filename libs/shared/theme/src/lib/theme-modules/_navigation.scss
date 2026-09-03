@@ -1,0 +1,45 @@
+// libs/shared/theme/src/lib/theme-modules/_navigation.scss
+@use '@angular/material' as mat;
+
+@mixin navigation-overrides() {
+  // Sobreescritura de tokens nativos MD3 para Navigation Drawers / Sidenavs
+  --mat-sidenav-container-shape: 0;
+
+  // Tokens de forma MD3 para listas y estado activo (reset de píldora 9999px a recto 0px)
+  --mat-list-active-indicator-shape: 0;
+  --mat-list-list-item-container-shape: 0;
+
+  .mat-drawer,
+  .mat-sidenav {
+    border-radius: 0;
+  }
+
+  // Lista de navegación y estado activo centralizado
+  .mat-mdc-nav-list {
+    --mat-list-active-indicator-shape: 0;
+    --mat-list-list-item-container-shape: 0;
+
+    .mat-mdc-list-item {
+      --mat-list-active-indicator-shape: 0;
+      --mat-list-list-item-container-shape: 0;
+      border-radius: 0;
+      border-right: none;
+      box-shadow: none;
+
+      &.is-active,
+      &.mdc-list-item--activated {
+        background-color: var(--sys-color-secondary-container);
+        border-radius: 0;
+        border-right: none;
+        box-shadow: none;
+
+        .mat-icon,
+        .mdc-list-item__primary-text,
+        .nav-label,
+        .nav-icon {
+          color: var(--sys-color-primary);
+        }
+      }
+    }
+  }
+}

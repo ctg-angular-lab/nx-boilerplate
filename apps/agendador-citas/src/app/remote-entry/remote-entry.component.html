@@ -1,0 +1,25 @@
+<div class="agendador-citas-view-container">
+  <!-- Colección de pestañas modular con carga lazy -->
+  <app-tabs-collection [tabs]="tabs()" />
+
+  <!-- Template para Tab 1: Agendar Cita -->
+  <ng-template #appointmentTab>
+    <div class="tab-pane-wrapper">
+      <app-agendar-cita />
+    </div>
+  </ng-template>
+
+  <!-- Template para Tab 2: Calendario -->
+  <ng-template #calendarTab>
+    <div class="tab-pane-wrapper">
+      <app-calendario-citas />
+    </div>
+  </ng-template>
+
+  <!-- Template para Tab 3: Profesionales Disponibles -->
+  <ng-template #professionalsTab>
+    <div class="tab-pane-wrapper">
+      <app-lista-profesionales />
+    </div>
+  </ng-template>
+</div>

@@ -1,0 +1,108 @@
+.table-wrapper {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--sys-color-surface-container-lowest);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.table-loader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+
+.table-container {
+  overflow-x: auto;
+  min-height: 200px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: transparent;
+
+  th.mat-header-cell {
+    background-color: var(--sys-color-surface-container-low);
+    color: var(--sys-color-on-surface);
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--sys-color-outline-variant);
+    white-space: nowrap;
+  }
+
+  td.mat-cell {
+    color: var(--sys-color-on-surface-variant);
+    font-size: 0.875rem;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--sys-color-outline-variant);
+  }
+
+  tr.table-row {
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+
+    &:hover {
+      background-color: var(--sys-color-surface-container);
+    }
+
+    &.selected-row {
+      background-color: var(--sys-color-surface-container-high);
+    }
+  }
+
+  .checkbox-cell {
+    width: 48px;
+    padding: 0 8px;
+    text-align: center;
+  }
+
+  .actions-cell {
+    width: 120px;
+    text-align: right;
+  }
+
+  .actions-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+.empty-row {
+  height: 180px;
+
+  .empty-cell {
+    text-align: center;
+    padding: 32px;
+  }
+
+  .empty-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: var(--sys-color-on-surface-variant);
+
+    .empty-icon {
+      font-size: 48px;
+      color: var(--sys-color-outline);
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.9375rem;
+    }
+  }
+}
+
+.table-paginator {
+  background-color: var(--sys-color-surface-container-low);
+  border-top: 1px solid var(--sys-color-outline-variant);
+  color: var(--sys-color-on-surface);
+}

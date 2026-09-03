@@ -1,0 +1,115 @@
+<div class="table-wrapper">
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" class="table-loader" />
+  }
+
+  <div class="table-container">
+    <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortChange.emit($event)">
+      <!-- Checkbox Column -->
+      @if (selectable()) {
+        <ng-container matColumnDef="__select__">
+          <th mat-header-cell *matHeaderCellDef class="checkbox-cell">
+            <mat-checkbox
+              (change)="$event ? masterToggle() : null"
+              [checked]="selectedRows().length > 0 && isAllSelected()"
+              [indeterminate]="selectedRows().length > 0 && !isAllSelected()"
+              aria-label="Seleccionar todos"
+            />
+          </th>
+          <td mat-cell *matCellDef="let row" class="checkbox-cell" (click)="$event.stopPropagation()">
+            <mat-checkbox
+              (click)="$event.stopPropagation()"
+              (change)="$event ? toggleRow(row) : null"
+              [checked]="isRowSelected(row)"
+              aria-label="Seleccionar fila"
+            />
+          </td>
+        </ng-container>
+      }
+
+      <!-- Dynamic Data Columns -->
+      @for (col of columns(); track col.field) {
+        <ng-container [matColumnDef]="col.field">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            [mat-sort-header]="col.sortable ? col.field : ''"
+            [disabled]="!col.sortable"
+            [style.text-align]="col.align || 'left'"
+            [style.width]="col.width || 'auto'"
+          >
+            {{ col.header }}
+          </th>
+          <td
+            mat-cell
+            *matCellDef="let row"
+            [style.text-align]="col.align || 'left'"
+            [style.width]="col.width || 'auto'"
+          >
+            @if (col.cellTemplate) {
+              <ng-container *ngTemplateOutlet="col.cellTemplate; context: { $implicit: row, field: col.field }" />
+            } @else if (col.formatter) {
+              {{ col.formatter(row) }}
+            } @else {
+              {{ row[col.field] }}
+            }
+          </td>
+        </ng-container>
+      }
+
+      <!-- Actions Column -->
+      @if (actions().length > 0) {
+        <ng-container matColumnDef="__actions__">
+          <th mat-header-cell *matHeaderCellDef class="actions-header">Acciones</th>
+          <td mat-cell *matCellDef="let row" class="actions-cell" (click)="$event.stopPropagation()">
+            <div class="actions-group">
+              @for (act of actions(); track act.id) {
+                @if (!act.hidden?.(row)) {
+                  <button
+                    mat-icon-button
+                    type="button"
+                    [matTooltip]="act.label"
+                    [disabled]="act.disabled?.(row)"
+                    (click)="onActionClick($event, act.id, row)"
+                  >
+                    <span class="material-symbols-outlined">{{ act.icon }}</span>
+                  </button>
+                }
+              }
+            </div>
+          </td>
+        </ng-container>
+      }
+
+      <!-- Headers and Rows -->
+      <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns()"
+        class="table-row"
+        [class.selected-row]="isRowSelected(row)"
+        (click)="onRowClick(row)"
+      ></tr>
+
+      <!-- Empty State -->
+      <tr class="mat-row empty-row" *matNoDataRow>
+        <td class="mat-cell empty-cell" [attr.colspan]="displayedColumns().length">
+          <div class="empty-content">
+            <span class="material-symbols-outlined empty-icon">inbox</span>
+            <p>{{ emptyMessage() }}</p>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <mat-paginator
+    class="table-paginator"
+    [length]="totalElements() ?? dataSource.data.length"
+    [pageSize]="pageSize()"
+    [pageIndex]="pageIndex()"
+    [pageSizeOptions]="pageSizeOptions()"
+    (page)="pageIndex.set($event.pageIndex); pageSize.set($event.pageSize); pageChange.emit($event)"
+    showFirstLastButtons
+  />
+</div>

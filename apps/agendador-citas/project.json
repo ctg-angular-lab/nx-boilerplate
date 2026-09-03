@@ -1,29 +1,29 @@
 {
-  "name": "Dashboard",
+  "name": "agendador-citas",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "prefix": "app",
-  "sourceRoot": "apps/dashboard/src",
+  "sourceRoot": "apps/agendador-citas/src",
   "tags": [],
   "targets": {
     "build": {
       "executor": "@nx/angular:webpack-browser",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/apps/dashboard",
-        "index": "apps/dashboard/src/index.html",
-        "main": "apps/dashboard/src/main.ts",
-        "tsConfig": "apps/dashboard/tsconfig.app.json",
+        "outputPath": "dist/apps/agendador-citas",
+        "index": "apps/agendador-citas/src/index.html",
+        "main": "apps/agendador-citas/src/main.ts",
+        "tsConfig": "apps/agendador-citas/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
         "assets": [
           {
             "glob": "**/*",
-            "input": "apps/dashboard/public"
+            "input": "apps/agendador-citas/public"
           }
         ],
-        "styles": ["apps/dashboard/src/styles.scss"],
+        "styles": ["apps/agendador-citas/src/styles.scss"],
         "customWebpackConfig": {
-          "path": "apps/dashboard/webpack.config.ts"
+          "path": "apps/agendador-citas/webpack.config.ts"
         }
       },
       "configurations": {
@@ -42,7 +42,7 @@
           ],
           "outputHashing": "all",
           "customWebpackConfig": {
-            "path": "apps/dashboard/webpack.prod.config.ts"
+            "path": "apps/agendador-citas/webpack.prod.config.ts"
           }
         },
         "development": {
@@ -65,10 +65,10 @@
       },
       "configurations": {
         "production": {
-          "buildTarget": "Dashboard:build:production"
+          "buildTarget": "agendador-citas:build:production"
         },
         "development": {
-          "buildTarget": "Dashboard:build:development"
+          "buildTarget": "agendador-citas:build:development"
         }
       },
       "defaultConfiguration": "development",
@@ -77,7 +77,7 @@
     "extract-i18n": {
       "executor": "@angular-devkit/build-angular:extract-i18n",
       "options": {
-        "buildTarget": "Dashboard:build"
+        "buildTarget": "agendador-citas:build"
       }
     },
     "lint": {
@@ -88,16 +88,16 @@
       "executor": "@nx/web:file-server",
       "defaultConfiguration": "production",
       "options": {
-        "buildTarget": "Dashboard:build",
+        "buildTarget": "agendador-citas:build",
         "port": 4201,
         "watch": false
       },
       "configurations": {
         "development": {
-          "buildTarget": "Dashboard:build:development"
+          "buildTarget": "agendador-citas:build:development"
         },
         "production": {
-          "buildTarget": "Dashboard:build:production"
+          "buildTarget": "agendador-citas:build:production"
         }
       }
     }

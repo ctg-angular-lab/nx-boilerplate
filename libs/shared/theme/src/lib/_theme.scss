@@ -2,6 +2,7 @@
 @use 'variables' as vars;
 @use 'typography' as typo;
 @use 'theme-modules/buttons' as buttons;
+@use 'theme-modules/navigation' as nav;
 
 // 1. Inicialización de utilidades core de Material
 @include mat.core();
@@ -26,7 +27,7 @@ $corporate-theme: mat.define-theme(
   )
 );
 
-// 3. Aplicación global en el DOM
+// 3. Aplicación global en el DOM e inyección de tokens del sistema
 html {
   @include mat.system-level-colors($corporate-theme);
   @include mat.system-level-typography($corporate-theme);
@@ -34,6 +35,7 @@ html {
 
   @include typo.typography-setup();
   @include buttons.button-overrides();
+  @include nav.navigation-overrides();
 
   background-color: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
@@ -49,9 +51,15 @@ html.dark-theme {
         tertiary: vars.$tertiary-palette,
         use-system-variables: true,
       ),
+      typography: (
+        brand-family: vars.$brand-font-family,
+        plain-family: vars.$plain-font-family,
+        use-system-variables: true,
+      ),
     )
   );
 
   @include mat.system-level-colors($corporate-dark-theme);
+  @include mat.system-level-typography($corporate-dark-theme);
   @include mat.all-component-colors($corporate-dark-theme);
 }
