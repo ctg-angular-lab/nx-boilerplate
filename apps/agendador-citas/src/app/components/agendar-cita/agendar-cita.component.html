@@ -1,9 +1,68 @@
 <section class="feature-card">
-  <div class="feature-card__header">
+  <header class="feature-card__header">
     <span class="material-symbols-outlined feature-card__icon">calendar_add_on</span>
     <h3 class="feature-card__title">{{ title() }}</h3>
-  </div>
-  <p class="feature-card__description">
-    Módulo para captura de datos del paciente, selección de especialidad y confirmación de turnos.
-  </p>
+  </header>
+
+  <mat-stepper orientation="vertical" [linear]="false" #stepper class="appointment-stepper">
+    <!-- PASO 1: Identificación del Paciente -->
+    <mat-step [stepControl]="form.controls.step1" label="Identificación">
+      <div class="stepper-step-content">
+        <app-step-cedula [stepForm]="form.controls.step1" />
+
+        <div class="stepper-actions">
+          <button
+            mat-flat-button
+            matStepperNext
+            type="button"
+            [disabled]="form.controls.step1.invalid"
+            (click)="verifyCedula()"
+          >
+            Verificar y Continuar
+          </button>
+        </div>
+      </div>
+    </mat-step>
+
+    <!-- PASO 2: Datos del Paciente -->
+    <mat-step [stepControl]="form.controls.step2" label="Datos del Paciente">
+      <div class="stepper-step-content">
+        <app-step-personal-info
+          [form]="form.controls.step2"
+          [history]="patientHistory()"
+        />
+
+        <div class="stepper-actions">
+          <button mat-stroked-button matStepperPrevious type="button">
+            Anterior
+          </button>
+          <button
+            mat-flat-button
+            matStepperNext
+            type="button"
+            [disabled]="form.controls.step2.invalid"
+          >
+            Siguiente
+          </button>
+        </div>
+      </div>
+    </mat-step>
+
+    <!-- PASO 3: Selección de Procedimiento y Horario -->
+    <mat-step [stepControl]="form.controls.step3" label="Procedimiento y Fecha">
+      <div class="stepper-step-content">
+        <app-step-procedure-selection
+          [form]="form.controls.step3"
+          [dates]="availableDates()"
+          (submitAppointment)="onAppointmentSubmitted()"
+        />
+
+        <div class="stepper-actions">
+          <button mat-stroked-button matStepperPrevious type="button">
+            Anterior
+          </button>
+        </div>
+      </div>
+    </mat-step>
+  </mat-stepper>
 </section>

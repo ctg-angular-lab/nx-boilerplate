@@ -5,7 +5,7 @@
   background-color: var(--sys-color-surface-container-low, #ffffff);
   border: 1px solid var(--sys-color-outline-variant, #e0e0e0);
   border-radius: 0;
-  gap: 12px;
+  gap: 20px;
 
   &__header {
     display: flex;
@@ -24,11 +24,22 @@
     font-size: var(--sys-typescale-title-medium-size, 1.25rem);
     color: var(--sys-color-on-surface);
   }
+}
 
-  &__description {
-    margin: 0;
-    font-family: var(--sys-typescale-body-medium-font);
-    font-size: var(--sys-typescale-body-medium-size, 0.95rem);
-    color: var(--sys-color-on-surface-variant);
-  }
+.appointment-stepper {
+  background: transparent;
+}
+
+.stepper-step-content {
+  padding: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stepper-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
 }

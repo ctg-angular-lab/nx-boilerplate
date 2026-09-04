@@ -1,0 +1,86 @@
+<div class="step-personal-info">
+  <!-- Historial Clínico del Paciente (si existe) -->
+  @if (history(); as patient) {
+    <mat-card class="history-card">
+      <mat-card-header class="history-card__header">
+        <span class="material-symbols-outlined history-card__icon">clinical_notes</span>
+        <mat-card-title class="history-card__title">Último Procedimiento y Recomendaciones</mat-card-title>
+      </mat-card-header>
+
+      <mat-card-content class="history-card__content">
+        <p class="history-card__recommendations">
+          <strong>Recomendaciones Médicas:</strong> {{ patient.recomendaciones }}
+        </p>
+
+        <div class="history-table-container">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Procedimiento</th>
+                <th>Fecha</th>
+                <th>Especialista</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of patient.ultimosProcedimientos; track item.id) {
+                <tr>
+                  <td>{{ item.nombre }}</td>
+                  <td>{{ item.fecha }}</td>
+                  <td>{{ item.profesional }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- Formulario de Datos Personales y Contacto -->
+  <form [formGroup]="form()" class="personal-form-grid">
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Nombres</mat-label>
+        <input matInput formControlName="nombre" placeholder="Ej. Juan" />
+        @if (hasError('nombre', 'required')) {
+          <mat-error>El nombre es obligatorio</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Apellidos</mat-label>
+        <input matInput formControlName="apellidos" placeholder="Ej. Pérez" />
+        @if (hasError('apellidos', 'required')) {
+          <mat-error>Los apellidos son obligatorios</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Correo Electrónico</mat-label>
+        <input matInput type="email" formControlName="correo" placeholder="ejemplo@correo.com" />
+        @if (hasError('correo', 'required')) {
+          <mat-error>El correo es obligatorio</mat-error>
+        }
+        @if (hasError('correo', 'email')) {
+          <mat-error>Ingrese un correo válido</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Teléfono Celular</mat-label>
+        <input matInput type="tel" formControlName="celular" placeholder="Ej. 3001234567" />
+        @if (hasError('celular', 'required')) {
+          <mat-error>El número celular es obligatorio</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <div class="whatsapp-option">
+      <mat-checkbox formControlName="recordatorioWhatsapp" color="primary">
+        Deseo recibir confirmación y recordatorios por WhatsApp
+      </mat-checkbox>
+    </div>
+  </form>
+</div>

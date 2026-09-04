@@ -1,0 +1,125 @@
+.step-procedure-selection {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.procedure-search-field {
+  width: 100%;
+
+  .search-icon {
+    margin-right: 8px;
+    color: var(--sys-color-on-surface-variant);
+  }
+}
+
+.procedure-option {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  padding: 4px 0;
+
+  .procedure-name {
+    font-weight: 500;
+    color: var(--sys-color-on-surface);
+  }
+
+  .procedure-meta {
+    font-size: 0.75rem;
+    color: var(--sys-color-on-surface-variant);
+  }
+}
+
+.available-slots-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  .section-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--sys-color-on-surface);
+
+    .material-symbols-outlined {
+      color: var(--sys-color-primary);
+    }
+  }
+}
+
+.slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.slot-card {
+  background-color: var(--sys-color-surface-container-lowest, #ffffff);
+  border: 1px solid var(--sys-color-outline-variant, #e0e0e0);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+
+  &:hover {
+    border-color: var(--sys-color-primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  &--selected {
+    border-color: var(--sys-color-primary);
+    background-color: var(--sys-color-surface-container-high, #f0f4f8);
+    box-shadow: 0 0 0 2px var(--sys-color-primary);
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px !important;
+  }
+
+  .slot-date,
+  .slot-time {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    color: var(--sys-color-on-surface);
+
+    .material-symbols-outlined {
+      font-size: 18px;
+      color: var(--sys-color-primary);
+    }
+  }
+
+  .slot-doctor {
+    font-size: 0.75rem;
+    color: var(--sys-color-on-surface-variant);
+    margin-top: 4px;
+  }
+}
+
+.no-slots-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  background-color: var(--sys-color-surface-container);
+  border-radius: 8px;
+  color: var(--sys-color-on-surface-variant);
+}
+
+.confirmation-action {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+
+  .confirm-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
