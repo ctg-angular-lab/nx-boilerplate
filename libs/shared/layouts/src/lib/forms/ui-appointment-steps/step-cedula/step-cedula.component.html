@@ -1,0 +1,27 @@
+<div class="step-cedula">
+  <div class="step-cedula__instructions">
+    <p class="instruction-text">
+      Ingrese el documento de identidad del paciente para consultar el historial clínico o registrar una nueva cita.
+    </p>
+  </div>
+
+  <form [formGroup]="stepForm()" class="step-cedula__form">
+    <mat-form-field appearance="outline" class="cedula-field">
+      <mat-label>Número de Documento / Cédula</mat-label>
+      <span matPrefix class="material-symbols-outlined prefix-icon">badge</span>
+      <input
+        matInput
+        type="text"
+        formControlName="cedula"
+        placeholder="Ej. 123456"
+        autocomplete="off"
+      />
+      @if (hasError('required')) {
+        <mat-error>El número de cédula es obligatorio</mat-error>
+      }
+      @if (hasError('pattern')) {
+        <mat-error>La cédula debe contener solo números</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</div>

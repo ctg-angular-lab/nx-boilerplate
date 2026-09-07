@@ -4,7 +4,9 @@
 
 // Mixin para encapsulación de glifos e iconografía Material Symbols
 @mixin typography-setup() {
-  .material-symbols-outlined {
+  .material-symbols-outlined,
+  .material-icons,
+  .mat-icon {
     font-family: 'Material Symbols Outlined', sans-serif;
     font-weight: normal;
     font-style: normal;
