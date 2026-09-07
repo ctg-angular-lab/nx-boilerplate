@@ -1,0 +1,20 @@
+<h2 mat-dialog-title class="confirmation-dialog-title">{{ data.title }}</h2>
+
+<mat-dialog-content class="confirmation-dialog-content">
+  <p class="confirmation-dialog-text">{{ data.text }}</p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="confirmation-dialog-actions">
+  @for (action of data.actions; track action.label) {
+    <button
+      mat-button
+      [color]="action.color !== 'default' ? action.color : null"
+      (click)="dialogRef.close(action.value)"
+    >
+      @if (action.icon) {
+        <mat-icon class="material-symbols-outlined">{{ action.icon }}</mat-icon>
+      }
+      <span>{{ action.label }}</span>
+    </button>
+  }
+</mat-dialog-actions>

@@ -14,10 +14,13 @@ import {
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialog } from '@angular/material/dialog';
 import {
   StepCedulaComponent,
   StepPersonalInfoComponent,
   StepProcedureSelectionComponent,
+  ConfirmationModalComponent,
+  ConfirmationModalData,
   AvailableDate,
   PatientHistory,
 } from '@nx-boilerplate/layouts';
@@ -41,6 +44,7 @@ import {
 })
 export class AgendarCitaComponent {
   private readonly fb = inject(FormBuilder);
+  private readonly dialog = inject(MatDialog);
 
   readonly title = signal<string>('Formulario de Agendamiento');
 
@@ -82,6 +86,83 @@ export class AgendarCitaComponent {
 
   get step3Group(): FormGroup {
     return this.form.controls.step3;
+  }
+
+  /**
+   * Orquesta la apertura del modal de confirmación con los datos dinámicos de la cita
+   */
+  openConfirmationModal(): void {
+    const nombre = this.step2Group.get('nombre')?.value || '';
+    const apellido = this.step2Group.get('apellidos')?.value || '';
+
+    // Valores dinámicos/formales para fecha y hora
+    const fecha = '10 de Septiembre de 2026';
+    const hora = '09:00 AM';
+
+    const modalData: ConfirmationModalData<boolean> = {
+      title: 'Confirmación de cita',
+      text: `Sr(a) ${nombre} ${apellido} ¿desea confirmar la cita para el ${fecha} a las ${hora}?`,
+      actions: [
+        { label: 'Confirmar', color: 'primary', value: true },
+        { label: 'Cancelar', color: 'default', value: false },
+      ],
+    };
+
+    const dialogRef = this.dialog.open<
+      ConfirmationModalComponent,
+      ConfirmationModalData<boolean>,
+      boolean
+    >(ConfirmationModalComponent, {
+      data: modalData,
+      width: '450px',
+      disableClose: true,
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        console.log('Cita confirmada');
+      }
+    });
+  }
+
+  /**
+   * Manejador del submit emitido desde el paso 3 del Stepper
+   */
+  onAppointmentSubmitted(): void {
+    this.openConfirmationModal();
+  }
+
+  /**
+   * Manejador de la acción de unirse a la lista de espera
+   */
+  onWaitlistRequested(): void {
+    const nombre = this.step2Group.get('nombre')?.value || '';
+    const apellido = this.step2Group.get('apellidos')?.value || '';
+
+    const modalData: ConfirmationModalData<boolean> = {
+      title: 'Lista de Espera',
+      text: `Sr(a) ${nombre} ${apellido}, ¿desea registrarse en la lista de espera? Le notificaremos automáticamente cuando se libere un turno.`,
+      actions: [
+        { label: 'Unirme a la lista', color: 'primary', value: true },
+        { label: 'Cancelar', color: 'default', value: false },
+      ],
+    };
+
+    const dialogRef = this.dialog.open<
+      ConfirmationModalComponent,
+      ConfirmationModalData<boolean>,
+      boolean
+    >(ConfirmationModalComponent, {
+      data: modalData,
+      width: '450px',
+      disableClose: true,
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        console.log('Paciente registrado en lista de espera');
+      }
+    });
   }
 
   /**
@@ -154,9 +235,5 @@ export class AgendarCitaComponent {
       this.patientHistory.set(null);
       this.availableDates.set([]);
     }
-  }
-
-  onAppointmentSubmitted(): void {
-    console.log('Cita confirmada con éxito:', this.form.value);
   }
 }

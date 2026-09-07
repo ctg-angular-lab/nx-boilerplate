@@ -56,6 +56,11 @@ export class StepProcedureSelectionComponent {
   readonly submitAppointment = output<void>();
 
   /**
+   * Evento emitido al unirse a la lista de espera
+   */
+  readonly joinWaitlist = output<void>();
+
+  /**
    * Fecha u horario seleccionado por el usuario
    */
   readonly selectedDateId = signal<string | null>(null);
@@ -128,5 +133,9 @@ export class StepProcedureSelectionComponent {
     if (this.form().valid) {
       this.submitAppointment.emit();
     }
+  }
+
+  onJoinWaitlist(): void {
+    this.joinWaitlist.emit();
   }
 }

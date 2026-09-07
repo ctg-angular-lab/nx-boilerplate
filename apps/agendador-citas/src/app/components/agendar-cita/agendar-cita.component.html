@@ -5,6 +5,14 @@
   </header>
 
   <mat-stepper orientation="vertical" [linear]="false" #stepper class="appointment-stepper">
+    <!-- Iconos personalizados para estados editado y completado del Stepper -->
+    <ng-template matStepperIcon="edit">
+      <mat-icon class="material-symbols-outlined">edit</mat-icon>
+    </ng-template>
+    <ng-template matStepperIcon="done">
+      <mat-icon class="material-symbols-outlined">check</mat-icon>
+    </ng-template>
+
     <!-- PASO 1: Identificación del Paciente -->
     <mat-step [stepControl]="form.controls.step1" label="Identificación">
       <div class="stepper-step-content">
@@ -55,6 +63,7 @@
           [form]="form.controls.step3"
           [dates]="availableDates()"
           (submitAppointment)="onAppointmentSubmitted()"
+          (joinWaitlist)="onWaitlistRequested()"
         />
 
         <div class="stepper-actions">

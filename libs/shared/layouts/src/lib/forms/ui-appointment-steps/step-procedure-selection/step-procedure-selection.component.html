@@ -33,49 +33,74 @@
         Seleccione una fecha y horario disponible
       </h4>
 
-      <div class="slots-grid">
-        @for (slot of dates(); track slot.id) {
-          <mat-card
-            class="slot-card"
-            [class.slot-card--selected]="selectedDateId() === slot.id"
-            (click)="selectDate(slot)"
-          >
-            <mat-card-content class="slot-card__body">
-              <div class="slot-date">
-                <span class="material-symbols-outlined">calendar_today</span>
-                <span>{{ slot.fecha }}</span>
-              </div>
-              <div class="slot-time">
-                <span class="material-symbols-outlined">schedule</span>
-                <strong>{{ slot.hora }}</strong>
-              </div>
-              @if (slot.profesional) {
-                <span class="slot-doctor">{{ slot.profesional }}</span>
-              }
-            </mat-card-content>
-          </mat-card>
-        } @empty {
-          <div class="no-slots-message">
-            <span class="material-symbols-outlined">event_busy</span>
-            <p>No hay turnos disponibles para este procedimiento.</p>
-          </div>
-        }
-      </div>
-    </section>
+      @if (dates().length > 0) {
+        <div class="slots-grid">
+          @for (slot of dates(); track slot.id) {
+            <mat-card
+              class="slot-card"
+              [class.slot-card--selected]="selectedDateId() === slot.id"
+              (click)="selectDate(slot)"
+            >
+              <mat-card-content class="slot-card__body">
+                <div class="slot-date">
+                  <span class="material-symbols-outlined">calendar_today</span>
+                  <span>{{ slot.fecha }}</span>
+                </div>
+                <div class="slot-time">
+                  <span class="material-symbols-outlined">schedule</span>
+                  <strong>{{ slot.hora }}</strong>
+                </div>
+                @if (slot.profesional) {
+                  <span class="slot-doctor">{{ slot.profesional }}</span>
+                }
+              </mat-card-content>
+            </mat-card>
+          }
+        </div>
 
-    <!-- Botón Primario de Confirmación Final -->
-    <div class="confirmation-action">
-      <button
-        mat-flat-button
-        color="primary"
-        type="button"
-        class="confirm-button"
-        [disabled]="form().invalid || !selectedDateId()"
-        (click)="confirm()"
-      >
-        <span class="material-symbols-outlined">check_circle</span>
-        Agendar Cita
-      </button>
-    </div>
+        <!-- Botón Primario de Confirmación Final -->
+        <div class="confirmation-action">
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            class="confirm-button"
+            [disabled]="form().invalid || !selectedDateId()"
+            (click)="confirm()"
+          >
+            <span class="material-symbols-outlined">check_circle</span>
+            Agendar Cita
+          </button>
+        </div>
+      } @else {
+        <!-- Card: Entrar en lista de espera -->
+        <mat-card class="waitlist-card">
+          <mat-card-content class="waitlist-card__content">
+            <div class="waitlist-card__info">
+              <div class="waitlist-card__header">
+                <span class="material-symbols-outlined waitlist-card__icon">hourglass_top</span>
+                <h5 class="waitlist-card__title">Entrar en lista de espera</h5>
+              </div>
+              <p class="waitlist-card__text">
+                Se estara verificando de acuerdo a cancelaciones diariamente
+              </p>
+            </div>
+
+            <div class="waitlist-card__action">
+              <button
+                mat-flat-button
+                color="primary"
+                type="button"
+                class="waitlist-btn"
+                (click)="onJoinWaitlist()"
+              >
+                <span class="material-symbols-outlined">notifications_active</span>
+                Unirme a la lista
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+    </section>
   }
 </div>
