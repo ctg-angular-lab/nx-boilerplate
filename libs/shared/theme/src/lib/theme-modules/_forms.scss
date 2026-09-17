@@ -1,0 +1,70 @@
+// libs/shared/theme/src/lib/theme-modules/_forms.scss
+@use 'sass:map';
+@use '@angular/material' as mat;
+@use '../variables' as vars;
+
+@mixin form-overrides() {
+  $primary-70: map.get(vars.$primary-palette, 70);
+
+  // Sobreescritura global de Design Tokens MD3 para mat-form-field (Outlined)
+  .mat-mdc-form-field {
+    // 1. Contenedor principal: Altura y padding vertical
+    --mdc-outlined-text-field-container-height: 40px;
+    --mat-form-field-container-height: 40px;
+    --mat-form-field-container-vertical-padding: 0;
+
+    // 2. Bordes estáticos
+    --mdc-outlined-text-field-outline-width: 1px;
+    --mdc-outlined-text-field-outline-color: #e2e8f0;
+
+    // 3. Bordes e interacción en Focus
+    --mdc-outlined-text-field-focus-outline-width: 2px;
+    --mdc-outlined-text-field-focus-outline-color: var(--sys-color-primary, #1e4ba8);
+
+    // 4. Espaciado del icono prefijo
+    --mdc-outlined-text-field-leading-space: 10px;
+
+    // 5. Color del icono prefijo extraído de Primary-70
+    --mdc-outlined-text-field-input-text-prefix-color: #{$primary-70};
+    --mat-form-field-leading-icon-color: #{$primary-70};
+
+    // 6. Centrado vertical perfecto del contenedor, infix y mat-label
+    .mat-mdc-text-field-wrapper {
+      .mat-mdc-form-field-flex {
+        align-items: center;
+      }
+
+      .mat-mdc-form-field-infix {
+        display: inline-flex;
+        align-items: center;
+        min-height: 40px;
+        padding-top: 0;
+        padding-bottom: 0;
+      }
+
+      .mat-mdc-floating-label:not(.mdc-floating-label--float-above) {
+        top: 50%;
+        transform: translateY(-50%);
+      }
+    }
+
+    // Centrado del icono prefijo
+    .mat-mdc-form-field-icon-prefix,
+    .mat-icon[matPrefix],
+    [matPrefix] {
+      color: $primary-70;
+      margin-inline-start: 5px;
+      margin-inline-end: 5px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      align-self: center;
+    }
+
+    // Preservación de anillo de foco accesible (High Contrast / WCAG 2.4.7)
+    &.mat-focused {
+      outline: 2px solid transparent;
+      outline-offset: 2px;
+    }
+  }
+}

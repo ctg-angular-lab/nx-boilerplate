@@ -23,8 +23,8 @@
   }
 
   &__title {
-    font-family: var(--sys-typescale-title-small-font);
-    font-size: var(--sys-typescale-title-small-size, 1rem);
+    font-size: 1rem;
+    font-weight: 600;
     color: var(--sys-color-on-surface);
   }
 

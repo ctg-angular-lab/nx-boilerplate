@@ -1,8 +1,12 @@
 @use '@angular/material' as mat;
 @use 'variables' as vars;
 @use 'typography' as typo;
+@use 'utilities' as utils;
 @use 'theme-modules/buttons' as buttons;
 @use 'theme-modules/navigation' as nav;
+@use 'theme-modules/tabs' as tabs;
+@use 'theme-modules/forms' as forms;
+@use 'theme-modules/stepper' as stepper;
 
 // 1. Inicialización de utilidades core de Material
 @include mat.core();
@@ -28,14 +32,54 @@ $corporate-theme: mat.define-theme(
 );
 
 // 3. Aplicación global en el DOM e inyección de tokens del sistema
-html {
+html, :root {
   @include mat.system-level-colors($corporate-theme);
   @include mat.system-level-typography($corporate-theme);
   @include mat.all-component-themes($corporate-theme);
 
+  // Mapeo canónico de Design Tokens Corporativos (--sys-color-*) a MD3
+  --sys-color-primary: var(--mat-sys-primary, #1e4ba8);
+  --sys-color-on-primary: var(--mat-sys-on-primary, #ffffff);
+  --sys-color-primary-container: var(--mat-sys-primary-container, #d4e3ff);
+  --sys-color-on-primary-container: var(--mat-sys-on-primary-container, #001945);
+
+  --sys-color-secondary: var(--mat-sys-secondary, #4f5b75);
+  --sys-color-on-secondary: var(--mat-sys-on-secondary, #ffffff);
+  --sys-color-secondary-container: var(--mat-sys-secondary-container, #d3dffe);
+  --sys-color-on-secondary-container: var(--mat-sys-on-secondary-container, #0d1b30);
+
+  --sys-color-tertiary: var(--mat-sys-tertiary, #00695c);
+  --sys-color-on-tertiary: var(--mat-sys-on-tertiary, #ffffff);
+  --sys-color-tertiary-container: var(--mat-sys-tertiary-container, #96f4e1);
+  --sys-color-on-tertiary-container: var(--mat-sys-on-tertiary-container, #00201b);
+
+  --sys-color-error: var(--mat-sys-error, #ba1a1a);
+  --sys-color-on-error: var(--mat-sys-on-error, #ffffff);
+  --sys-color-error-container: var(--mat-sys-error-container, #ffdad6);
+  --sys-color-on-error-container: var(--mat-sys-on-error-container, #410002);
+
+  --sys-color-surface: var(--mat-sys-surface, #f8fafc);
+  --sys-color-on-surface: var(--mat-sys-on-surface, #191c20);
+  --sys-color-surface-variant: var(--mat-sys-surface-variant, #dde3eb);
+  --sys-color-on-surface-variant: var(--mat-sys-on-surface-variant, #41474e);
+  --sys-color-surface-container-lowest: var(--mat-sys-surface-container-lowest, #ffffff);
+  --sys-color-surface-container-low: var(--mat-sys-surface-container-low, #f0f0f7);
+  --sys-color-surface-container: var(--mat-sys-surface-container, #e7e8ee);
+  --sys-color-surface-container-high: var(--mat-sys-surface-container-high, #e1e2e8);
+  --sys-color-surface-container-highest: var(--mat-sys-surface-container-highest, #d9dae0);
+
+  --sys-color-outline: var(--mat-sys-outline, #71777f);
+  --sys-color-outline-variant: var(--mat-sys-outline-variant, #c1c7cf);
+  --sys-color-shadow: var(--mat-sys-shadow, #000000);
+  --sys-color-scrim: var(--mat-sys-scrim, #000000);
+
   @include typo.typography-setup();
+  @include utils.utilities-setup();
   @include buttons.button-overrides();
   @include nav.navigation-overrides();
+  @include tabs.tabs-overrides();
+  @include forms.form-overrides();
+  @include stepper.stepper-overrides();
 
   background-color: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
@@ -62,4 +106,37 @@ html.dark-theme {
   @include mat.system-level-colors($corporate-dark-theme);
   @include mat.system-level-typography($corporate-dark-theme);
   @include mat.all-component-colors($corporate-dark-theme);
+
+  --sys-color-primary: var(--mat-sys-primary, #a4c2ff);
+  --sys-color-on-primary: var(--mat-sys-on-primary, #002c6d);
+  --sys-color-primary-container: var(--mat-sys-primary-container, #074094);
+  --sys-color-on-primary-container: var(--mat-sys-on-primary-container, #d4e3ff);
+
+  --sys-color-secondary: var(--mat-sys-secondary, #b6c3e1);
+  --sys-color-on-secondary: var(--mat-sys-on-secondary, #233046);
+  --sys-color-secondary-container: var(--mat-sys-secondary-container, #39455d);
+  --sys-color-on-secondary-container: var(--mat-sys-on-secondary-container, #d3dffe);
+
+  --sys-color-tertiary: var(--mat-sys-tertiary, #79d7c5);
+  --sys-color-on-tertiary: var(--mat-sys-on-tertiary, #003730);
+  --sys-color-tertiary-container: var(--mat-sys-tertiary-container, #005046);
+  --sys-color-on-tertiary-container: var(--mat-sys-on-tertiary-container, #96f4e1);
+
+  --sys-color-error: var(--mat-sys-error, #ffb4ab);
+  --sys-color-on-error: var(--mat-sys-on-error, #690005);
+  --sys-color-error-container: var(--mat-sys-error-container, #93000a);
+  --sys-color-on-error-container: var(--mat-sys-on-error-container, #ffdad6);
+
+  --sys-color-surface: var(--mat-sys-surface, #101418);
+  --sys-color-on-surface: var(--mat-sys-on-surface, #e1e2e8);
+  --sys-color-surface-variant: var(--mat-sys-surface-variant, #41474e);
+  --sys-color-on-surface-variant: var(--mat-sys-on-surface-variant, #c1c7cf);
+  --sys-color-surface-container-lowest: var(--mat-sys-surface-container-lowest, #0e1115);
+  --sys-color-surface-container-low: var(--mat-sys-surface-container-low, #191c20);
+  --sys-color-surface-container: var(--mat-sys-surface-container, #1d2024);
+  --sys-color-surface-container-high: var(--mat-sys-surface-container-high, #272a2e);
+  --sys-color-surface-container-highest: var(--mat-sys-surface-container-highest, #323539);
+
+  --sys-color-outline: var(--mat-sys-outline, #8b9199);
+  --sys-color-outline-variant: var(--mat-sys-outline-variant, #41474e);
 }

@@ -1,3 +1,2 @@
-export function apiInterfaces(): string {
-  return 'api-interfaces';
-}
+export * from './patient.interface';
+export * from './appointment.interface';
