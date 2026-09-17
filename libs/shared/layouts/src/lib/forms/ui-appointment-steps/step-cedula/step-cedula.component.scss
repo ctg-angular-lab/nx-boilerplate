@@ -6,7 +6,7 @@
   &__instructions {
     .instruction-text {
       margin: 0;
-      font-size: var(--sys-typescale-body-medium-size, 0.9375rem);
+      font-size: 0.9375rem;
       color: var(--sys-color-on-surface-variant);
       line-height: 1.4;
     }
@@ -24,7 +24,6 @@
 
     .prefix-icon {
       margin-right: 8px;
-      color: var(--sys-color-on-surface-variant);
     }
   }
 }

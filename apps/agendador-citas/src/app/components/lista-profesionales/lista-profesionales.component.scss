@@ -20,15 +20,12 @@
 
   &__title {
     margin: 0;
-    font-family: var(--sys-typescale-title-medium-font);
-    font-size: var(--sys-typescale-title-medium-size, 1.25rem);
     color: var(--sys-color-on-surface);
   }
 
   &__description {
     margin: 0;
-    font-family: var(--sys-typescale-body-medium-font);
-    font-size: var(--sys-typescale-body-medium-size, 0.95rem);
+    font-size: 0.95rem;
     color: var(--sys-color-on-surface-variant);
   }
 }

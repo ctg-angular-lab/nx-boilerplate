@@ -1,0 +1,73 @@
+// libs/shared/theme/src/lib/theme-modules/_stepper.scss
+@use 'sass:map';
+@use '@angular/material' as mat;
+@use '../variables' as vars;
+
+@mixin stepper-overrides() {
+  $primary-99: map.get(vars.$primary-palette, 99); // #fdfcff
+  $primary-95: map.get(vars.$primary-palette, 95); // #ecf2ff
+  $primary-90: map.get(vars.$primary-palette, 90); // #d4e3ff
+  $primary-70: map.get(vars.$primary-palette, 70); // #749afc
+
+  // 1. Sobreescritura global de Tokens MD3 para Stepper
+  --mat-stepper-header-hover-state-layer-color: #{$primary-99};
+  --mat-stepper-header-focus-state-layer-color: #{$primary-90};
+
+  .mat-step-header {
+    transition: background-color 0.2s ease-in-out;
+
+    // Estado Hover con Primary-99
+    &:hover:not([aria-disabled]),
+    &:hover[aria-disabled='false'] {
+      background-color: $primary-99;
+    }
+
+    // Estado Focus (Programático y Teclado) con Primary-90
+    &.cdk-program-focused,
+    &.cdk-keyboard-focused {
+      background-color: $primary-90;
+    }
+
+    // Centrado óptico de iconos y numeración
+    .mat-step-icon {
+      .mat-step-icon-content {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+
+        span {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          line-height: 1;
+          height: 100%;
+          width: 100%;
+          font-size: 0.75rem;
+          font-weight: 600;
+          margin: 0;
+          padding: 0;
+        }
+
+        .mat-icon,
+        .material-symbols-outlined {
+          font-size: 16px;
+          width: 16px;
+          height: 16px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+      }
+    }
+  }
+
+  // 2. Línea de seguimiento vertical activa con gradiente tonal
+  .mat-vertical-content-container-active.mat-stepper-vertical-line::before,
+  .mat-stepper-vertical .mat-vertical-content-container-active::before {
+    border-left: none;
+    width: 2px;
+    left: -1px;
+    background: linear-gradient(180deg, $primary-95 0%, $primary-70 50%, $primary-95 100%);
+  }
+}

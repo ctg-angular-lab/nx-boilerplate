@@ -1,20 +1,82 @@
 // libs/shared/theme/src/lib/theme-modules/_buttons.scss
+@use 'sass:map';
 @use '@angular/material' as mat;
+@use '../variables' as vars;
 
 @mixin button-overrides() {
-  // Sobreescritura de tokens de forma para botones rectos (border-radius: 0)
-  --mat-button-filled-container-shape: 0;
-  --mat-button-outlined-container-shape: 0;
-  --mat-button-protected-container-shape: 0;
-  --mat-button-text-container-shape: 0;
-  --mat-button-tonal-container-shape: 0;
-  --mdc-shape-small: 0;
-  --mdc-shape-corner-full: 0;
+  $primary-100: map.get(vars.$primary-palette, 100); // #ffffff
+  $primary-90: map.get(vars.$primary-palette, 90);   // #d4e3ff
+  $primary-80: map.get(vars.$primary-palette, 80);   // #a4c2ff
+  $primary-70: map.get(vars.$primary-palette, 70);   // #749afc
+  $primary-60: map.get(vars.$primary-palette, 60);   // #577fdf
+  $primary-50: map.get(vars.$primary-palette, 50);   // #3b65c3
 
-  .mat-mdc-button,
-  .mat-mdc-unelevated-button,
-  .mat-mdc-raised-button,
-  .mat-mdc-outlined-button {
-    border-radius: 0;
+  // 1. Sobreescritura global de Tokens MD3 para Botones
+  --mat-button-filled-container-shape: 12px;
+  --mat-button-outlined-container-shape: 12px;
+  --mat-button-protected-container-shape: 12px;
+  --mat-button-text-container-shape: 12px;
+  --mat-button-tonal-container-shape: 12px;
+  --mdc-shape-small: 12px;
+  --mdc-shape-corner-full: 12px;
+
+  --mat-button-filled-container-color: #{$primary-70};
+  --mat-button-filled-label-text-color: #{$primary-100};
+  --mat-button-outlined-label-text-color: #{$primary-70};
+  --mat-button-outlined-outline-color: #{$primary-70};
+
+  // 2. Estilos Base Comunes para Botones MDC
+  .mat-mdc-button-base {
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.01em;
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, color 0.2s ease-in-out;
+
+    .mdc-button__label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+  }
+
+  // 3. Variante Primary (mat-flat-button / mat-raised-button / unelevated)
+  .mat-mdc-unelevated-button:not(:disabled),
+  .mat-mdc-raised-button:not(:disabled),
+  .mat-mdc-button-base.mat-primary:not(.mat-mdc-outlined-button):not(.mat-mdc-button):not(:disabled) {
+    background-color: $primary-70;
+    color: $primary-100;
+    border-width: 0px;
+    border-style: none;
+    
+    &:hover,
+    &:active {
+      background-color: $primary-60;
+      color: $primary-100;
+    }
+  }
+
+  // 4. Variante Secondary (mat-stroked-button / outlined)
+  .mat-mdc-outlined-button:not(:disabled) {
+    background-color: $primary-100;
+    color: $primary-70;
+    border: 1px solid $primary-70;
+    
+    .mat-mdc-button-outline {
+      border-color: $primary-70;
+      border-width: 1px;
+    }
+    
+    &:hover,
+    &:active {
+      background-color: $primary-90;
+      border-color: $primary-90;
+      color: $primary-100;
+    }
   }
 }

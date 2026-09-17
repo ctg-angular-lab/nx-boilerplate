@@ -1,0 +1,13 @@
+// Utilitarios de layout y diseño transversal
+@mixin utilities-setup() {
+  .separador {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      rgba(224, 225, 226, 0) 0%,
+      rgb(224, 225, 226) 49.52%,
+      rgba(224, 225, 226, 0) 100%
+    );
+  }
+}

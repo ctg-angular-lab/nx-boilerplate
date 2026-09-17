@@ -11,10 +11,11 @@
 }
 
 .shell-sidenav {
+  --mat-sidenav-container-background-color: #F7FAFC;
   width: 260px;
   border-right: 1px solid var(--sys-color-outline-variant, #e0e0e0);
-  background-color: var(--sys-color-surface-container-low, #ffffff);
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+  background-color: #F7FAFC;
+  box-shadow: none;
 }
 
 /* --- ÁREA DE CONTENIDO PRINCIPAL CON BACKGROUND Y ORBS --- */
@@ -98,13 +99,20 @@
 }
 
 /* --- TOOLBARS Y ALINEACIONES --- */
+.mat-toolbar {
+  --mat-toolbar-container-background-color: #F7FAFC;
+  --mat-toolbar-container-text-color: var(--sys-color-on-surface);
+  background-color: #F7FAFC;
+  color: var(--sys-color-on-surface);
+}
+
 .shell-topbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   position: relative;
   z-index: 10;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: none;
 }
 
 .toolbar-action-group,
@@ -125,24 +133,33 @@
 
 /* --- SIDENAV COMPONENTS --- */
 .shell-sidenav-header {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: none;
   z-index: 10;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  height: auto;
+  min-height: 64px;
+  padding: 16px;
 }
 
 .shell-brand {
   font-weight: 700;
   font-size: 1.125rem;
   letter-spacing: 0.05em;
+  margin-bottom: 10px;
 }
 
 .shell-nav-list {
   margin-top: 8px;
-}
-
-.nav-icon {
-  margin-right: 16px;
-  color: var(--sys-color-on-surface-variant, #5f6368);
+  padding-inline-start: 16px;
+  padding-inline-end: 15px;
+  padding-block: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .nav-label {

@@ -14,31 +14,84 @@
     border-radius: 0;
   }
 
-  // Lista de navegación y estado activo centralizado
+  // Lista de navegación y sobreescritura de tokens de componente MD3
   .mat-mdc-nav-list {
-    --mat-list-active-indicator-shape: 0;
-    --mat-list-list-item-container-shape: 0;
+    --mat-list-list-item-container-shape: 15px;
+    --mat-list-active-indicator-shape: 15px;
+    --mat-list-list-item-hover-state-layer-color: transparent;
+    --mat-list-list-item-hover-state-layer-opacity: 0;
 
     .mat-mdc-list-item {
-      --mat-list-active-indicator-shape: 0;
-      --mat-list-list-item-container-shape: 0;
-      border-radius: 0;
-      border-right: none;
-      box-shadow: none;
+      --mat-list-list-item-container-shape: 15px;
+      --mat-list-active-indicator-shape: 15px;
+      --mat-list-list-item-hover-state-layer-color: transparent;
+      --mat-list-list-item-hover-state-layer-opacity: 0;
+      border-radius: 15px;
+      transition: background-color 0.2s ease-in-out;
+
+      .mdc-list-item__content,
+      .nav-label,
+      .nav-icon {
+        position: relative;
+        z-index: 1;
+      }
+
+      .nav-label,
+      .mdc-list-item__primary-text {
+        color: var(--sys-color-on-surface, #191c20);
+        font-weight: 500;
+        transition: color 0.2s ease-in-out;
+      }
+
+      &:hover {
+        background-color: #ffffff;
+
+        .nav-label,
+        .mdc-list-item__primary-text {
+          color: var(--sys-color-on-surface, #191c20);
+        }
+
+        .mat-icon,
+        .nav-icon {
+          background-color: var(--sys-color-primary);
+          color: #ffffff;
+        }
+      }
 
       &.is-active,
       &.mdc-list-item--activated {
-        background-color: var(--sys-color-secondary-container);
-        border-radius: 0;
-        border-right: none;
-        box-shadow: none;
+        --mat-list-list-item-container-shape: 15px;
+        --mat-list-active-indicator-shape: 15px;
+        background-color: #ffffff;
+        border-radius: 15px;
+
+        .nav-label,
+        .mdc-list-item__primary-text {
+          color: var(--sys-color-primary);
+          font-weight: 600;
+        }
 
         .mat-icon,
-        .mdc-list-item__primary-text,
-        .nav-label,
         .nav-icon {
-          color: var(--sys-color-primary);
+          background-color: var(--sys-color-primary);
+          color: #ffffff;
         }
+      }
+
+      // Estructura y contenedor del mat-icon dentro de la lista
+      .mat-icon,
+      .nav-icon {
+        background-color: var(--sys-color-primary);
+        color: #ffffff;
+        border-radius: 12px;
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        margin-right: 12px;
       }
     }
   }

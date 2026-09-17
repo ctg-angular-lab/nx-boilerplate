@@ -4,11 +4,13 @@
   <!-- Menú Lateral (Sidenav) -->
   <mat-sidenav
     [opened]="isSidenavOpen()"
-    mode="side"
+    (openedChange)="isSidenavOpen.set($event)"
+    mode="over"
     class="shell-sidenav">
     
     <mat-toolbar color="primary" class="shell-sidenav-header">
-      <span class="shell-brand">MFE Portal</span>
+      <span class="shell-brand">Dras Botero</span>
+      <div class="separador"></div>
     </mat-toolbar>
     
     <mat-nav-list class="shell-nav-list">

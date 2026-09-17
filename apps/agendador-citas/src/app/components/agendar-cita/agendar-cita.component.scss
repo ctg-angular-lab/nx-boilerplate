@@ -2,8 +2,7 @@
   display: flex;
   flex-direction: column;
   padding: 32px 24px;
-  background-color: var(--sys-color-surface-container-low, #ffffff);
-  border: 1px solid var(--sys-color-outline-variant, #e0e0e0);
+  //background-color: var(--sys-color-surface-container-low, #ffffff);
   border-radius: 0;
   gap: 20px;
 
@@ -20,8 +19,6 @@
 
   &__title {
     margin: 0;
-    font-family: var(--sys-typescale-title-medium-font);
-    font-size: var(--sys-typescale-title-medium-size, 1.25rem);
     color: var(--sys-color-on-surface);
   }
 }

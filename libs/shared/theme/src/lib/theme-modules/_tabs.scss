@@ -1,0 +1,8 @@
+// libs/shared/theme/src/lib/theme-modules/_tabs.scss
+@use '@angular/material' as mat;
+
+@mixin tabs-overrides() {
+  .mat-mdc-tab-header {
+    background-color: rgba(255, 255, 255, 0.5);
+  }
+}
