@@ -28,6 +28,9 @@
       ],
       "@nx-boilerplate/layouts": [
         "./libs/shared/layouts/src/index.ts"
+      ],
+      "@nx-boilerplate/backend/patients-domain": [
+        "./libs/backend/patients-domain/src/index.ts"
       ]
     }
   },
