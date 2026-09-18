@@ -5,16 +5,13 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const logger = new Logger('PatientsService');
+  const logger = new Logger('ProceduresService');
 
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
     transport: Transport.RMQ,
     options: {
       urls: [process.env.RABBITMQ_URI || 'amqp://localhost:5672'],
-      queue:
-        process.env.RABBITMQ_PATIENTS_QUEUE ||
-        process.env.RABBITMQ_QUEUE ||
-        'patients_queue',
+      queue: process.env.RABBITMQ_PROCEDURES_QUEUE || 'procedures_queue',
       queueOptions: {
         durable: true,
       },
@@ -31,8 +28,8 @@ async function bootstrap() {
 
   await app.listen();
   logger.log(
-    `Microservicio PatientsService conectado y escuchando en la cola RabbitMQ: ${
-      process.env.RABBITMQ_QUEUE || 'patients_queue'
+    `Microservicio ProceduresService conectado y escuchando en la cola RabbitMQ: ${
+      process.env.RABBITMQ_PROCEDURES_QUEUE || 'procedures_queue'
     }`
   );
 }

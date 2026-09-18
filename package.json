@@ -2,7 +2,9 @@
   "name": "@nx-boilerplate/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "serve:backend": "nx run-many -t serve -p api-gateway patients-service procedures-service"
+  },
   "private": true,
   "devDependencies": {
     "@analogjs/vite-plugin-angular": "~2.1.2",
