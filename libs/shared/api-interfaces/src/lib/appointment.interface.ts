@@ -21,9 +21,11 @@ export interface ICreateAppointmentRequest {
   celular: string;
   recordatorioWhatsapp: boolean;
   procedimientoId: string;
+  procedimientoNombre?: string;
   slotId?: string;
   fecha?: string;
   hora?: string;
+  notes?: string;
 }
 
 export interface ICreateWaitlistRequest {

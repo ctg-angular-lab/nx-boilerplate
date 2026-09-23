@@ -41,6 +41,10 @@ export class CreateAppointmentDto implements ICreateAppointmentRequest {
   @IsNotEmpty({ message: 'El ID del procedimiento es requerido' })
   procedimientoId!: string;
 
+  @IsString({ message: 'El nombre del procedimiento debe ser una cadena de texto' })
+  @IsOptional()
+  procedimientoNombre?: string;
+
   @IsString({ message: 'El ID del slot debe ser una cadena de texto' })
   @IsOptional()
   slotId?: string;
@@ -52,6 +56,10 @@ export class CreateAppointmentDto implements ICreateAppointmentRequest {
   @IsString({ message: 'La hora debe ser una cadena de texto' })
   @IsOptional()
   hora?: string;
+
+  @IsString({ message: 'Las notas deben ser una cadena de texto' })
+  @IsOptional()
+  notes?: string;
 }
 
 export class CreateWaitlistDto implements ICreateWaitlistRequest {

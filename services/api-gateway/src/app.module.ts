@@ -27,7 +27,10 @@ import { ProceduresController } from './controllers/procedures.controller';
         transport: Transport.RMQ,
         options: {
           urls: [process.env.RABBITMQ_URI || 'amqp://localhost:5672'],
-          queue: process.env.SCHEDULING_QUEUE || 'scheduling_queue',
+          queue:
+            process.env.RABBITMQ_SCHEDULING_QUEUE ||
+            process.env.SCHEDULING_QUEUE ||
+            'scheduling_queue',
           queueOptions: {
             durable: true,
           },

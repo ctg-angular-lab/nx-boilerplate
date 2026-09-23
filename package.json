@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "serve:backend": "nx run-many -t serve -p api-gateway patients-service procedures-service"
+    "serve:backend": "nx run-many -t serve -p api-gateway patients-service procedures-service scheduling-service"
   },
   "private": true,
   "devDependencies": {
@@ -78,6 +78,7 @@
     "chart.js": "^4.5.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "googleapis": "^181.0.0",
     "mongoose": "^9.10.1",
     "reflect-metadata": "^0.1.13",
     "rxjs": "~7.8.0"

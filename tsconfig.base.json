@@ -34,6 +34,9 @@
       ],
       "@nx-boilerplate/backend/procedures-domain": [
         "./libs/backend/procedures-domain/src/index.ts"
+      ],
+      "@nx-boilerplate/backend/scheduling-domain": [
+        "./libs/backend/scheduling-domain/src/index.ts"
       ]
     }
   },

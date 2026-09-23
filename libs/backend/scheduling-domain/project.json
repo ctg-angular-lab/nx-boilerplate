@@ -1,0 +1,19 @@
+{
+  "name": "scheduling-domain",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/scheduling-domain/src",
+  "projectType": "library",
+  "tags": ["scope:backend", "type:domain-lib"],
+  "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": ["{workspaceRoot}/coverage/libs/backend/scheduling-domain"],
+      "options": {
+        "config": "libs/backend/scheduling-domain/vite.config.mts"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}
