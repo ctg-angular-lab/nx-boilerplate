@@ -1,0 +1,19 @@
+{
+  "name": "patients-domain",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/patients-domain/src",
+  "projectType": "library",
+  "tags": ["scope:backend", "type:domain-lib"],
+  "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": ["{workspaceRoot}/coverage/libs/backend/patients-domain"],
+      "options": {
+        "config": "libs/backend/patients-domain/vite.config.mts"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

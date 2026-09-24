@@ -2,7 +2,9 @@
   "name": "@nx-boilerplate/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "serve:backend": "nx run-many -t serve -p api-gateway patients-service procedures-service scheduling-service"
+  },
   "private": true,
   "devDependencies": {
     "@analogjs/vite-plugin-angular": "~2.1.2",
@@ -67,6 +69,7 @@
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/microservices": "11.1.25",
+    "@nestjs/mongoose": "^12.0.0",
     "@nestjs/platform-express": "^11.0.0",
     "@nx/angular": "^22.7.5",
     "amqp-connection-manager": "^5.0.0",
@@ -75,6 +78,8 @@
     "chart.js": "^4.5.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "googleapis": "^181.0.0",
+    "mongoose": "^9.10.1",
     "reflect-metadata": "^0.1.13",
     "rxjs": "~7.8.0"
   }

@@ -28,6 +28,15 @@
       ],
       "@nx-boilerplate/layouts": [
         "./libs/shared/layouts/src/index.ts"
+      ],
+      "@nx-boilerplate/backend/patients-domain": [
+        "./libs/backend/patients-domain/src/index.ts"
+      ],
+      "@nx-boilerplate/backend/procedures-domain": [
+        "./libs/backend/procedures-domain/src/index.ts"
+      ],
+      "@nx-boilerplate/backend/scheduling-domain": [
+        "./libs/backend/scheduling-domain/src/index.ts"
       ]
     }
   },

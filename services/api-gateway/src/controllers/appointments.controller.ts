@@ -2,48 +2,60 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Inject,
   Post,
   Query,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { IAvailableDate, IDayAvailability } from '@nx-boilerplate/api-interfaces';
+import { firstValueFrom, timeout } from 'rxjs';
 import {
-  CreateAppointmentDto,
-  CreateWaitlistDto,
+  CreateAppointmentBodyDto,
+  CreateWaitlistBodyDto,
   GetAvailableDatesQueryDto,
-} from '@nx-boilerplate/shared-dtos';
-import { IAvailableDate } from '@nx-boilerplate/api-interfaces';
-import { firstValueFrom } from 'rxjs';
+} from '../dtos/appointment-gateway.dto';
 
 @Controller('appointments')
 export class AppointmentsController {
   constructor(
-    @Inject('SCHEDULING_SERVICE') private readonly schedulingClient: ClientProxy,
+    @Inject('SCHEDULING_SERVICE')
+    private readonly schedulingClient: ClientProxy,
   ) {}
 
   @Get('available-dates')
   async getAvailableDates(
     @Query() query: GetAvailableDatesQueryDto,
-  ): Promise<IAvailableDate[]> {
+  ): Promise<IAvailableDate[] | IDayAvailability[]> {
     return firstValueFrom(
-      this.schedulingClient.send<IAvailableDate[]>(
-        'appointments.get-available-dates',
-        query,
-      ),
+      this.schedulingClient
+        .send<IAvailableDate[] | IDayAvailability[]>(
+          'appointments.get-available-dates',
+          query,
+        )
+        .pipe(timeout(10000)),
     );
   }
 
   @Post()
-  async createAppointment(@Body() dto: CreateAppointmentDto) {
+  @HttpCode(HttpStatus.CREATED)
+  async createAppointment(@Body() body: CreateAppointmentBodyDto) {
     return firstValueFrom(
-      this.schedulingClient.send('appointments.create', dto),
+      this.schedulingClient
+        .send('appointments.create', body)
+        .pipe(timeout(10000)),
     );
   }
 
   @Post('waitlist')
-  async addToWaitlist(@Body() dto: CreateWaitlistDto) {
+  @HttpCode(HttpStatus.CREATED)
+  async createWaitlist(@Body() body: CreateWaitlistBodyDto) {
     return firstValueFrom(
-      this.schedulingClient.send('waitlist.create', dto),
+      this.schedulingClient
+        .send('waitlist.create', body)
+        .pipe(timeout(5000)),
     );
   }
 }
+

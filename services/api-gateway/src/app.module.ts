@@ -3,6 +3,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { HealthController } from './controllers/health.controller';
 import { PatientsController } from './controllers/patients.controller';
 import { AppointmentsController } from './controllers/appointments.controller';
+import { ProceduresController } from './controllers/procedures.controller';
 
 @Module({
   imports: [
@@ -12,7 +13,10 @@ import { AppointmentsController } from './controllers/appointments.controller';
         transport: Transport.RMQ,
         options: {
           urls: [process.env.RABBITMQ_URI || 'amqp://localhost:5672'],
-          queue: process.env.PATIENTS_QUEUE || 'patients_queue',
+          queue:
+            process.env.RABBITMQ_PATIENTS_QUEUE ||
+            process.env.PATIENTS_QUEUE ||
+            'patients_queue',
           queueOptions: {
             durable: true,
           },
@@ -23,7 +27,22 @@ import { AppointmentsController } from './controllers/appointments.controller';
         transport: Transport.RMQ,
         options: {
           urls: [process.env.RABBITMQ_URI || 'amqp://localhost:5672'],
-          queue: process.env.SCHEDULING_QUEUE || 'scheduling_queue',
+          queue:
+            process.env.RABBITMQ_SCHEDULING_QUEUE ||
+            process.env.SCHEDULING_QUEUE ||
+            'scheduling_queue',
+          queueOptions: {
+            durable: true,
+          },
+        },
+      },
+      {
+        name: 'PROCEDURES_SERVICE',
+        transport: Transport.RMQ,
+        options: {
+          urls: [process.env.RABBITMQ_URI || 'amqp://localhost:5672'],
+          queue:
+            process.env.RABBITMQ_PROCEDURES_QUEUE || 'procedures_queue',
           queueOptions: {
             durable: true,
           },
@@ -31,6 +50,11 @@ import { AppointmentsController } from './controllers/appointments.controller';
       },
     ]),
   ],
-  controllers: [HealthController, PatientsController, AppointmentsController],
+  controllers: [
+    HealthController,
+    PatientsController,
+    AppointmentsController,
+    ProceduresController,
+  ],
 })
 export class AppModule {}
