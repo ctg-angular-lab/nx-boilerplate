@@ -10,9 +10,12 @@
 
 ## 1. Propósito y Alcance de Negocio
 
-El **API Gateway** es el punto único de entrada HTTP (BFF / Edge Service) para todo el ecosistema de microservicios del monorepo. Su responsabilidad primordial es desacoplar el frontend (App Shell y Remotes MFE en Angular) de la topología interna del backend, centralizando la validación de peticiones entrantes, la negociación de políticas CORS, la traducción de excepciones y el enrutamiento asíncrono hacia los microservicios de dominio mediante RabbitMQ.
+El **API Gateway** es el punto único de entrada HTTP (BFF / Edge Service) para todo el ecosistema de microservicios del monorepo. Su responsabilidad primordial es desacoplar el frontend (App Shell y Remotes MFE en Angular) de la topología interna del backend, centralizando:
 
-Este componente garantiza que ningún cliente externo tenga acceso directo a las colas de mensajería internas de RabbitMQ, encapsulando la seguridad perimetral, la transformación de datos y la normalización de códigos de estado HTTP ante fallos de RPC.
+1. **Seguridad y Perímetro:** Negociación de políticas CORS (`allowedHeaders`, `credentials`), prefijo unificado `/api` y validación estricta de payloads entrantes mediante `ValidationPipe` en runtime.
+2. **Orquestación Asíncrona:** Despacho de mensajes RPC tipados hacia los microservicios de dominio (`patients-service`, `procedures-service`, `scheduling-service`) a través de colas dedicadas de RabbitMQ (`Transport.RMQ`).
+3. **Resiliencia Operativa:** Control de latencia perimetral mediante operadores `timeout()` (5s y 10s) que previenen peticiones colgadas ante demoras de servicios externos como Google Calendar.
+4. **Estandarización de Respuestas (Envelope Pattern):** Unificación del 100% de las respuestas HTTP (exitosas y de error) bajo la estructura canónica `IApiResponse<T>`, aislando al frontend de inconsistencias estructurales.
 
 ---
 
@@ -25,166 +28,228 @@ graph TD
         RemoteAgendador[MFE Agendador :4201]
     end
 
-    subgraph Perimetro [BFF / Edge Gateway]
-        Gateway[API Gateway NestJS :3000/api]
-        ValPipe[ValidationPipe Whitelist/Transform]
-        RpcFilter[RpcExceptionFilter]
+    subgraph EdgeGateway [Perímetro API Gateway :3000/api]
+        GatewayMain[NestJS HTTP Server]
+        Cors[CORS Policy & Headers]
+        ValPipe[ValidationPipe Whitelist/Forbid/Transform]
+        Transform[TransformInterceptor - Envelope 2xx]
+        RpcFilter[RpcExceptionFilter - Envelope 4xx/5xx/504]
     end
 
     subgraph Broker [Message Broker RabbitMQ :5672]
         QueuePatients[(patients_queue)]
+        QueueProcedures[(procedures_queue)]
         QueueScheduling[(scheduling_queue)]
     end
 
-    subgraph BackendServices [Microservicios de Dominio]
+    subgraph BackendServices [Microservicios de Dominio NestJS]
         PatientsSvc[Patients Service]
+        ProceduresSvc[Procedures Service]
         SchedulingSvc[Scheduling Service]
     end
 
-    Shell -->|HTTP REST| Gateway
-    RemoteAgendador -->|HTTP REST| Gateway
-    Gateway --> ValPipe
-    ValPipe --> Gateway
-    Gateway -.->|Captura Fallos| RpcFilter
+    subgraph External [Servicios Externos & Persistencia]
+        GoogleCal[Google Calendar API]
+        MongoAtlas[(MongoDB Atlas)]
+    end
 
-    Gateway -->|RMQ: patients.find-by-national-id| QueuePatients
+    Shell -->|HTTP REST| GatewayMain
+    RemoteAgendador -->|HTTP REST| GatewayMain
+    GatewayMain --> Cors --> ValPipe
+    ValPipe --> Transform
+    Transform -.->|Captura Fallos & Timeouts| RpcFilter
+
+    Transform -->|RMQ: patients.*| QueuePatients
     QueuePatients --> PatientsSvc
 
-    Gateway -->|RMQ: appointments.get-available-dates| QueueScheduling
-    Gateway -->|RMQ: appointments.create| QueueScheduling
-    Gateway -->|RMQ: waitlist.create| QueueScheduling
+    Transform -->|RMQ: procedures.*| QueueProcedures
+    QueueProcedures --> ProceduresSvc
+
+    Transform -->|RMQ: appointments.* / waitlist.*| QueueScheduling
     QueueScheduling --> SchedulingSvc
+
+    SchedulingSvc --> GoogleCal
+    SchedulingSvc --> MongoAtlas
+    PatientsSvc --> MongoAtlas
+    ProceduresSvc --> MongoAtlas
 ```
 
 ---
 
 ## 3. Contratos de Datos e Interfaces
 
-El API Gateway consume directamente los contratos TypeScript de `@nx-boilerplate/api-interfaces` y aplica validación en tiempo de ejecución utilizando los DTOs de `@nx-boilerplate/shared-dtos`.
+El API Gateway consume los contratos TypeScript de `@nx-boilerplate/api-interfaces` y aplica validación perimetral utilizando los DTOs definidos en `@nx-boilerplate/shared-dtos` y `services/api-gateway/src/dtos/`.
 
 ### A. Interfaces de Contrato (`@nx-boilerplate/api-interfaces`)
 
 | Interfaz | Archivo Origen | Propósito |
 |---|---|---|
-| `IPatientHistory` | `libs/shared/api-interfaces/src/lib/patient.interface.ts` | Historial médico consolidado del paciente y sus procedimientos anteriores. |
-| `IAvailableDate` | `libs/shared/api-interfaces/src/lib/appointment.interface.ts` | Fechas y horarios disponibles para citas médicas con su respectivo profesional. |
-| `ICreateAppointmentRequest` | `libs/shared/api-interfaces/src/lib/appointment.interface.ts` | Estructura canónica del payload para agendar una nueva cita. |
-| `ICreateWaitlistRequest` | `libs/shared/api-interfaces/src/lib/appointment.interface.ts` | Estructura canónica del payload para inscripción en lista de espera. |
+| `IApiResponse<T>` | `libs/shared/api-interfaces/src/lib/api-response.interface.ts` | Sobre genérico (Envelope Pattern) para el 100% de las respuestas HTTP. |
+| `IPatientHistory` | `libs/shared/api-interfaces/src/lib/patient.interface.ts` | Historial médico consolidado del paciente y sus procedimientos previos. |
+| `IProcedure` | `libs/shared/api-interfaces/src/lib/procedure.interface.ts` | Especificación de procedimiento médico estético (valor y duración estándar). |
+| `IProfessionalSummary` | `libs/shared/api-interfaces/src/lib/procedure.interface.ts` | Perfil enriquecido del médico facultado con su jornada en `horarioTrabajo`. |
+| `IAvailableDate` | `libs/shared/api-interfaces/src/lib/appointment.interface.ts` | Slot disponible en formato plano para consulta de día único. |
+| `IDayAvailability` | `libs/shared/api-interfaces/src/lib/appointment.interface.ts` | Disponibilidad agrupada por día con bloques `ISlotDisplay` para ventanas semanales. |
+| `ICreateAppointmentRequest` | `libs/shared/api-interfaces/src/lib/appointment.interface.ts` | Contrato de solicitud para reserva formal de citas médicas. |
+| `ICreateWaitlistRequest` | `libs/shared/api-interfaces/src/lib/appointment.interface.ts` | Contrato de solicitud para registro en lista de espera reactiva. |
 
-### B. DTOs y Validación Runtime (`@nx-boilerplate/shared-dtos`)
+### B. DTOs y Validación Runtime (`class-validator`)
 
-Todas las solicitudes entrantes son procesadas por un `ValidationPipe` global configurado con `{ whitelist: true, forbidNonWhitelisted: true, transform: true }`.
+Todas las peticiones entrantes son filtradas por un `ValidationPipe` global con `{ whitelist: true, forbidNonWhitelisted: true, transform: true }`.
 
-| DTO | Decoradores / Reglas | Propósito |
-|---|---|---|
-| `FindPatientByNationalIdDto` | `@IsString()`, `@IsNotEmpty()`, `@Length(5, 20)`, `@Matches(/^[a-zA-Z0-9]+$/)` | Valida el parámetro de ruta `:nationalId` para búsqueda de pacientes. |
-| `GetAvailableDatesQueryDto` | `@IsString()`, `@IsOptional()` | Valida los parámetros de consulta (`?procedureId=...`) para disponibilidad de fechas. |
-| `CreateAppointmentDto` | `@IsString()`, `@IsNotEmpty()`, `@Matches(/^[0-9]+$/)` (cédula), `@IsEmail()`, `@IsBoolean()`, `@IsOptional()` | Valida el cuerpo de la petición (`POST /api/appointments`) para agendamiento de citas. |
-| `CreateWaitlistDto` | `@IsString()`, `@IsNotEmpty()`, `@Matches(/^[0-9]+$/)` (cédula), `@IsEmail()`, `@IsString()` (celular, procedimiento) | Valida el cuerpo de la petición (`POST /api/appointments/waitlist`) para lista de espera. |
+| DTO | Ubicación | Decoradores / Reglas | Propósito |
+|---|---|---|---|
+| `FindPatientByNationalIdDto` | `@nx-boilerplate/shared-dtos` | `@IsString()`, `@IsNotEmpty()`, `@Length(5, 20)`, `@Matches(/^[a-zA-Z0-9]+$/)` | Valida el parámetro `:nationalId` en consulta de pacientes. |
+| `FindProcedureParamDto` | `@nx-boilerplate/shared-dtos` | `@IsString()`, `@IsNotEmpty()` | Valida el parámetro `:idProcedimiento` en rutas de procedimientos. |
+| `FilterProceduresQueryDto` | `@nx-boilerplate/shared-dtos` | `@IsOptional()`, `@IsString()` | Valida el query opcional `?doctorCedula=` en catálogo de procedimientos. |
+| `GetAvailableDatesQueryDto` | `services/api-gateway/src/dtos/` | `@IsString()`, `@IsNotEmpty()`, `@IsEmail()`, `@IsDateString()`, `@IsOptional()` | Valida filtros de disponibilidad (`procedureId`, `doctorEmail`, `startDate`, `endDate`, `targetDate`). |
+| `CreateAppointmentBodyDto` | `services/api-gateway/src/dtos/` | `@IsEmail()`, `@IsString()`, `@IsNotEmpty()`, `@IsISO8601()`, `@IsOptional()` | Valida el payload de agendamiento formal y sincronización con Google Calendar. |
+| `CreateWaitlistBodyDto` | `services/api-gateway/src/dtos/` | `@IsString()`, `@IsNotEmpty()`, `@IsEmail()`, `@IsOptional()` | Valida el registro de pacientes en lista de espera ante falta de cupos. |
 
 ---
 
 ## 4. Puntos de Entrada y Comunicación
 
-El microservicio expone un servidor HTTP con prefijo global `/api` en el puerto `process.env.PORT || 3000` y habilita CORS para orígenes autorizados (`http://localhost:4200`, `http://localhost:4201`).
+El servicio expone un servidor HTTP con prefijo global `/api` en el puerto `process.env.PORT || 3000`.
 
-### A. Endpoints HTTP Expuestos
+### A. Política CORS Configurada
+* **Orígenes permitidos:** `http://localhost:4200`, `http://localhost:4201`
+* **Métodos:** `GET, HEAD, PUT, PATCH, POST, DELETE`
+* **Cabeceras permitidas:** `Content-Type, Authorization, Accept`
+* **Credenciales:** `true`
 
-#### 1. Salud del Servicio (`HealthController`)
+---
+
+### B. Endpoints HTTP Expuestos
+
+Todas las respuestas exitosas ($2xx$) son devueltas dentro de la estructura estándar:
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Operación realizada exitosamente",
+  "data": ...
+}
+```
+
+#### 1. Salud del Sistema (`HealthController`)
 * **GET `/api/health`**
-  * **Respuesta (200 OK):**
-    ```json
-    {
-      "status": "ok",
-      "service": "api-gateway",
-      "timestamp": "2026-09-16T20:30:00.000Z",
-      "uptime": 124.5
-    }
-    ```
+  * **Retorno:** Estado del gateway, timestamp y uptime.
 
 #### 2. Gestión de Pacientes (`PatientsController`)
 * **GET `/api/patients/:nationalId`**
-  * **Parámetros:** `nationalId` (validado mediante `FindPatientByNationalIdDto`).
-  * **Transporte Backend:** Envío RPC hacia `PATIENTS_SERVICE` (`patients_queue`).
-  * **Patrón RMQ emitido:** `patients.find-by-national-id`.
-  * **Payload emitido:** `{ nationalId: params.nationalId }`.
-  * **Respuesta esperada:** `IPatientHistory` (200 OK).
+  * **Parámetro:** `:nationalId` (Cédula del paciente).
+  * **Transporte Backend:** `PATIENTS_SERVICE` (`patients_queue`).
+  * **Patrón RMQ:** `patients.find-by-national-id`.
+  * **Respuesta (`data`):** Objeto `IPatientHistory`.
 
-#### 3. Agendamiento de Citas (`AppointmentsController`)
+#### 3. Catálogo de Procedimientos y Médicos (`ProceduresController`)
+* **GET `/api/procedures`**
+  * **Query Params:** `?doctorCedula=` (opcional).
+  * **Transporte Backend:** `PROCEDURES_SERVICE` (`procedures_queue`).
+  * **Patrón RMQ:** `procedures.find-by-doctor` o `procedures.get-all`.
+  * **Timeout:** 5000 ms.
+  * **Respuesta (`data`):** Arreglo `IProcedure[]`.
+
+* **GET `/api/procedures/:idProcedimiento`**
+  * **Parámetro:** `:idProcedimiento` (ej. `PROC-EST-001`).
+  * **Transporte Backend:** `PROCEDURES_SERVICE` (`procedures_queue`).
+  * **Patrón RMQ:** `procedures.find-by-id`.
+  * **Timeout:** 5000 ms.
+  * **Respuesta (`data`):** Objeto `IProcedure`.
+
+* **GET `/api/procedures/:idProcedimiento/doctors`**
+  * **Parámetro:** `:idProcedimiento` (ej. `PROC-EST-001`).
+  * **Transporte Backend:** `PROCEDURES_SERVICE` (`procedures_queue`).
+  * **Patrón RMQ:** `procedures.get-doctors-by-procedure`.
+  * **Timeout:** 5000 ms.
+  * **Respuesta (`data`):** Arreglo `IProfessionalSummary[]` enriquecido con `horarioTrabajo` (`diasLaborales`, `horaInicio`, `horaFin`, `recesoAlmuerzo`).
+
+#### 4. Agendamiento y Disponibilidad (`AppointmentsController`)
 * **GET `/api/appointments/available-dates`**
-  * **Query Params:** `procedureId?: string` (validado con `GetAvailableDatesQueryDto`).
-  * **Transporte Backend:** Envío RPC hacia `SCHEDULING_SERVICE` (`scheduling_queue`).
-  * **Patrón RMQ emitido:** `appointments.get-available-dates`.
-  * **Respuesta esperada:** `IAvailableDate[]` (200 OK).
+  * **Query Params:**
+    * Modo Rango Semanal: `procedureId`, `doctorEmail`, `startDate`, `endDate`.
+    * Modo Día Único: `procedureId`, `doctorEmail`, `targetDate`.
+  * **Transporte Backend:** `SCHEDULING_SERVICE` (`scheduling_queue`).
+  * **Patrón RMQ:** `appointments.get-available-dates`.
+  * **Timeout:** 10000 ms.
+  * **Respuesta (`data`):** `IDayAvailability[]` (semanal) o `IAvailableDate[]` (día único).
 
 * **POST `/api/appointments`**
-  * **Body:** `CreateAppointmentDto`.
-  * **Transporte Backend:** Envío RPC hacia `SCHEDULING_SERVICE` (`scheduling_queue`).
-  * **Patrón RMQ emitido:** `appointments.create`.
-  * **Respuesta esperada:** Resultado de la creación de la cita (201 Created).
+  * **Body:** `CreateAppointmentBodyDto`.
+  * **Código HTTP:** `201 Created`.
+  * **Transporte Backend:** `SCHEDULING_SERVICE` (`scheduling_queue`).
+  * **Patrón RMQ:** `appointments.create`.
+  * **Timeout:** 10000 ms.
+  * **Respuesta (`data`):** Confirmación con `appointmentId` y `googleCalendarEventId`.
 
 * **POST `/api/appointments/waitlist`**
-  * **Body:** `CreateWaitlistDto`.
-  * **Transporte Backend:** Envío RPC hacia `SCHEDULING_SERVICE` (`scheduling_queue`).
-  * **Patrón RMQ emitido:** `waitlist.create`.
-  * **Respuesta esperada:** Confirmación de registro en lista de espera (201 Created).
+  * **Body:** `CreateWaitlistBodyDto`.
+  * **Código HTTP:** `201 Created`.
+  * **Transporte Backend:** `SCHEDULING_SERVICE` (`scheduling_queue`).
+  * **Patrón RMQ:** `waitlist.create`.
+  * **Timeout:** 5000 ms.
+  * **Respuesta (`data`):** Objeto de confirmación con `waitlistId` y `registeredAt`.
 
-### B. Manejo de Errores y Excepciones (`RpcExceptionFilter`)
+---
 
-El filtro global `RpcExceptionFilter` intercepta cualquier excepción proveniente de los clientes `ClientProxy` (mensajes de error RPC, `RpcException` o caídas del broker) y las transforma en una respuesta HTTP normalizada:
+### C. Normalización de Excepciones y Timeouts (`RpcExceptionFilter`)
+
+Cualquier fallo de microservicio, validación perimetral o timeout de red es transformado al sobre de error estándar:
 
 ```json
 {
-  "statusCode": 404,
-  "message": "Paciente no encontrado con el documento proporcionado",
-  "timestamp": "2026-09-16T20:30:00.000Z",
-  "path": "/api/patients/12345678"
+  "success": false,
+  "statusCode": 504,
+  "message": "Tiempo de espera agotado al comunicarse con el microservicio (Gateway Timeout)",
+  "data": null,
+  "timestamp": "2026-09-24T18:00:00.000Z",
+  "path": "/api/appointments/available-dates"
 }
 ```
+
+* **Excepciones RPC mapeadas:** 404 (recurso no encontrado), 400 (parámetros inválidos), 409 (conflicto de slot en Google Calendar).
+* **Manejo de `TimeoutError`:** Mapeado automáticamente a código HTTP `504 Gateway Timeout`.
 
 ---
 
 ## 5. Dependencias y Límites Arquitectónicos
 
-De acuerdo con las directrices de `enforce-module-boundaries` de Nx:
-
-* **Tags de Nx:** `["scope:backend", "type:service"]`.
-* **Módulos que consume:**
-  * `@nx-boilerplate/api-interfaces` (`libs/shared/api-interfaces`): Contratos e interfaces TypeScript puras.
-  * `@nx-boilerplate/shared-dtos` (`libs/shared/dtos`): Clases DTO para runtime validation con `class-validator`.
+* **Tags de Nx (`project.json`):** `["scope:backend", "type:service"]`.
+* **Librerías Consumidas:**
+  * `@nx-boilerplate/api-interfaces` (`libs/shared/api-interfaces`): Contratos e interfaces puras TS.
+  * `@nx-boilerplate/shared-dtos` (`libs/shared/dtos`): DTOs compartidos de validación.
   * `@nestjs/microservices`: Clientes RabbitMQ (`ClientProxy`, `Transport.RMQ`).
-* **Dependencias de Red e Infraestructura:**
-  * Servidor RabbitMQ (`amqp://localhost:5672` o `process.env.RABBITMQ_URI`).
-  * Colas: `patients_queue` y `scheduling_queue`.
-* **Módulos que lo consumen:**
-  * Aplicaciones cliente Frontend (`app-shell`, `apps/agendador-citas`, `apps/login`) a través de llamadas HTTP REST (`/api/*`).
+* **Clientes RabbitMQ Registrados (`AppModule`):**
+  1. `PATIENTS_SERVICE` -> `patients_queue`
+  2. `PROCEDURES_SERVICE` -> `procedures_queue`
+  3. `SCHEDULING_SERVICE` -> `scheduling_queue`
+* **Colección Postman Asociada:**
+  * Archivo formal disponible en [agendador-citas.collection.json](file:///Users/usuario/Desktop/nx-boilerplate/docs/coleccion-apis/agendador-citas.collection.json) con los 8 endpoints organizados cronológicamente.
 
 ---
 
 ## 6. Guía de Configuración y Variables de Entorno
 
-El servicio utiliza las siguientes variables de entorno para su inicialización:
-
 | Variable | Valor por Defecto | Descripción |
 |---|---|---|
-| `PORT` | `3000` | Puerto en el que escucha el servidor HTTP Fastify/Express. |
-| `RABBITMQ_URI` | `amqp://localhost:5672` | URI de conexión al broker RabbitMQ. |
-| `PATIENTS_QUEUE` | `patients_queue` | Nombre de la cola de RabbitMQ para el microservicio de pacientes. |
-| `SCHEDULING_QUEUE` | `scheduling_queue` | Nombre de la cola de RabbitMQ para el microservicio de agendamiento. |
+| `PORT` | `3000` | Puerto en el que escucha el servidor HTTP del Gateway. |
+| `RABBITMQ_URI` | `amqp://localhost:5672` | Cadena de conexión al broker de mensajería RabbitMQ. |
+| `RABBITMQ_PATIENTS_QUEUE` | `patients_queue` | Nombre de la cola de pacientes en RabbitMQ. |
+| `RABBITMQ_PROCEDURES_QUEUE` | `procedures_queue` | Nombre de la cola de procedimientos médicos en RabbitMQ. |
+| `RABBITMQ_SCHEDULING_QUEUE` | `scheduling_queue` | Nombre de la cola de agendamiento y Google Calendar en RabbitMQ. |
 
 ---
 
 ## 7. Comandos de Verificación (Nx)
 
-Ejecuta los siguientes comandos desde la raíz del monorepo:
-
 ```bash
-# Servir en modo desarrollo (watch)
+# Servir en modo desarrollo con recarga en caliente
 npx nx serve api-gateway
 
-# Compilar para producción (Webpack)
+# Compilar el bundle de producción Webpack
 npx nx build api-gateway
 
-# Validar reglas de estilo y límites arquitectónicos (Lint)
+# Validar reglas de estilo y límites arquitectónicos
 npx nx lint api-gateway
 ```
