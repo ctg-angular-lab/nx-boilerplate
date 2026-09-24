@@ -1,31 +1,52 @@
 import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateWaitlistPayloadDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  cedula!: string;
+  cedula?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  nombre!: string;
+  nombre?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  apellidos!: string;
+  apellidos?: string;
 
+  @IsOptional()
   @IsEmail()
-  @IsNotEmpty()
-  correo!: string;
+  correo?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  celular!: string;
+  celular?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  procedimientoId!: string;
+  procedimientoId?: string;
+
+  @IsOptional()
+  @IsString()
+  patientNationalId?: string;
+
+  @IsOptional()
+  @IsString()
+  patientFullName?: string;
+
+  @IsOptional()
+  @IsEmail()
+  patientEmail?: string;
+
+  @IsOptional()
+  @IsString()
+  patientPhone?: string;
+
+  @IsOptional()
+  @IsString()
+  procedureId?: string;
 
   @IsOptional()
   @IsEmail()
   preferredDoctorEmail?: string;
+
 }

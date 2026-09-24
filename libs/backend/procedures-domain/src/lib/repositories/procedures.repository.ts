@@ -1,14 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { IProcedure } from '@nx-boilerplate/api-interfaces';
+import { IActiveProfessional, IProcedure } from '@nx-boilerplate/api-interfaces';
 import { Procedure, ProcedureDocument } from '../schemas/procedure.schema';
+import {
+  ActiveProfessional,
+  ActiveProfessionalDocument,
+} from '../schemas/active-professional.schema';
 
 @Injectable()
 export class ProceduresRepository {
   constructor(
     @InjectModel(Procedure.name)
-    private readonly procedureModel: Model<ProcedureDocument>
+    private readonly procedureModel: Model<ProcedureDocument>,
+    @InjectModel(ActiveProfessional.name)
+    private readonly professionalModel: Model<ActiveProfessionalDocument>
   ) {}
 
   async findAll(): Promise<IProcedure[]> {
@@ -35,6 +41,14 @@ export class ProceduresRepository {
       .exec();
   }
 
+  async findDoctorsByCedulas(cedulas: string[]): Promise<IActiveProfessional[]> {
+    return this.professionalModel
+      .find({ cedula: { $in: cedulas } })
+      .select('-_id -__v -createdAt -updatedAt')
+      .lean<IActiveProfessional[]>()
+      .exec();
+  }
+
   async count(): Promise<number> {
     return this.procedureModel.countDocuments().exec();
   }
@@ -43,3 +57,4 @@ export class ProceduresRepository {
     await this.procedureModel.insertMany(procedures);
   }
 }
+

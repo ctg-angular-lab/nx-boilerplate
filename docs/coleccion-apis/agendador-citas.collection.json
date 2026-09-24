@@ -1,0 +1,290 @@
+{
+  "info": {
+    "_postman_id": "c1f7a8b9-4d2e-4b6a-9e12-3a5f7c8d9e01",
+    "name": "agendador-citas",
+    "description": "Colección oficial de APIs para el flujo completo del Agendador de Citas (Frontend -> API Gateway -> Microservicios RabbitMQ).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Agendador de Citas",
+      "description": "Endpoints ordenados en secuencia cronológica según el flujo de usuario en el frontend.",
+      "item": [
+        {
+          "name": "01 - Identificación de Paciente (Paso 1)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/patients/:nationalId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "patients",
+                ":nationalId"
+              ],
+              "variable": [
+                {
+                  "key": "nationalId",
+                  "value": "1020304050",
+                  "description": "Cédula o documento de identidad del paciente"
+                }
+              ]
+            },
+            "description": "Paso 1: Consulta el historial y existencia de un paciente. Si no existe, retorna 404 permitiendo al frontend habilitar el registro de datos personales en el Paso 2."
+          }
+        },
+        {
+          "name": "02 - Listar Procedimientos Disponibles (Paso 2)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/procedures",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "procedures"
+              ]
+            },
+            "description": "Paso 2: Obtiene el catálogo completo de procedimientos médicos estéticos con su valor estándar y duración."
+          }
+        },
+        {
+          "name": "03 - Detalle de un Procedimiento",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/procedures/:idProcedimiento",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "procedures",
+                ":idProcedimiento"
+              ],
+              "variable": [
+                {
+                  "key": "idProcedimiento",
+                  "value": "PROC-EST-001",
+                  "description": "Código identificador del procedimiento"
+                }
+              ]
+            },
+            "description": "Consulta el detalle técnico de un procedimiento médico específico por su ID."
+          }
+        },
+        {
+          "name": "04 - Médicos Especialistas por Procedimiento (Paso 3)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/procedures/:idProcedimiento/doctors",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "procedures",
+                ":idProcedimiento",
+                "doctors"
+              ],
+              "variable": [
+                {
+                  "key": "idProcedimiento",
+                  "value": "PROC-EST-001",
+                  "description": "Código identificador del procedimiento"
+                }
+              ]
+            },
+            "description": "Paso 3: Retorna la lista enriquecida de médicos facultados para el procedimiento, incluyendo nombres, especialidad, correo y su horario laboral detallado."
+          }
+        },
+        {
+          "name": "05 - Disponibilidad Semanal por Rango (Paso 4 - Rango)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/appointments/available-dates?procedureId=PROC-EST-001&doctorEmail=camilotabares.portafolio@gmail.com&startDate=2026-09-28&endDate=2026-10-03",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "appointments",
+                "available-dates"
+              ],
+              "query": [
+                {
+                  "key": "procedureId",
+                  "value": "PROC-EST-001",
+                  "description": "ID del procedimiento (requerido)"
+                },
+                {
+                  "key": "doctorEmail",
+                  "value": "camilotabares.portafolio@gmail.com",
+                  "description": "Correo de Google Calendar del médico"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2026-09-28",
+                  "description": "Inicio de la ventana semanal (YYYY-MM-DD)"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2026-10-03",
+                  "description": "Fin de la ventana semanal (YYYY-MM-DD)"
+                }
+              ]
+            },
+            "description": "Paso 4 (Recomendado): Consulta optimizada en una sola llamada de red a Google Calendar para toda la semana. Retorna los días organizados con sus slots disponibles."
+          }
+        },
+        {
+          "name": "06 - Disponibilidad para un Día Específico (Paso 4 - Día)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/appointments/available-dates?procedureId=PROC-EST-001&doctorEmail=camilotabares.portafolio@gmail.com&targetDate=2026-09-28",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "appointments",
+                "available-dates"
+              ],
+              "query": [
+                {
+                  "key": "procedureId",
+                  "value": "PROC-EST-001",
+                  "description": "ID del procedimiento (requerido)"
+                },
+                {
+                  "key": "doctorEmail",
+                  "value": "camilotabares.portafolio@gmail.com",
+                  "description": "Correo del médico"
+                },
+                {
+                  "key": "targetDate",
+                  "value": "2026-09-28",
+                  "description": "Fecha específica (YYYY-MM-DD)"
+                }
+              ]
+            },
+            "description": "Paso 4 (Alternativo): Consulta de disponibilidad plana para un único día (retrocompatibilidad)."
+          }
+        },
+        {
+          "name": "07 - Reservar y Confirmar Cita Médica (Paso 5 - Confirmar)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"doctorEmail\": \"camilotabares.portafolio@gmail.com\",\n  \"doctorCedula\": \"1020304050\",\n  \"patientNationalId\": \"1020304050\",\n  \"patientFullName\": \"Laura Sofía Gómez Restrepo\",\n  \"patientEmail\": \"laura.gomez@example.com\",\n  \"procedureId\": \"PROC-EST-001\",\n  \"procedureName\": \"Armonización y Perfilado Labial con Ácido Hialurónico\",\n  \"startTime\": \"2026-09-28T09:00:00.000Z\",\n  \"endTime\": \"2026-09-28T09:45:00.000Z\",\n  \"notes\": \"Primera consulta estética - Paciente prefiere anestesia tópica\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/appointments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "appointments"
+              ]
+            },
+            "description": "Paso 5: Reserva formal de la cita médica. Valida colisiones, crea el evento en Google Calendar y almacena el registro en MongoDB Atlas."
+          }
+        },
+        {
+          "name": "08 - Inscribir en Lista de Espera Reactiva (Alternativa)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientNationalId\": \"1020304050\",\n  \"patientFullName\": \"Laura Sofía Gómez Restrepo\",\n  \"patientEmail\": \"laura.gomez@example.com\",\n  \"patientPhone\": \"+573001234567\",\n  \"procedureId\": \"PROC-EST-001\",\n  \"preferredDoctorEmail\": \"camilotabares.portafolio@gmail.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/appointments/waitlist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "appointments",
+                "waitlist"
+              ]
+            },
+            "description": "Alternativa de Paso 5: Si el paciente no encuentra un horario que se ajuste a su disponibilidad, se inscribe en la lista de espera reactiva para ser contactado ante cancelaciones."
+          }
+        }
+      ]
+    }
+  ]
+}

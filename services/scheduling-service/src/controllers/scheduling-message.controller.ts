@@ -4,7 +4,7 @@ import {
   SchedulingDomainService,
   IBookAppointmentCommand,
 } from '@nx-boilerplate/backend/scheduling-domain';
-import { IAvailableDate } from '@nx-boilerplate/api-interfaces';
+import { IAvailableDate, IDayAvailability } from '@nx-boilerplate/api-interfaces';
 import { GetAvailableDatesPayloadDto } from '../dtos/get-available-dates-payload.dto';
 import { CreateAppointmentPayloadDto } from '../dtos/create-appointment-payload.dto';
 import { CreateWaitlistPayloadDto } from '../dtos/create-waitlist-payload.dto';
@@ -26,13 +26,28 @@ export class SchedulingMessageController {
   @MessagePattern('appointments.get-available-dates')
   async getAvailableDates(
     @Payload() payload: GetAvailableDatesPayloadDto
-  ): Promise<IAvailableDate[]> {
+  ): Promise<IAvailableDate[] | IDayAvailability[]> {
     this.logger.log(`Consultando disponibilidad de citas: ${JSON.stringify(payload)}`);
 
     const doctorEmail = payload.doctorEmail || DEFAULT_DOCTOR.email;
     const doctorCedula = payload.doctorCedula || DEFAULT_DOCTOR.cedula;
-    const targetDate = payload.targetDate ? new Date(payload.targetDate) : new Date();
     const durationMinutes = 45;
+
+    // Consulta por rango semanal optimizada
+    if (payload.startDate && payload.endDate) {
+      const start = new Date(payload.startDate);
+      const end = new Date(payload.endDate);
+
+      return this.schedulingDomainService.getAvailableSlotsForRange(
+        doctorEmail,
+        start,
+        end,
+        durationMinutes
+      );
+    }
+
+    // Consulta de día único (retrocompatibilidad)
+    const targetDate = payload.targetDate ? new Date(payload.targetDate) : new Date();
 
     const slots = await this.schedulingDomainService.getAvailableSlots(
       doctorEmail,
@@ -59,6 +74,7 @@ export class SchedulingMessageController {
     });
   }
 
+
   @MessagePattern('appointments.create')
   async createAppointment(@Payload() payload: CreateAppointmentPayloadDto) {
     this.logger.log(`Procesando reserva de cita para cédula: ${payload.cedula}`);
@@ -82,14 +98,20 @@ export class SchedulingMessageController {
       });
     }
 
+    const patientNationalId = (payload.patientNationalId || payload.cedula || '').trim();
+    const patientFullName = (payload.patientFullName || `${payload.nombre || ''} ${payload.apellidos || ''}`).trim();
+    const patientEmail = (payload.patientEmail || payload.correo || '').trim();
+    const procedureId = (payload.procedureId || payload.procedimientoId || '').trim();
+    const procedureName = payload.procedureName || payload.procedimientoNombre || `Procedimiento ${procedureId}`;
+
     const command: IBookAppointmentCommand = {
       doctorEmail: payload.doctorEmail || DEFAULT_DOCTOR.email,
       doctorCedula: payload.doctorCedula || DEFAULT_DOCTOR.cedula,
-      patientNationalId: payload.cedula,
-      patientFullName: `${payload.nombre} ${payload.apellidos}`.trim(),
-      patientEmail: payload.correo,
-      procedureId: payload.procedimientoId,
-      procedureName: payload.procedimientoNombre || `Procedimiento ${payload.procedimientoId}`,
+      patientNationalId,
+      patientFullName,
+      patientEmail,
+      procedureId,
+      procedureName,
       startTime: start,
       endTime: end,
       notes: payload.notes,
@@ -110,15 +132,18 @@ export class SchedulingMessageController {
 
   @MessagePattern('waitlist.create')
   async createWaitlist(@Payload() payload: CreateWaitlistPayloadDto) {
-    this.logger.log(`Registrando en lista de espera a: ${payload.nombre} ${payload.apellidos}`);
+    const patientName = payload.patientFullName || `${payload.nombre || ''} ${payload.apellidos || ''}`.trim();
+    const procedureId = payload.procedureId || payload.procedimientoId;
+    this.logger.log(`Registrando en lista de espera a: ${patientName}`);
 
     return {
       success: true,
       message: 'Registrado en lista de espera exitosamente. Te contactaremos ante una cancelación.',
       waitlistId: `WL-${Date.now()}`,
-      patient: `${payload.nombre} ${payload.apellidos}`,
-      procedureId: payload.procedimientoId,
+      patient: patientName,
+      procedureId,
       registeredAt: new Date().toISOString(),
     };
   }
 }
+

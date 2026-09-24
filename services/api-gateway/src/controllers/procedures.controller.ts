@@ -1,6 +1,6 @@
 import { Controller, Get, Inject, Param, Query } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { IProcedure } from '@nx-boilerplate/api-interfaces';
+import { IProcedure, IProfessionalSummary } from '@nx-boilerplate/api-interfaces';
 import {
   FindProcedureParamDto,
   FilterProceduresQueryDto,
@@ -49,23 +49,16 @@ export class ProceduresController {
   }
 
   @Get(':idProcedimiento/doctors')
-  async getProcedureDoctors(@Param() params: FindProcedureParamDto): Promise<{
-    idProcedimiento: string;
-    nombreProcedimiento: string;
-    medicosRelacionados: string[];
-  }> {
-    const procedure = await firstValueFrom(
+  async getProcedureDoctors(
+    @Param() params: FindProcedureParamDto,
+  ): Promise<IProfessionalSummary[]> {
+    return firstValueFrom(
       this.proceduresClient
-        .send<IProcedure>('procedures.find-by-id', {
+        .send<IProfessionalSummary[]>('procedures.get-doctors-by-procedure', {
           idProcedimiento: params.idProcedimiento,
         })
         .pipe(timeout(5000)),
     );
-
-    return {
-      idProcedimiento: procedure.idProcedimiento,
-      nombreProcedimiento: procedure.nombreProcedimiento,
-      medicosRelacionados: procedure.medicosRelacionados,
-    };
   }
 }
+

@@ -7,6 +7,8 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { TimeoutError } from 'rxjs';
+import { IApiResponse } from '@nx-boilerplate/api-interfaces';
 
 @Catch()
 export class RpcExceptionFilter implements ExceptionFilter {
@@ -20,7 +22,11 @@ export class RpcExceptionFilter implements ExceptionFilter {
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message: string | object = 'Internal server error';
 
-    if (exception instanceof HttpException) {
+    if (exception instanceof TimeoutError) {
+      status = HttpStatus.GATEWAY_TIMEOUT;
+      message =
+        'Tiempo de espera agotado al comunicarse con el microservicio (Gateway Timeout)';
+    } else if (exception instanceof HttpException) {
       status = exception.getStatus();
       message = exception.getResponse();
     } else if (
@@ -40,13 +46,23 @@ export class RpcExceptionFilter implements ExceptionFilter {
       this.logger.error(`Excepción no controlada: ${JSON.stringify(exception)}`);
     }
 
-    const payload = {
+    const resolvedMessage =
+      typeof message === 'object' && message !== null && 'message' in message
+        ? String((message as { message?: unknown }).message ?? message)
+        : String(message);
+
+    const payload: IApiResponse<null> = {
+      success: false,
       statusCode: status,
-      message: typeof message === 'object' && 'message' in message ? (message as any).message : message,
+      message: resolvedMessage,
+      data: null,
       timestamp: new Date().toISOString(),
       path: request.url,
     };
 
-    response.status(typeof status === 'number' && status >= 100 && status <= 599 ? status : 500).json(payload);
+    response
+      .status(typeof status === 'number' && status >= 100 && status <= 599 ? status : 500)
+      .json(payload);
   }
 }
+

@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
+import { IDayAvailability, ISlotDisplay } from '@nx-boilerplate/api-interfaces';
 import {
   CALENDAR_PROVIDER,
   ICalendarProvider,
@@ -7,6 +8,7 @@ import {
 } from '../ports/calendar-provider.port';
 import { AppointmentRepository } from '../repositories/appointment.repository';
 import { Appointment, AppointmentStatus } from '../schemas/appointment.schema';
+
 
 export interface IBookAppointmentCommand {
   doctorEmail: string;
@@ -98,6 +100,119 @@ export class SchedulingDomainService {
 
     return availableSlots;
   }
+
+  /**
+   * Calcula los slots disponibles agrupados por día para un rango de fechas (ej. semanal).
+   * Realiza una única llamada a Google Calendar y a MongoDB para todo el rango.
+   */
+  async getAvailableSlotsForRange(
+    doctorEmail: string,
+    startDate: Date,
+    endDate: Date,
+    procedureDurationMinutes: number
+  ): Promise<IDayAvailability[]> {
+    // 1. Normalizar inicio y fin del rango completo
+    const rangeStart = new Date(startDate);
+    rangeStart.setHours(0, 0, 0, 0);
+
+    const rangeEnd = new Date(endDate);
+    rangeEnd.setHours(23, 59, 59, 999);
+
+    // 2. Consulta ÚNICA a Google Calendar y MongoDB para todo el rango
+    const [googleBusy, mongoAppointments] = await Promise.all([
+      this.calendarProvider.getBusyIntervals(doctorEmail, rangeStart, rangeEnd),
+      this.appointmentRepository.findByDoctorAndDateRange(doctorEmail, rangeStart, rangeEnd),
+    ]);
+
+    const allBusyIntervals: ITimeSlot[] = [
+      ...googleBusy,
+      ...mongoAppointments.map((apt) => ({
+        start: new Date(apt.startTime),
+        end: new Date(apt.endTime),
+      })),
+    ];
+
+    const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const result: IDayAvailability[] = [];
+
+    // 3. Iterar día por día entre startDate y endDate
+    const currentDay = new Date(rangeStart);
+    const slotDurationMs = procedureDurationMinutes * 60 * 1000;
+
+    while (currentDay.getTime() <= rangeEnd.getTime()) {
+      const year = currentDay.getFullYear();
+      const month = String(currentDay.getMonth() + 1).padStart(2, '0');
+      const day = String(currentDay.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+      const dayOfWeek = currentDay.getDay();
+      const dayName = dayNames[dayOfWeek];
+
+      const daySlots: ISlotDisplay[] = [];
+
+      // Domingo descanso (sin slots); Lunes a Sábado jornada operativa
+      if (dayOfWeek !== 0) {
+        // Jornada base: 07:00 a 19:00
+        const workStart = new Date(currentDay);
+        workStart.setHours(7, 0, 0, 0);
+
+        const workEnd = new Date(currentDay);
+        workEnd.setHours(19, 0, 0, 0);
+
+        // Receso de almuerzo: 12:00 a 13:00
+        const lunchStart = new Date(currentDay);
+        lunchStart.setHours(12, 0, 0, 0);
+        const lunchEnd = new Date(currentDay);
+        lunchEnd.setHours(13, 0, 0, 0);
+
+        const dayBusy = [
+          { start: lunchStart, end: lunchEnd },
+          ...allBusyIntervals.filter((busy) => {
+            return busy.start.getTime() < workEnd.getTime() && busy.end.getTime() > workStart.getTime();
+          }),
+        ];
+
+        let currentSlotStart = new Date(workStart);
+        while (currentSlotStart.getTime() + slotDurationMs <= workEnd.getTime()) {
+          const currentSlotEnd = new Date(currentSlotStart.getTime() + slotDurationMs);
+
+          const hasOverlap = dayBusy.some((busy) => {
+            return (
+              currentSlotStart.getTime() < busy.end.getTime() &&
+              currentSlotEnd.getTime() > busy.start.getTime()
+            );
+          });
+
+          if (!hasOverlap) {
+            const startH = String(currentSlotStart.getHours()).padStart(2, '0');
+            const startM = String(currentSlotStart.getMinutes()).padStart(2, '0');
+            const endH = String(currentSlotEnd.getHours()).padStart(2, '0');
+            const endM = String(currentSlotEnd.getMinutes()).padStart(2, '0');
+
+            daySlots.push({
+              startTime: currentSlotStart.toISOString(),
+              endTime: currentSlotEnd.toISOString(),
+              display: `${startH}:${startM} - ${endH}:${endM}`,
+            });
+          }
+
+          currentSlotStart = new Date(currentSlotStart.getTime() + slotDurationMs);
+        }
+      }
+
+      result.push({
+        date: dateStr,
+        dayName,
+        slots: daySlots,
+      });
+
+      // Avanzar al siguiente día
+      currentDay.setDate(currentDay.getDate() + 1);
+      currentDay.setHours(0, 0, 0, 0);
+    }
+
+    return result;
+  }
+
 
   /**
    * Reserva una cita verificando disponibilidad previa, registrando en Google Calendar y persistiendo en MongoDB.

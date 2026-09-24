@@ -93,4 +93,69 @@ describe('ProceduresDomainService', () => {
     expect(result[0].idProcedimiento).toBe('PROC-EST-002');
     expect(repository.findByDoctor).toHaveBeenCalledWith('71345678');
   });
+
+  describe('getDoctorsByProcedureId', () => {
+    it('debe retornar los médicos asociados al procedimiento', async () => {
+      const mockDoctors = [
+        {
+          cedula: '52890123',
+          nombres: 'Dra. María',
+          apellidos: 'Gómez',
+          email: 'maria.gomez@clinica.com',
+          profesion: 'Dermatóloga Estética',
+          procedimientosRelacionados: ['PROC-EST-001'],
+          horarioTrabajo: {
+            diasLaborales: ['Lunes', 'Miércoles', 'Viernes'],
+            horaInicio: '08:00',
+            horaFin: '17:00',
+          },
+        },
+      ];
+
+      (repository as unknown as { findDoctorsByCedulas: ReturnType<typeof vi.fn> }).findDoctorsByCedulas =
+        vi.fn().mockResolvedValue(mockDoctors);
+
+      const result = await service.getDoctorsByProcedureId('PROC-EST-001');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].cedula).toBe('52890123');
+      expect(result[0].nombres).toBe('Dra. María');
+      expect(result[0].profesion).toBe('Dermatóloga Estética');
+      expect(repository.findDoctorsByCedulas).toHaveBeenCalledWith(['52890123', '1032456789']);
+    });
+
+    it('debe retornar arreglo vacío si el procedimiento no tiene médicos relacionados', async () => {
+      const procWithoutDoctors: IProcedure = {
+        idProcedimiento: 'PROC-SIN-MEDICOS',
+        nombreProcedimiento: 'Procedimiento Sin Médicos',
+        valorStandar: 100000,
+        duracionStandar: 30,
+        medicosRelacionados: [],
+      };
+
+      vi.spyOn(repository, 'findById').mockResolvedValueOnce(procWithoutDoctors);
+
+      const result = await service.getDoctorsByProcedureId('PROC-SIN-MEDICOS');
+
+      expect(result).toEqual([]);
+    });
+
+    it('debe lanzar RpcException 404 si el procedimiento no existe al consultar médicos', async () => {
+      try {
+        await service.getDoctorsByProcedureId('PROC-INEXISTENTE');
+        expect.unreachable('Se esperaba que lanzara RpcException');
+      } catch (error: unknown) {
+        expect(error).toBeInstanceOf(RpcException);
+        const rpcError = error as RpcException;
+        const errPayload = rpcError.getError();
+        expect(errPayload).toEqual(
+          expect.objectContaining({
+            status: 'error',
+            code: 404,
+            message: 'Procedimiento médico no encontrado',
+          })
+        );
+      }
+    });
+  });
 });

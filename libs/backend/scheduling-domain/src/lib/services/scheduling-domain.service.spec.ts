@@ -65,4 +65,41 @@ describe('SchedulingDomainService', () => {
     expect(appointment.status).toBe(AppointmentStatus.CONFIRMED);
     expect(appointment.googleCalendarEventId).toContain('mock-google-id-');
   });
+
+  it('debe calcular los slots disponibles para un rango semanal ejecutando una única consulta a Google Calendar', async () => {
+    const startDate = new Date('2026-09-21T00:00:00.000Z'); // Lunes
+    const endDate = new Date('2026-09-26T00:00:00.000Z');   // Sábado
+    const doctorEmail = 'camilotabares.portafolio@gmail.com';
+    const durationMinutes = 45;
+
+    const spyGetBusy = vi.spyOn(mockCalendarAdapter, 'getBusyIntervals');
+    const spyFindMongo = vi.spyOn(mockAppointmentRepository, 'findByDoctorAndDateRange');
+
+    const result = await service.getAvailableSlotsForRange(
+      doctorEmail,
+      startDate,
+      endDate,
+      durationMinutes
+    );
+
+    // Debe ejecutar exactamente una llamada al proveedor de calendario y a Mongo para todo el rango
+    expect(spyGetBusy).toHaveBeenCalledTimes(1);
+    expect(spyFindMongo).toHaveBeenCalledTimes(1);
+
+    expect(result.length).toBeGreaterThanOrEqual(6);
+    expect(result[0]).toHaveProperty('date');
+    expect(result[0]).toHaveProperty('dayName');
+    expect(result[0]).toHaveProperty('slots');
+    expect(Array.isArray(result[0].slots)).toBe(true);
+
+    // Validar que cada slot tenga startTime, endTime y display
+    if (result[0].slots.length > 0) {
+      const firstSlot = result[0].slots[0];
+      expect(firstSlot).toHaveProperty('startTime');
+      expect(firstSlot).toHaveProperty('endTime');
+      expect(firstSlot).toHaveProperty('display');
+      expect(firstSlot.display).toMatch(/^\d{2}:\d{2} - \d{2}:\d{2}$/);
+    }
+  });
 });
+

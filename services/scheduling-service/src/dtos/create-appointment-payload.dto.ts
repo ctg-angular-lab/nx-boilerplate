@@ -8,38 +8,57 @@ import {
 } from 'class-validator';
 
 export class CreateAppointmentPayloadDto {
+  @IsOptional()
   @IsString({ message: 'La cédula debe ser una cadena de texto' })
-  @IsNotEmpty({ message: 'La cédula es requerida' })
-  @Matches(/^[0-9]+$/, { message: 'La cédula debe contener solo números' })
-  cedula!: string;
+  cedula?: string;
 
+  @IsOptional()
   @IsString({ message: 'El nombre debe ser una cadena de texto' })
-  @IsNotEmpty({ message: 'El nombre es requerido' })
-  nombre!: string;
+  nombre?: string;
 
+  @IsOptional()
   @IsString({ message: 'Los apellidos deben ser una cadena de texto' })
-  @IsNotEmpty({ message: 'Los apellidos son requeridos' })
-  apellidos!: string;
+  apellidos?: string;
 
+  @IsOptional()
   @IsEmail({}, { message: 'El formato de correo no es válido' })
-  @IsNotEmpty({ message: 'El correo electrónico es requerido' })
-  correo!: string;
+  correo?: string;
 
+  @IsOptional()
   @IsString({ message: 'El celular debe ser una cadena de texto' })
-  @IsNotEmpty({ message: 'El celular es requerido' })
-  celular!: string;
+  celular?: string;
 
   @IsBoolean()
   @IsOptional()
   recordatorioWhatsapp?: boolean;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty({ message: 'El ID del procedimiento es requerido' })
-  procedimientoId!: string;
+  procedimientoId?: string;
 
   @IsOptional()
   @IsString()
   procedimientoNombre?: string;
+
+  @IsOptional()
+  @IsString()
+  patientNationalId?: string;
+
+  @IsOptional()
+  @IsString()
+  patientFullName?: string;
+
+  @IsOptional()
+  @IsEmail()
+  patientEmail?: string;
+
+  @IsOptional()
+  @IsString()
+  procedureId?: string;
+
+  @IsOptional()
+  @IsString()
+  procedureName?: string;
 
   @IsOptional()
   @IsEmail()

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
-import { IProcedure } from '@nx-boilerplate/api-interfaces';
+import { IProcedure, IProfessionalSummary } from '@nx-boilerplate/api-interfaces';
 import { ProceduresRepository } from '../repositories/procedures.repository';
 
 @Injectable()
@@ -29,4 +29,31 @@ export class ProceduresDomainService {
   async getByDoctor(doctorCedula: string): Promise<IProcedure[]> {
     return this.proceduresRepository.findByDoctor(doctorCedula);
   }
+
+  async getDoctorsByProcedureId(
+    idProcedimiento: string
+  ): Promise<IProfessionalSummary[]> {
+    const procedure = await this.getById(idProcedimiento);
+
+    if (
+      !procedure.medicosRelacionados ||
+      procedure.medicosRelacionados.length === 0
+    ) {
+      return [];
+    }
+
+    const doctors = await this.proceduresRepository.findDoctorsByCedulas(
+      procedure.medicosRelacionados
+    );
+
+    return doctors.map((doc) => ({
+      cedula: doc.cedula,
+      nombres: doc.nombres,
+      apellidos: doc.apellidos,
+      email: doc.email,
+      profesion: doc.profesion,
+      horarioTrabajo: doc.horarioTrabajo,
+    }));
+  }
 }
+

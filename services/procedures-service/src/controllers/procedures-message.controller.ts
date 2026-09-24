@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { IProcedure } from '@nx-boilerplate/api-interfaces';
+import { IProcedure, IProfessionalSummary } from '@nx-boilerplate/api-interfaces';
 import {
   FindProcedureByIdDto,
   FindProceduresByDoctorDto,
@@ -29,4 +29,14 @@ export class ProceduresMessageController {
   ): Promise<IProcedure[]> {
     return this.proceduresDomainService.getByDoctor(payload.doctorCedula);
   }
+
+  @MessagePattern('procedures.get-doctors-by-procedure')
+  async getDoctorsByProcedure(
+    @Payload() payload: FindProcedureByIdDto
+  ): Promise<IProfessionalSummary[]> {
+    return this.proceduresDomainService.getDoctorsByProcedureId(
+      payload.idProcedimiento
+    );
+  }
 }
+

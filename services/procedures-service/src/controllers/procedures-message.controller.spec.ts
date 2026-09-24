@@ -28,6 +28,7 @@ describe('ProceduresMessageController', () => {
             getAll: vi.fn().mockResolvedValue(mockProcedures),
             getById: vi.fn().mockResolvedValue(mockProcedures[0]),
             getByDoctor: vi.fn().mockResolvedValue(mockProcedures),
+            getDoctorsByProcedureId: vi.fn().mockResolvedValue([]),
           },
         },
       ],
@@ -60,4 +61,33 @@ describe('ProceduresMessageController', () => {
     expect(result).toEqual(mockProcedures);
     expect(service.getByDoctor).toHaveBeenCalledWith('52890123');
   });
+
+  it('debe atender procedures.get-doctors-by-procedure con el idProcedimiento recibido', async () => {
+    const mockDoctors = [
+      {
+        cedula: '52890123',
+        nombres: 'Dra. María',
+        apellidos: 'Gómez',
+        email: 'maria.gomez@clinica.com',
+        profesion: 'Dermatóloga Estética',
+        horarioTrabajo: {
+          diasLaborales: ['Lunes', 'Miércoles'],
+          horaInicio: '08:00',
+          horaFin: '17:00',
+        },
+      },
+    ];
+
+    vi.spyOn(service, 'getDoctorsByProcedureId' as keyof ProceduresDomainService).mockResolvedValueOnce(
+      mockDoctors as never
+    );
+
+    const result = await controller.getDoctorsByProcedure({
+      idProcedimiento: 'PROC-EST-001',
+    });
+
+    expect(result).toEqual(mockDoctors);
+    expect(service.getDoctorsByProcedureId).toHaveBeenCalledWith('PROC-EST-001');
+  });
 });
+
