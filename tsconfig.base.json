@@ -23,12 +23,8 @@
       "@nx-boilerplate/api-interfaces": [
         "./libs/shared/api-interfaces/src/index.ts"
       ],
-      "@nx-boilerplate/shared-dtos": [
-        "./libs/shared/dtos/src/index.ts"
-      ],
-      "@nx-boilerplate/layouts": [
-        "./libs/shared/layouts/src/index.ts"
-      ],
+      "@nx-boilerplate/shared-dtos": ["./libs/shared/dtos/src/index.ts"],
+      "@nx-boilerplate/layouts": ["./libs/shared/layouts/src/index.ts"],
       "@nx-boilerplate/backend/patients-domain": [
         "./libs/backend/patients-domain/src/index.ts"
       ],
@@ -37,7 +33,8 @@
       ],
       "@nx-boilerplate/backend/scheduling-domain": [
         "./libs/backend/scheduling-domain/src/index.ts"
-      ]
+      ],
+      "@nx-boilerplate/data-access": ["./libs/shared/data-access/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
