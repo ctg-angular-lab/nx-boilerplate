@@ -1,8 +1,11 @@
 import {
   Component,
   ChangeDetectionStrategy,
+  DestroyRef,
   inject,
   signal,
+  computed,
+  effect,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -15,6 +18,7 @@ import { MatStepperModule } from '@angular/material/stepper';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
+import { Observable, filter, switchMap } from 'rxjs';
 import {
   StepCedulaComponent,
   StepPersonalInfoComponent,
@@ -22,8 +26,12 @@ import {
   ConfirmationModalComponent,
   ConfirmationModalData,
   AvailableDate,
-  PatientHistory,
 } from '@nx-boilerplate/layouts';
+import {
+  ICreateAppointmentRequest,
+  IProfessionalSummary,
+} from '@nx-boilerplate/api-interfaces';
+import { AppointmentLogicService } from '../../services/appointment-logic.service';
 
 @Component({
   selector: 'app-agendar-cita',
@@ -45,14 +53,10 @@ import {
 export class AgendarCitaComponent {
   private readonly fb = inject(FormBuilder);
   private readonly dialog = inject(MatDialog);
+  private readonly appointmentLogic = inject(AppointmentLogicService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly title = signal<string>('Formulario de Agendamiento');
-
-  /**
-   * Signals para el estado reactivo del paciente y citas
-   */
-  readonly patientHistory = signal<PatientHistory | null>(null);
-  readonly availableDates = signal<AvailableDate[]>([]);
 
   /**
    * FormGroup fuertemente tipado con 3 sub-grupos
@@ -89,22 +93,128 @@ export class AgendarCitaComponent {
   }
 
   /**
+   * Conexión directa con la Signal de historial de paciente gestionada por el servicio de dominio
+   */
+  readonly patientHistory = this.appointmentLogic.patientHistory;
+
+  /**
+   * Catálogo reactivo de procedimientos médicos cargados desde el backend
+   */
+  readonly procedures = this.appointmentLogic.procedures;
+
+  /**
+   * Señal nativa para las fechas disponibles (libre de toSignal y de problemas de Injection Context)
+   */
+  readonly availableDates = signal<AvailableDate[]>([]);
+
+  /**
+   * Médicos profesionales asignados al procedimiento seleccionado
+   */
+  readonly procedureDoctors = signal<IProfessionalSummary[]>([]);
+
+  /**
+   * Indica si la consulta de doctores del procedimiento ha finalizado
+   */
+  readonly doctorsLoaded = signal<boolean>(false);
+
+  /**
+   * Información consolidada del paciente del Paso 2 para el mensaje de lista de espera
+   */
+  readonly patientInfo = computed(() => {
+    const rawStep2 = this.step2Group.getRawValue();
+    return {
+      nombre: rawStep2.nombre || this.patientHistory()?.nombre || '',
+      apellidos: rawStep2.apellidos || this.patientHistory()?.apellidos || '',
+    };
+  });
+
+  constructor() {
+    // Sincronización reactiva con Signals: auto-llenado del Paso 2
+    effect(() => {
+      const patient = this.patientHistory();
+      if (patient) {
+        this.step2Group.patchValue({
+          nombre: patient.nombre ?? '',
+          apellidos: patient.apellidos ?? '',
+          correo: patient.correo ?? '',
+          celular: patient.celular ?? '',
+        });
+      }
+    });
+
+    // Escucha reactiva de selección de procedimiento: consulta los doctores asignados
+    const sub = this.form.controls.step3.controls.procedimientoId.valueChanges
+      .pipe(
+        filter((id): id is string => typeof id === 'string' && id.trim().length > 0),
+        switchMap((id) => {
+          this.doctorsLoaded.set(false);
+          return this.appointmentLogic.getProcedureDoctors(id);
+        })
+      )
+      .subscribe((doctors) => {
+        this.procedureDoctors.set(doctors);
+        this.doctorsLoaded.set(true);
+        console.log('Doctores asignados al procedimiento:', doctors);
+      });
+
+    this.destroyRef.onDestroy(() => sub.unsubscribe());
+  }
+
+  /**
+   * Dispara la verificación de la cédula ingresada en el paso 1
+   */
+  verifyCedula(): void {
+    const cedula = this.step1Group.controls['cedula'].value;
+    if (cedula) {
+      this.appointmentLogic.verifyPatient(cedula);
+    }
+  }
+
+  /**
+   * Mapea el estado consolidado del formulario y envía la mutación para agendar la cita
+   */
+  submitAppointment(): void {
+    if (this.form.invalid) {
+      return;
+    }
+
+    const step1 = this.step1Group.getRawValue();
+    const step2 = this.step2Group.getRawValue();
+    const step3 = this.step3Group.getRawValue();
+
+    const payload: ICreateAppointmentRequest = {
+      cedula: step1.cedula ?? '',
+      nombre: step2.nombre ?? '',
+      apellidos: step2.apellidos ?? '',
+      correo: step2.correo ?? '',
+      celular: step2.celular ?? '',
+      recordatorioWhatsapp: !!step2.recordatorioWhatsapp,
+      procedimientoId: step3.procedimientoId ?? '',
+    };
+
+    this.appointmentLogic.createAppointment(payload).subscribe({
+      next: () => {
+        this.openConfirmationModal();
+      },
+      error: (error) => {
+        console.error('Error al registrar la cita médica:', error);
+      },
+    });
+  }
+
+  /**
    * Orquesta la apertura del modal de confirmación con los datos dinámicos de la cita
    */
   openConfirmationModal(): void {
     const nombre = this.step2Group.get('nombre')?.value || '';
     const apellido = this.step2Group.get('apellidos')?.value || '';
 
-    // Valores dinámicos/formales para fecha y hora
-    const fecha = '10 de Septiembre de 2026';
-    const hora = '09:00 AM';
-
     const modalData: ConfirmationModalData<boolean> = {
       title: 'Confirmación de cita',
-      text: `Sr(a) ${nombre} ${apellido} ¿desea confirmar la cita para el ${fecha} a las ${hora}?`,
+      text: `Sr(a) ${nombre} ${apellido}, su solicitud de cita ha sido procesada exitosamente.`,
       actions: [
-        { label: 'Confirmar', color: 'primary', value: true },
-        { label: 'Cancelar', color: 'default', value: false },
+        { label: 'Aceptar', color: 'primary', value: true },
+        { label: 'Cerrar', color: 'default', value: false },
       ],
     };
 
@@ -120,7 +230,7 @@ export class AgendarCitaComponent {
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
-        console.log('Cita confirmada');
+        console.log('Modal cerrado tras confirmación');
       }
     });
   }
@@ -129,7 +239,7 @@ export class AgendarCitaComponent {
    * Manejador del submit emitido desde el paso 3 del Stepper
    */
   onAppointmentSubmitted(): void {
-    this.openConfirmationModal();
+    this.submitAppointment();
   }
 
   /**
@@ -163,77 +273,5 @@ export class AgendarCitaComponent {
         console.log('Paciente registrado en lista de espera');
       }
     });
-  }
-
-  /**
-   * Simula la verificación de cédula y precarga datos del paciente
-   */
-  verifyCedula(): void {
-    const cedula = this.step1Group.controls['cedula'].value;
-
-    if (cedula === '123456') {
-      this.patientHistory.set({
-        cedula: '123456',
-        nombreCompleto: 'Juan Pérez',
-        ultimosProcedimientos: [
-          {
-            id: 'proc-1',
-            nombre: 'Limpieza Dental Profunda',
-            fecha: '2026-01-15',
-            profesional: 'Dra. María Gómez',
-          },
-          {
-            id: 'proc-2',
-            nombre: 'Extracción Tercer Molar',
-            fecha: '2025-11-20',
-            profesional: 'Dr. Carlos Mendoza',
-          },
-          {
-            id: 'proc-3',
-            nombre: 'Revisión General Odontológica',
-            fecha: '2025-08-10',
-            profesional: 'Dra. María Gómez',
-          },
-        ],
-        recomendaciones:
-          'Paciente con sensibilidad dental leve. Requiere profilaxis cada 6 meses y control radiográfico anual.',
-      });
-
-      // Precarga automática en el formulario del paso 2
-      this.step2Group.patchValue({
-        nombre: 'Juan',
-        apellidos: 'Pérez',
-        correo: 'juan.perez@example.com',
-        celular: '3001234567',
-        recordatorioWhatsapp: true,
-      });
-
-      this.availableDates.set([
-        {
-          id: 'slot-1',
-          fecha: '2026-09-10',
-          hora: '09:00 AM',
-          profesional: 'Dra. María Gómez',
-          disponible: true,
-        },
-        {
-          id: 'slot-2',
-          fecha: '2026-09-10',
-          hora: '10:30 AM',
-          profesional: 'Dra. María Gómez',
-          disponible: true,
-        },
-        {
-          id: 'slot-3',
-          fecha: '2026-09-11',
-          hora: '02:00 PM',
-          profesional: 'Dr. Carlos Mendoza',
-          disponible: true,
-        },
-      ]);
-    } else {
-      this.patientHistory.set(null);
-      this.availableDates.set([]);
-    }
   }
 }

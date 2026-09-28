@@ -11,7 +11,10 @@ export interface IProcedureItem {
 
 export interface IPatientHistory {
   cedula: string;
-  nombreCompleto: string;
+  nombre: string;
+  apellidos: string;
+  correo: string;
+  celular: string;
   ultimosProcedimientos: IProcedureItem[];
   recomendaciones: string;
 }

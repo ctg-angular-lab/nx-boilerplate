@@ -71,8 +71,7 @@
           "buildTarget": "Login:build:development"
         }
       },
-      "defaultConfiguration": "development",
-      "dependsOn": ["app-shell:serve"]
+      "defaultConfiguration": "development"
     },
     "extract-i18n": {
       "executor": "@angular-devkit/build-angular:extract-i18n",
@@ -89,7 +88,7 @@
       "defaultConfiguration": "production",
       "options": {
         "buildTarget": "Login:build",
-        "port": 4202,
+        "port": 4212,
         "watch": false
       },
       "configurations": {

@@ -19,8 +19,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import {
   AvailableDate,
-  MedicalProcedureOption,
 } from '../../../models/appointment-steps.models';
+import { IProcedure, IProfessionalSummary } from '@nx-boilerplate/api-interfaces';
 
 @Component({
   selector: 'lib-step-procedure-selection, app-step-procedure-selection',
@@ -46,6 +46,26 @@ export class StepProcedureSelectionComponent {
   readonly form = input.required<FormGroup>();
 
   /**
+   * Catálogo de procedimientos médicos reales desde MongoDB Atlas
+   */
+  readonly procedures = input<IProcedure[]>([]);
+
+  /**
+   * Médicos profesionales asignados al procedimiento
+   */
+  readonly doctors = input<IProfessionalSummary[]>([]);
+
+  /**
+   * Indica si la consulta de doctores ha finalizado
+   */
+  readonly doctorsLoaded = input<boolean>(false);
+
+  /**
+   * Información del paciente para el mensaje personalizado de lista de espera
+   */
+  readonly patientInfo = input<{ nombre: string; apellidos: string } | null>(null);
+
+  /**
    * Horarios y turnos disponibles para selección
    */
   readonly dates = input<AvailableDate[]>([]);
@@ -61,78 +81,45 @@ export class StepProcedureSelectionComponent {
   readonly joinWaitlist = output<void>();
 
   /**
-   * Fecha u horario seleccionado por el usuario
-   */
-  readonly selectedDateId = signal<string | null>(null);
-
-  /**
    * Control local para búsqueda y autocompletado de procedimiento
    */
   readonly searchControl = new FormControl<string>('');
 
   /**
-   * Catálogo de procedimientos médicos disponibles
+   * Nombre del procedimiento seleccionado actualmente
    */
-  readonly procedureCatalog = signal<MedicalProcedureOption[]>([
-    {
-      id: 'proc-1',
-      nombre: 'Limpieza Dental Profunda y Profilaxis',
-      duracion: '45 min',
-      especialidad: 'Odontología General',
-    },
-    {
-      id: 'proc-2',
-      nombre: 'Extracción Simple o Quirúrgica',
-      duracion: '60 min',
-      especialidad: 'Cirugía Oral',
-    },
-    {
-      id: 'proc-3',
-      nombre: 'Valoración y Consulta de Ortodoncia',
-      duracion: '30 min',
-      especialidad: 'Ortodoncia',
-    },
-    {
-      id: 'proc-4',
-      nombre: 'Blanqueamiento Dental LED',
-      duracion: '60 min',
-      especialidad: 'Estética Dental',
-    },
-    {
-      id: 'proc-5',
-      nombre: 'Endodoncia y Tratamiento de Conductos',
-      duracion: '90 min',
-      especialidad: 'Endodoncia',
-    },
-  ]);
+  readonly selectedProcedureName = computed(() => {
+    const procId = this.form().get('procedimientoId')?.value;
+    const found = this.procedures().find((p) => p.idProcedimiento === procId);
+    return found ? found.nombreProcedimiento : (this.searchControl.value || '');
+  });
 
   /**
-   * Filtro computado puro para autocompletar
+   * Mensaje dinámico para la lista de espera cuando no hay profesionales disponibles
+   */
+  readonly waitlistMessage = computed(() => {
+    const procName = this.selectedProcedureName();
+    const patient = this.patientInfo();
+    const nombre = patient?.nombre ?? '';
+    const apellidos = patient?.apellidos ?? '';
+    return `Se consultará con los profesionales disponibles pueden realizar el procedimiento ${procName} y se agendará llamada al paciente ${nombre} ${apellidos}`.trim();
+  });
+
+  /**
+   * Filtro computado puro para autocompletar contra el catálogo de procedimientos
    */
   readonly filteredProcedures = computed(() => {
-    const filterValue = (this.searchControl.value || '').toLowerCase();
-    return this.procedureCatalog().filter(
-      (p) =>
-        p.nombre.toLowerCase().includes(filterValue) ||
-        p.especialidad.toLowerCase().includes(filterValue)
+    const filterValue = (this.searchControl.value || '').toLowerCase().trim();
+    return this.procedures().filter((p) =>
+      p.nombreProcedimiento.toLowerCase().includes(filterValue)
     );
   });
 
   onProcedureSelected(event: MatAutocompleteSelectedEvent): void {
-    const selected = event.option.value as MedicalProcedureOption;
-    this.searchControl.setValue(selected.nombre);
-    this.form().get('procedimientoId')?.setValue(selected.id);
+    const selected = event.option.value as IProcedure;
+    this.searchControl.setValue(selected.nombreProcedimiento);
+    this.form().get('procedimientoId')?.setValue(selected.idProcedimiento);
     this.form().get('procedimientoId')?.markAsDirty();
-  }
-
-  selectDate(slot: AvailableDate): void {
-    this.selectedDateId.set(slot.id);
-  }
-
-  confirm(): void {
-    if (this.form().valid) {
-      this.submitAppointment.emit();
-    }
   }
 
   onJoinWaitlist(): void {

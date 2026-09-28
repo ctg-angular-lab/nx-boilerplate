@@ -7,7 +7,10 @@ export interface ProcedureItem {
 
 export interface PatientHistory {
   cedula: string;
-  nombreCompleto: string;
+  nombre: string;
+  apellidos: string;
+  correo: string;
+  celular: string;
   ultimosProcedimientos: ProcedureItem[];
   recomendaciones: string;
 }

@@ -60,7 +60,9 @@
       "executor": "@nx/angular:module-federation-dev-server",
       "options": {
         "port": 4200,
-        "publicHost": "http://localhost:4200"
+        "publicHost": "http://localhost:4200",
+        "devRemotes": ["agendador-citas", "Login"],
+        "staticRemotesPort": 4210
       },
       "configurations": {
         "production": {

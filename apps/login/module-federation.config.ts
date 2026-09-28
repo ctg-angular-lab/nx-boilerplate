@@ -5,6 +5,8 @@ const config: ModuleFederationConfig = {
   exposes: {
     './Routes': 'apps/login/src/app/remote-entry/entry.routes.ts',
   },
+  // @angular/cdk y @angular/material son provistos como singletons por el host (app-shell).
+  // Declararlos aquí también causaría que Webpack registre dos instancias (NG0912).
 };
 
 /**
