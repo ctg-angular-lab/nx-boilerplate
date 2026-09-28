@@ -61,16 +61,14 @@
       <div class="stepper-step-content">
         <app-step-procedure-selection
           [form]="form.controls.step3"
+          [procedures]="procedures()"
+          [doctors]="procedureDoctors()"
+          [doctorsLoaded]="doctorsLoaded()"
+          [patientInfo]="patientInfo()"
           [dates]="availableDates()"
           (submitAppointment)="onAppointmentSubmitted()"
           (joinWaitlist)="onWaitlistRequested()"
         />
-
-        <div class="stepper-actions">
-          <button mat-stroked-button matStepperPrevious type="button">
-            Anterior
-          </button>
-        </div>
       </div>
     </mat-step>
   </mat-stepper>

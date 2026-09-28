@@ -27,7 +27,16 @@ export class Patient {
   cedula!: string;
 
   @Prop({ required: true })
-  nombreCompleto!: string;
+  nombre!: string;
+
+  @Prop({ required: true })
+  apellidos!: string;
+
+  @Prop({ required: true })
+  correo!: string;
+
+  @Prop({ required: true })
+  celular!: string;
 
   @Prop({ type: [ProcedureItemSchema], default: [] })
   ultimosProcedimientos!: ProcedureItem[];

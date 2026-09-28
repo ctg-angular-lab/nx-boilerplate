@@ -32,7 +32,10 @@ export class PatientsRepository implements OnModuleInit {
         const initialPatients: IPatientHistory[] = [
           {
             cedula: '1020304050',
-            nombreCompleto: 'Laura Sofía Gómez',
+            nombre: 'Laura Sofía',
+            apellidos: 'Gómez',
+            correo: 'laura.gomez@example.com',
+            celular: '3001234567',
             ultimosProcedimientos: [
               {
                 id: 'proc-101',
@@ -52,7 +55,10 @@ export class PatientsRepository implements OnModuleInit {
           },
           {
             cedula: '12345678',
-            nombreCompleto: 'Juan Pérez',
+            nombre: 'Juan',
+            apellidos: 'Pérez',
+            correo: 'juan.perez@example.com',
+            celular: '3109876543',
             ultimosProcedimientos: [
               {
                 id: 'proc-201',

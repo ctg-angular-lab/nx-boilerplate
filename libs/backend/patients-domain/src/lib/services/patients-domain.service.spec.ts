@@ -11,7 +11,10 @@ describe('PatientsDomainService', () => {
 
   const mockPatient: IPatientHistory = {
     cedula: '1020304050',
-    nombreCompleto: 'Laura Sofía Gómez',
+    nombre: 'Laura Sofía',
+    apellidos: 'Gómez',
+    correo: 'laura.gomez@example.com',
+    celular: '3001234567',
     ultimosProcedimientos: [
       {
         id: 'proc-101',
@@ -53,7 +56,10 @@ describe('PatientsDomainService', () => {
     const result = await service.findByNationalId('1020304050');
     expect(result).toBeDefined();
     expect(result.cedula).toBe('1020304050');
-    expect(result.nombreCompleto).toBe('Laura Sofía Gómez');
+    expect(result.nombre).toBe('Laura Sofía');
+    expect(result.apellidos).toBe('Gómez');
+    expect(result.correo).toBe('laura.gomez@example.com');
+    expect(result.celular).toBe('3001234567');
     expect(repository.findByCedula).toHaveBeenCalledWith('1020304050');
   });
 

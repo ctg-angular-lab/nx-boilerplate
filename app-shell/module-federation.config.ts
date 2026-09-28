@@ -1,8 +1,14 @@
-import { ModuleFederationConfig } from '@nx/module-federation';
+import { ModuleFederationConfig, sharePackages } from '@nx/module-federation';
 
 const config: ModuleFederationConfig = {
   name: 'app-shell',
-  remotes: ['agendador-citas', 'Login'],
+  // Los remotes se registran dinámicamente en runtime vía main.ts → registerRemotes()
+  // usando el manifest en public/module-federation.manifest.json.
+  // NO declarar remotes estáticos aquí: causaría que Nx detecte los mismos remotes
+  // dos veces (estáticos + dinámicos del manifest) generando conflictos de puertos (NG0912, EADDRINUSE).
+  additionalShared: Object.entries(
+    sharePackages(['@angular/animations', '@angular/cdk', '@angular/material'])
+  ),
 };
 
 /**

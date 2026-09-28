@@ -18,6 +18,7 @@ Antes de generar o modificar código en dominios específicos, consulta y aplica
 2. **Material Design 3 & Temas SCSS:** [.agents/skills/md3-architecture/SKILL.md](file:///.agents/skills/md3-architecture/SKILL.md)
 3. **Microservicios NestJS & RabbitMQ:** [.agents/skills/nest-microservices/SKILL.md](file:///.agents/skills/nest-microservices/SKILL.md)
 4. **Documentación Técnica de Módulos:** [.agents/skills/doc-architect/SKILL.md](file:///.agents/skills/doc-architect/SKILL.md) (disparado con `documentar :fileName` generando `docs/:fileName.md`)
+5. **Capa de Datos Angular (HTTP, RxJS, Signals):** [.agents/skills/angular-data-expert/SKILL.md](file:///.agents/skills/angular-data-expert/SKILL.md)
 
 ## 3. Protocolo de Interacción y Triaje (4 Fases)
 * **Fase 0 (Scoping Obligatorio ante ambigüedad):** Prohibido codificar de inmediato. Identificar skill, listar lineamientos requeridos y formular 2-4 preguntas clave al usuario.

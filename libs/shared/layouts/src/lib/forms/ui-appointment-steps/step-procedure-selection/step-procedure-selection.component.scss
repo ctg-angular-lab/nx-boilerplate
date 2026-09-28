@@ -49,55 +49,106 @@
   }
 }
 
-.slots-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+.profesionales-list {
+  display: flex;
+  flex-direction: column;
   gap: 16px;
+  width: 100%;
 }
 
-.slot-card {
+.profesional-disponible {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-radius: 12px;
   background-color: var(--sys-color-surface-container-lowest, #ffffff);
   border: 1px solid var(--sys-color-outline-variant, #e0e0e0);
-  border-radius: 12px;
-  cursor: pointer;
+  box-shadow: none;
   transition: all 0.2s ease-in-out;
 
   &:hover {
     border-color: var(--sys-color-primary);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
   }
 
-  &--selected {
-    border-color: var(--sys-color-primary);
-    background-color: var(--sys-color-surface-container-high, #f0f4f8);
-    box-shadow: 0 0 0 2px var(--sys-color-primary);
-  }
-
-  &__body {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 16px !important;
-  }
-
-  .slot-date,
-  .slot-time {
+  &__foto {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 0.875rem;
-    color: var(--sys-color-on-surface);
+    justify-content: center;
+  }
+
+  &__avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: var(--sys-color-primary-container, #e8f0fe);
+    color: var(--sys-color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     .material-symbols-outlined {
-      font-size: 18px;
-      color: var(--sys-color-primary);
+      font-size: 26px;
     }
   }
 
-  .slot-doctor {
-    font-size: 0.75rem;
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    margin: 0 24px;
+  }
+
+  &__nombre {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--sys-color-on-surface);
+  }
+
+  &__profesion {
+    font-size: 0.875rem;
     color: var(--sys-color-on-surface-variant);
-    margin-top: 4px;
+  }
+
+  &__email {
+    font-size: 0.8rem;
+    color: var(--sys-color-outline);
+  }
+
+  &__acciones {
+    display: flex;
+    align-items: center;
+
+    .btn-ver-calendario {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+
+    &__info {
+      margin: 0;
+      width: 100%;
+    }
+
+    &__acciones {
+      width: 100%;
+
+      .btn-ver-calendario {
+        width: 100%;
+        justify-content: center;
+      }
+    }
   }
 }
 
@@ -168,17 +219,5 @@
       align-items: center;
       gap: 8px;
     }
-  }
-}
-
-.confirmation-action {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
-
-  .confirm-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
   }
 }

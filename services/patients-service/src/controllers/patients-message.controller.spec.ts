@@ -10,7 +10,10 @@ describe('PatientsMessageController', () => {
 
   const mockPatient: IPatientHistory = {
     cedula: '1020304050',
-    nombreCompleto: 'Laura Sofía Gómez',
+    nombre: 'Laura Sofía',
+    apellidos: 'Gómez',
+    correo: 'laura.gomez@example.com',
+    celular: '3001234567',
     ultimosProcedimientos: [],
     recomendaciones: 'Ninguna',
   };

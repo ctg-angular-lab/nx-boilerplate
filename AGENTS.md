@@ -57,6 +57,7 @@ Para preservar los límites arquitectónicos (`enforce-module-boundaries`), asig
 | `libs/shared/api-interfaces` | `["scope:shared", "type:contracts"]` | Interfaces compartidas cliente-servidor |
 | `libs/shared/dtos` | `["scope:backend", "type:dtos"]` | Validación de payload en runtime |
 | `libs/shared/theme`, `layouts` | `["scope:shared", "type:ui"]` | Estilos y presentación compartida |
+| `libs/shared/data-access` | `["scope:shared", "type:data-access"]` | Capa HTTP, interceptores y estado reactivo |
 
 ---
 
@@ -69,6 +70,7 @@ Antes de implementar código o documentar, debes invocar y seguir las reglas del
 | Componentes de UI Angular, Signals, MFE routing, Chart.js, tablas y formularios | `angular-ui-expert` | [.agents/skills/angular-ui-expert/SKILL.md](file:///.agents/skills/angular-ui-expert/SKILL.md) |
 | Tematización SCSS, Design Tokens MD3, paletas tonales, estilos de componentes | `md3-architecture` | [.agents/skills/md3-architecture/SKILL.md](file:///.agents/skills/md3-architecture/SKILL.md) |
 | Microservicios NestJS, RabbitMQ, DTOs de validación, servicios de dominio DDD | `nest-microservices` | [.agents/skills/nest-microservices/SKILL.md](file:///.agents/skills/nest-microservices/SKILL.md) |
+| Servicios HTTP, interceptores funcionales, estado reactivo RxJS→Signals, `rxResource` | `angular-data-expert` | [.agents/skills/angular-data-expert/SKILL.md](file:///.agents/skills/angular-data-expert/SKILL.md) |
 | Documentación técnica estandarizada de módulos, microservicios y features | `doc-architect` | [.agents/skills/doc-architect/SKILL.md](file:///.agents/skills/doc-architect/SKILL.md) |
 
 ### Comando Rápido de Documentación (`documentar :fileName`)
