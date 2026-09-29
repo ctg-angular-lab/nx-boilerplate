@@ -8,7 +8,9 @@ import {
   IPatientHistory,
   IProcedure,
   IProfessionalSummary,
+  CalendarDay,
 } from '@nx-boilerplate/api-interfaces';
+import { generateDaySlots } from '@nx-boilerplate/shared/utils';
 
 @Injectable({
   providedIn: 'root',
@@ -35,8 +37,81 @@ export class AppointmentLogicService {
   private readonly _procedures = signal<IProcedure[]>([]);
   readonly procedures = this._procedures.asReadonly();
 
+  /**
+   * Estado reactivo para la disponibilidad semanal del calendario (Mock / API)
+   * Patrón Signal Nativo con Visibilidad Encapsulada (#weekDays privado + weekDays público readonly)
+   */
+  readonly #weekDays = signal<CalendarDay[]>([]);
+  public readonly weekDays = this.#weekDays.asReadonly();
+
   constructor() {
     this.loadProcedures();
+  }
+
+  /**
+   * Carga declarativa y síncrona de la disponibilidad semanal usando utilidades compartidas
+   */
+  loadMockWeekAvailability(): void {
+    const days: CalendarDay[] = [
+      {
+        date: new Date(2026, 7, 24),
+        label: 'Lunes',
+        subLabel: '24 ago',
+        isToday: false,
+        isAvailable: true,
+        slots: generateDaySlots('lun', [1, 3, 7]),
+      },
+      {
+        date: new Date(2026, 7, 25),
+        label: 'Martes',
+        subLabel: '25 ago',
+        isToday: false,
+        isAvailable: true,
+        slots: generateDaySlots('mar', [2, 5, 8]),
+      },
+      {
+        date: new Date(2026, 7, 26),
+        label: 'Miércoles',
+        subLabel: '26 ago',
+        isToday: true,
+        isAvailable: true,
+        slots: generateDaySlots('mie', [0, 4, 9, 12]),
+      },
+      {
+        date: new Date(2026, 7, 27),
+        label: 'Jueves',
+        subLabel: '27 ago',
+        isToday: false,
+        isAvailable: true,
+        slots: generateDaySlots('jue', [3, 6, 11]),
+      },
+      {
+        date: new Date(2026, 7, 28),
+        label: 'Viernes',
+        subLabel: '28 ago',
+        isToday: false,
+        isAvailable: true,
+        slots: generateDaySlots('vie', [1, 4, 7, 10]),
+      },
+      {
+        date: new Date(2026, 7, 29),
+        label: 'Sábado',
+        subLabel: '29 ago',
+        isToday: false,
+        isAvailable: true,
+        slots: generateDaySlots('sab', [2, 5]),
+      },
+      {
+        date: new Date(2026, 7, 30),
+        label: 'Domingo',
+        subLabel: '30 ago',
+        isToday: false,
+        isAvailable: false,
+        slots: [],
+      },
+    ];
+
+    this.#weekDays.set(days);
   }
 
   /**

@@ -18,7 +18,7 @@ import { MatStepperModule } from '@angular/material/stepper';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
-import { Observable, filter, switchMap } from 'rxjs';
+import { filter, switchMap } from 'rxjs';
 import {
   StepCedulaComponent,
   StepPersonalInfoComponent,
