@@ -8,6 +8,20 @@
   gap: 24px;
 }
 
+.calendar-filters {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--sys-color-outline-variant, #e0e0e0);
+
+  &__select {
+    min-width: 320px;
+    max-width: 480px;
+    width: 100%;
+  }
+}
+
 .calendar-header {
   display: flex;
   align-items: center;
@@ -57,6 +71,19 @@
     background-color: var(--sys-color-surface-container-low, #f5f5f5);
     border-radius: 8px;
     padding: 2px;
+
+    .semana-ant,
+    .semana-post {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s ease, opacity 0.2s ease;
+
+      &:disabled {
+        opacity: 0.38;
+        cursor: not-allowed;
+      }
+    }
   }
 }
 

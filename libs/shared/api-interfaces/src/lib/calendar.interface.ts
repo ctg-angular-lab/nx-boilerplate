@@ -14,5 +14,18 @@ export interface CalendarDay {
   slots: TimeSlot[];
   isToday: boolean;
   isAvailable?: boolean;
+  isPast?: boolean;
+}
+
+export interface IAvailableWeekRange {
+  weekStart: string; // Formato ISO YYYY-MM-DD
+  weekEnd: string;   // Formato ISO YYYY-MM-DD
+  hasAvailableSlots: boolean;
+  totalAvailableSlots?: number;
+}
+
+export interface IAvailableWeekRangesResponse {
+  professionalCedula: string;
+  ranges: IAvailableWeekRange[];
 }
 

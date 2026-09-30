@@ -9,8 +9,13 @@ import {
   IProcedure,
   IProfessionalSummary,
   CalendarDay,
+  IAvailableWeekRange,
+  IAvailableWeekRangesResponse,
 } from '@nx-boilerplate/api-interfaces';
-import { generateDaySlots } from '@nx-boilerplate/shared/utils';
+import {
+  buildCalendarWeek,
+  getColombiaWeekRange,
+} from '@nx-boilerplate/shared/utils';
 
 @Injectable({
   providedIn: 'root',
@@ -44,73 +49,121 @@ export class AppointmentLogicService {
   readonly #weekDays = signal<CalendarDay[]>([]);
   public readonly weekDays = this.#weekDays.asReadonly();
 
+  /**
+   * Estado reactivo interno para el profesional médico activo en el calendario
+   */
+  readonly #activeProfessional = signal<IProfessionalSummary | null>(null);
+  public readonly activeProfessional = this.#activeProfessional.asReadonly();
+
+  /**
+   * Catálogo de profesionales médicos disponibles para selección
+   */
+  readonly #availableProfessionals = signal<IProfessionalSummary[]>([]);
+  public readonly availableProfessionals = this.#availableProfessionals.asReadonly();
+
   constructor() {
     this.loadProcedures();
+    this.loadMockProfessionals();
+  }
+
+  /**
+   * Carga el catálogo mock de profesionales médicos con sus horarios
+   */
+  loadMockProfessionals(): void {
+    const mockDoctors: IProfessionalSummary[] = [
+      {
+        cedula: '1098765432',
+        nombres: 'Camila',
+        apellidos: 'Botero Zuluaga',
+        email: 'cbotero@clinica.com',
+        profesion: 'Medicina General y Preventiva',
+        horarioTrabajo: {
+          diasLaborales: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
+          horaInicio: '08:00',
+          horaFin: '17:00',
+        },
+      },
+      {
+        cedula: '1012345678',
+        nombres: 'Alejandro',
+        apellidos: 'Mendoza Ruiz',
+        email: 'amendoza@clinica.com',
+        profesion: 'Especialista en Medicina Interna',
+        horarioTrabajo: {
+          diasLaborales: ['Lunes', 'Miércoles', 'Viernes', 'Sábado'],
+          horaInicio: '08:00',
+          horaFin: '14:00',
+        },
+      },
+      {
+        cedula: '1087654321',
+        nombres: 'Carlos',
+        apellidos: 'Restrepo Gómez',
+        email: 'crestrepo@clinica.com',
+        profesion: 'Cardiología Clínica',
+        horarioTrabajo: {
+          diasLaborales: ['Martes', 'Jueves', 'Viernes'],
+          horaInicio: '09:00',
+          horaFin: '18:00',
+        },
+      },
+    ];
+
+    this.#availableProfessionals.set(mockDoctors);
+    if (!this.#activeProfessional()) {
+      this.#activeProfessional.set(mockDoctors[0]);
+    }
+  }
+
+  /**
+   * Selecciona el profesional médico activo en el calendario
+   */
+  selectProfessional(professional: IProfessionalSummary): void {
+    this.#activeProfessional.set(professional);
+  }
+
+  /**
+   * Selecciona el profesional médico activo a partir de su número de cédula
+   */
+  selectProfessionalByCedula(cedula: string): void {
+    const doctor = this.#availableProfessionals().find((p) => p.cedula === cedula);
+    if (doctor) {
+      this.#activeProfessional.set(doctor);
+    }
+  }
+
+  /**
+   * Consulta los rangos de semanas futuras con disponibilidad para un profesional médico
+   */
+  getAvailableWeekRanges(professionalCedula: string): Observable<IAvailableWeekRangesResponse> {
+    return this.apiClient
+      .get<IAvailableWeekRangesResponse>(
+        `/api/appointments/available-weeks?professionalCedula=${professionalCedula}`
+      )
+      .pipe(
+        map((response) => response.data ?? { professionalCedula, ranges: [] }),
+        catchError((error) => {
+          console.warn(`Error al consultar rangos disponibles para cédula ${professionalCedula}:`, error);
+          return of({
+            professionalCedula,
+            ranges: [
+              { weekStart: '2026-09-28', weekEnd: '2026-10-04', hasAvailableSlots: true, totalAvailableSlots: 15 },
+              { weekStart: '2026-10-05', weekEnd: '2026-10-11', hasAvailableSlots: true, totalAvailableSlots: 12 },
+              { weekStart: '2026-10-12', weekEnd: '2026-10-18', hasAvailableSlots: false, totalAvailableSlots: 0 },
+              { weekStart: '2026-10-19', weekEnd: '2026-10-25', hasAvailableSlots: true, totalAvailableSlots: 8 },
+            ],
+          });
+        })
+      );
   }
 
   /**
    * Carga declarativa y síncrona de la disponibilidad semanal usando utilidades compartidas
+   * con cálculo dinámico en la zona horaria de Colombia.
    */
-  loadMockWeekAvailability(): void {
-    const days: CalendarDay[] = [
-      {
-        date: new Date(2026, 7, 24),
-        label: 'Lunes',
-        subLabel: '24 ago',
-        isToday: false,
-        isAvailable: true,
-        slots: generateDaySlots('lun', [1, 3, 7]),
-      },
-      {
-        date: new Date(2026, 7, 25),
-        label: 'Martes',
-        subLabel: '25 ago',
-        isToday: false,
-        isAvailable: true,
-        slots: generateDaySlots('mar', [2, 5, 8]),
-      },
-      {
-        date: new Date(2026, 7, 26),
-        label: 'Miércoles',
-        subLabel: '26 ago',
-        isToday: true,
-        isAvailable: true,
-        slots: generateDaySlots('mie', [0, 4, 9, 12]),
-      },
-      {
-        date: new Date(2026, 7, 27),
-        label: 'Jueves',
-        subLabel: '27 ago',
-        isToday: false,
-        isAvailable: true,
-        slots: generateDaySlots('jue', [3, 6, 11]),
-      },
-      {
-        date: new Date(2026, 7, 28),
-        label: 'Viernes',
-        subLabel: '28 ago',
-        isToday: false,
-        isAvailable: true,
-        slots: generateDaySlots('vie', [1, 4, 7, 10]),
-      },
-      {
-        date: new Date(2026, 7, 29),
-        label: 'Sábado',
-        subLabel: '29 ago',
-        isToday: false,
-        isAvailable: true,
-        slots: generateDaySlots('sab', [2, 5]),
-      },
-      {
-        date: new Date(2026, 7, 30),
-        label: 'Domingo',
-        subLabel: '30 ago',
-        isToday: false,
-        isAvailable: false,
-        slots: [],
-      },
-    ];
-
+  loadMockWeekAvailability(offsetWeeks = 0): void {
+    const week = getColombiaWeekRange(offsetWeeks);
+    const days = buildCalendarWeek(week.days);
     this.#weekDays.set(days);
   }
 

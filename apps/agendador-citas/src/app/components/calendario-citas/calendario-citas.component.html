@@ -1,8 +1,25 @@
 <section class="calendar-card">
-  <!-- Cabecera del Calendario (Fase 1) -->
+  <!-- Cabecera de Filtros -->
+  <div class="calendar-filters">
+    <mat-form-field appearance="outline" class="calendar-filters__select" subscriptSizing="dynamic">
+      <mat-label>Profesional médico</mat-label>
+      <mat-select
+        [value]="activeProfessional()?.cedula"
+        (selectionChange)="onProfessionalChange($event.value)"
+      >
+        @for (doctor of availableProfessionals(); track doctor.cedula) {
+          <mat-option [value]="doctor.cedula">
+            {{ doctor.nombres }} {{ doctor.apellidos }} — {{ doctor.profesion }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <!-- Cabecera del Calendario -->
   <header class="calendar-header">
     <div class="calendar-header__info">
-      <h3 class="calendar-header__title">{{ title() }}</h3>
+      <h3 class="calendar-header__title">{{ calendarTitle() }}</h3>
       <p class="calendar-header__range">{{ currentDateRange() }}</p>
     </div>
 
@@ -11,6 +28,7 @@
         mat-stroked-button
         type="button"
         class="calendar-header__btn-today"
+        [disabled]="isCurrentWeek()"
         (click)="goToToday()"
       >
         Hoy
@@ -20,7 +38,9 @@
         <button
           mat-icon-button
           type="button"
+          class="semana-ant"
           aria-label="Semana anterior"
+          [disabled]="isCurrentWeek()"
           (click)="previousWeek()"
         >
           <mat-icon class="material-symbols-outlined">chevron_left</mat-icon>
@@ -29,6 +49,7 @@
         <button
           mat-icon-button
           type="button"
+          class="semana-post"
           aria-label="Semana siguiente"
           (click)="nextWeek()"
         >
