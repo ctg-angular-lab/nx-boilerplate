@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
-import { IProcedure, IProfessionalSummary } from '@nx-boilerplate/api-interfaces';
+import {
+  IActiveProfessional,
+  IProcedure,
+  IProfessionalSummary,
+} from '@nx-boilerplate/api-interfaces';
 import { ProceduresRepository } from '../repositories/procedures.repository';
 
 @Injectable()
@@ -54,6 +58,10 @@ export class ProceduresDomainService {
       profesion: doc.profesion,
       horarioTrabajo: doc.horarioTrabajo,
     }));
+  }
+
+  async getAllDoctors(): Promise<IActiveProfessional[]> {
+    return this.proceduresRepository.findAllDoctors();
   }
 }
 

@@ -49,6 +49,14 @@ export class ProceduresRepository {
       .exec();
   }
 
+  async findAllDoctors(): Promise<IActiveProfessional[]> {
+    return this.professionalModel
+      .find()
+      .select('-_id -__v -createdAt -updatedAt')
+      .lean<IActiveProfessional[]>()
+      .exec();
+  }
+
   async count(): Promise<number> {
     return this.procedureModel.countDocuments().exec();
   }

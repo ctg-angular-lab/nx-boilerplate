@@ -135,6 +135,63 @@
           }
         },
         {
+          "name": "04b - Listar Todos los Especialistas Activos (Catálogo General)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/doctors",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "doctors"
+              ]
+            },
+            "description": "Obtiene el catálogo completo de profesionales activos registrados en la colección profesionalesActivos (MongoDB Atlas). Retorna el documento completo con cédula, nombres, email, profesión, procedimientos relacionados y horario laboral detallado."
+          },
+          "response": [
+            {
+              "name": "200 OK - Listado Completo de Especialistas",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/doctors",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "doctors"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"Operación realizada exitosamente\",\n  \"data\": [\n    {\n      \"cedula\": \"52890123\",\n      \"nombres\": \"Mariana\",\n      \"apellidos\": \"Botero Giraldo\",\n      \"fechaNacimiento\": \"1991-01-21\",\n      \"email\": \"marianabotero1991@gmail.com\",\n      \"profesion\": \"Médica Especialista en Medicina Estética y Rejuvenecimiento Facial\",\n      \"procedimientosRelacionados\": [\n        \"PROC-EST-001\",\n        \"PROC-EST-002\",\n        \"PROC-EST-005\"\n      ],\n      \"horarioTrabajo\": {\n        \"diasLaborales\": [\n          \"LUNES\",\n          \"MIERCOLES\",\n          \"VIERNES\"\n        ],\n        \"horaInicio\": \"08:00\",\n        \"horaFin\": \"17:00\",\n        \"recesoAlmuerzo\": {\n          \"inicio\": \"12:30\",\n          \"fin\": \"13:30\"\n        }\n      }\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
           "name": "05 - Disponibilidad Semanal por Rango (Paso 4 - Rango)",
           "request": {
             "method": "GET",

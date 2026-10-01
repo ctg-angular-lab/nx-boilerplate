@@ -9,7 +9,6 @@ import {
   IProcedure,
   IProfessionalSummary,
   CalendarDay,
-  IAvailableWeekRange,
   IAvailableWeekRangesResponse,
 } from '@nx-boilerplate/api-interfaces';
 import {
@@ -63,56 +62,29 @@ export class AppointmentLogicService {
 
   constructor() {
     this.loadProcedures();
-    this.loadMockProfessionals();
+    this.fetchActiveProfessionals();
   }
 
   /**
-   * Carga el catálogo mock de profesionales médicos con sus horarios
+   * Consulta el catálogo de especialistas activos desde el API Gateway (GET /api/doctors)
+   * y establece el primer especialista como seleccionado por defecto si aún no hay ninguno activo.
    */
-  loadMockProfessionals(): void {
-    const mockDoctors: IProfessionalSummary[] = [
-      {
-        cedula: '1098765432',
-        nombres: 'Camila',
-        apellidos: 'Botero Zuluaga',
-        email: 'cbotero@clinica.com',
-        profesion: 'Medicina General y Preventiva',
-        horarioTrabajo: {
-          diasLaborales: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
-          horaInicio: '08:00',
-          horaFin: '17:00',
-        },
-      },
-      {
-        cedula: '1012345678',
-        nombres: 'Alejandro',
-        apellidos: 'Mendoza Ruiz',
-        email: 'amendoza@clinica.com',
-        profesion: 'Especialista en Medicina Interna',
-        horarioTrabajo: {
-          diasLaborales: ['Lunes', 'Miércoles', 'Viernes', 'Sábado'],
-          horaInicio: '08:00',
-          horaFin: '14:00',
-        },
-      },
-      {
-        cedula: '1087654321',
-        nombres: 'Carlos',
-        apellidos: 'Restrepo Gómez',
-        email: 'crestrepo@clinica.com',
-        profesion: 'Cardiología Clínica',
-        horarioTrabajo: {
-          diasLaborales: ['Martes', 'Jueves', 'Viernes'],
-          horaInicio: '09:00',
-          horaFin: '18:00',
-        },
-      },
-    ];
-
-    this.#availableProfessionals.set(mockDoctors);
-    if (!this.#activeProfessional()) {
-      this.#activeProfessional.set(mockDoctors[0]);
-    }
+  fetchActiveProfessionals(): void {
+    this.apiClient
+      .get<IProfessionalSummary[]>('/api/doctors')
+      .pipe(
+        map((response) => response.data ?? []),
+        catchError((error) => {
+          console.error('Error al cargar profesionales activos desde API Gateway:', error);
+          return of([]);
+        })
+      )
+      .subscribe((doctors) => {
+        this.#availableProfessionals.set(doctors);
+        if (doctors.length > 0 && !this.#activeProfessional()) {
+          this.#activeProfessional.set(doctors[0]);
+        }
+      });
   }
 
   /**

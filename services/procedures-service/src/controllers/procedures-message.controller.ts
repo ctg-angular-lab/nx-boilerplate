@@ -1,6 +1,10 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { IProcedure, IProfessionalSummary } from '@nx-boilerplate/api-interfaces';
+import {
+  IActiveProfessional,
+  IProcedure,
+  IProfessionalSummary,
+} from '@nx-boilerplate/api-interfaces';
 import {
   FindProcedureByIdDto,
   FindProceduresByDoctorDto,
@@ -37,6 +41,11 @@ export class ProceduresMessageController {
     return this.proceduresDomainService.getDoctorsByProcedureId(
       payload.idProcedimiento
     );
+  }
+
+  @MessagePattern('doctors.get-all')
+  async getAllDoctors(): Promise<IActiveProfessional[]> {
+    return this.proceduresDomainService.getAllDoctors();
   }
 }
 

@@ -4,6 +4,7 @@ import { HealthController } from './controllers/health.controller';
 import { PatientsController } from './controllers/patients.controller';
 import { AppointmentsController } from './controllers/appointments.controller';
 import { ProceduresController } from './controllers/procedures.controller';
+import { DoctorsController } from './controllers/doctors.controller';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { ProceduresController } from './controllers/procedures.controller';
     PatientsController,
     AppointmentsController,
     ProceduresController,
+    DoctorsController,
   ],
 })
 export class AppModule {}
