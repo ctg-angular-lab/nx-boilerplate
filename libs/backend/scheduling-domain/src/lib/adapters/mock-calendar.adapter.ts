@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
   ICalendarProvider,
-  ITimeSlot,
+  ICalendarBusyResult,
   ICreateAppointmentEvent,
 } from '../ports/calendar-provider.port';
 
@@ -9,7 +9,7 @@ import {
 export class MockCalendarAdapter implements ICalendarProvider {
   private readonly logger = new Logger(MockCalendarAdapter.name);
 
-  async getBusyIntervals(calendarEmail: string, fromDate: Date, toDate: Date): Promise<ITimeSlot[]> {
+  async getBusyIntervals(calendarEmail: string, fromDate: Date, toDate: Date): Promise<ICalendarBusyResult> {
     this.logger.log(
       `[MockCalendar] Retornando slots ocupados simulados para ${calendarEmail} entre ${fromDate.toISOString()} y ${toDate.toISOString()}`
     );
@@ -20,7 +20,7 @@ export class MockCalendarAdapter implements ICalendarProvider {
     const lunchEnd = new Date(fromDate);
     lunchEnd.setHours(13, 0, 0, 0);
 
-    return [{ start: lunchStart, end: lunchEnd }];
+    return { intervals: [{ start: lunchStart, end: lunchEnd }], isSynced: true };
   }
 
   async createEvent(eventData: ICreateAppointmentEvent): Promise<string> {

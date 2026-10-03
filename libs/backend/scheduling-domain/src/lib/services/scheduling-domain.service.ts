@@ -56,10 +56,12 @@ export class SchedulingDomainService {
     lunchEnd.setHours(13, 0, 0, 0);
 
     // 2. Consultar intervalos ocupados en Google Calendar y MongoDB en paralelo
-    const [googleBusy, mongoAppointments] = await Promise.all([
+    const [calendarResult, mongoAppointments] = await Promise.all([
       this.calendarProvider.getBusyIntervals(doctorEmail, workStart, workEnd),
       this.appointmentRepository.findByDoctorAndDateRange(doctorEmail, workStart, workEnd),
     ]);
+
+    const googleBusy = calendarResult.intervals;
 
     // Consolidar todos los intervalos de bloqueo
     const allBusyIntervals: ITimeSlot[] = [
@@ -119,10 +121,12 @@ export class SchedulingDomainService {
     rangeEnd.setHours(23, 59, 59, 999);
 
     // 2. Consulta ÚNICA a Google Calendar y MongoDB para todo el rango
-    const [googleBusy, mongoAppointments] = await Promise.all([
+    const [calendarResult, mongoAppointments] = await Promise.all([
       this.calendarProvider.getBusyIntervals(doctorEmail, rangeStart, rangeEnd),
       this.appointmentRepository.findByDoctorAndDateRange(doctorEmail, rangeStart, rangeEnd),
     ]);
+
+    const { intervals: googleBusy, isSynced: isCalendarSynced } = calendarResult;
 
     const allBusyIntervals: ITimeSlot[] = [
       ...googleBusy,
@@ -203,6 +207,7 @@ export class SchedulingDomainService {
         date: dateStr,
         dayName,
         slots: daySlots,
+        isCalendarSynced,
       });
 
       // Avanzar al siguiente día
@@ -222,7 +227,7 @@ export class SchedulingDomainService {
     const end = new Date(command.endTime);
 
     // 1. Validar que el intervalo no choque con eventos existentes
-    const busyIntervals = await this.calendarProvider.getBusyIntervals(command.doctorEmail, start, end);
+    const { intervals: busyIntervals } = await this.calendarProvider.getBusyIntervals(command.doctorEmail, start, end);
     const hasCollision = busyIntervals.some(
       (busy) => start.getTime() < busy.end.getTime() && end.getTime() > busy.start.getTime()
     );

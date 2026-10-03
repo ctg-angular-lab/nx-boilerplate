@@ -8,6 +8,11 @@ export interface IDayAvailability {
   date: string;
   dayName: string;
   slots: ISlotDisplay[];
+  /**
+   * true  → el calendario del doctor está sincronizado con el bot (datos de Google Calendar reales)
+   * false → el bot no tiene acceso al calendario del doctor
+   */
+  isCalendarSynced: boolean;
 }
 
 export interface IGetAvailableDatesRequest {
@@ -57,4 +62,11 @@ export interface ICreateWaitlistRequest {
   correo: string;
   celular: string;
   procedimientoId: string;
+}
+
+export interface IWeekWindow {
+  startDate: string;   // YYYY-MM-DD (nunca domingo)
+  endDate: string;     // YYYY-MM-DD (siempre sábado de la semana calculada)
+  totalDays: number;   // 1 a 6 días
+  offsetWeeks: number; // 0 = semana actual, 1 = siguiente, -1 = anterior
 }

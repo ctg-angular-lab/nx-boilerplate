@@ -37,6 +37,9 @@ html, :root {
   @include mat.system-level-typography($corporate-theme);
   @include mat.all-component-themes($corporate-theme);
 
+  // Tipografía base global del sistema MD3 (heredable por todos los elementos de texto)
+  font-family: var(--mat-sys-body-medium-font, vars.$plain-font-family);
+
   // Mapeo canónico de Design Tokens Corporativos (--sys-color-*) a MD3
   --sys-color-primary: var(--mat-sys-primary, #1e4ba8);
   --sys-color-on-primary: var(--mat-sys-on-primary, #ffffff);

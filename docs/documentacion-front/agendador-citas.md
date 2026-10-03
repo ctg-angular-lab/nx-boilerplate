@@ -1,20 +1,19 @@
-# Agendador de Citas (MFE Remote)
+# Agendador de Citas
 
-> **Ficha Técnica del Módulo**  
-> * **Ubicación en Monorepo:** `apps/agendador-citas`  
-> * **Tipo de Módulo:** Microfrontend Angular 21+ (Remote Standalone en Module Federation)  
-> * **Tags Nx (`project.json`):** `["scope:frontend", "type:app"]`  
-> * **Puerto Dev Local:** `4201` (`http://localhost:4201`)  
-> * **Host Principal:** `app-shell` (`http://localhost:4200`)  
-> * **Estado:** Activo (Fase de Maquetación UI / Stepper Reactivo)  
+> **Ficha Técnica del Módulo**
+> * **Ubicación en Monorepo:** `apps/agendador-citas`
+> * **Tipo de Módulo:** Microfrontend Angular — Remote MFE (Module Federation)
+> * **Tags Nx (`project.json`):** `["scope:frontend", "type:app"]`
+> * **Puerto de desarrollo:** `4201`
+> * **Estado:** Activo
 
 ---
 
 ## 1. Propósito y Alcance de Negocio
 
-La aplicación **`agendador-citas`** es un microfrontend (Remote MFE) autónomo responsable de toda la experiencia de usuario orientada al autoservicio y gestión asistida de citas para procedimientos médicos y estéticos.
+El MFE **Agendador de Citas** es el Remote principal que gestiona todo el flujo de agendamiento de citas médicas desde la perspectiva del paciente o del operador clínico. Permite seleccionar un profesional médico, visualizar su disponibilidad semanal real (sincronizada con Google Calendar y MongoDB Atlas) y agendar una cita en el horario elegido.
 
-Su objetivo principal es guiar al paciente a través de un embudo conversacional estructurado (Stepper reactivo) que valida su identidad, recupera y muestra sus antecedentes clínicos previos, permite la selección ágil del procedimiento deseado y facilita la reserva en tiempo real de turnos disponibles sincronizados con Google Calendar y MongoDB Atlas, contemplando mecanismos de resiliencia como la suscripción a listas de espera reactivas en caso de no hallar disponibilidad.
+La arquitectura reactiva basada en **Signals** y un único **Single Source of Truth (SSOT)** (`AppointmentLogicService`) garantiza que la UI siempre refleje el estado real del sistema sin suscripciones manuales ni lógica duplicada en los componentes.
 
 ---
 
@@ -22,219 +21,253 @@ Su objetivo principal es guiar al paciente a través de un embudo conversacional
 
 ```mermaid
 graph TD
-    subgraph Host [Host Shell :4200]
-        AppShell[App Shell Host]
-        ShellNav[Navegación / Sidebar]
-    end
+    Shell["app-shell\n(Host MFE)"]
+    Remote["agendador-citas\nRemote Entry / Routes"]
+    SSOT["AppointmentLogicService\nSSOT — Signals + effect()"]
+    CalComp["CalendarioCitasComponent\nSmart UI"]
+    API["API Gateway\nhttp://localhost:3000/api"]
+    GC["Google Calendar API\n(via scheduling-service)"]
+    Mongo["MongoDB Atlas\n(via scheduling-service)"]
 
-    subgraph MFERemote [Remote MFE: agendador-citas :4201]
-        EntryRoutes[entry.routes.ts /Routes]
-        RemoteEntry[RemoteEntryComponent - TabsCollection]
-
-        subgraph Tabs [Vistas en Pestañas]
-            Tab1[Tab 1: Agendar Cita]
-            Tab2[Tab 2: Calendario]
-            Tab3[Tab 3: Directorio Profesionales]
-        end
-
-        subgraph SmartApp [Smart Orchestrator]
-            AgendarCita[AgendarCitaComponent: Stepper 3 Pasos]
-        end
-
-        subgraph Modals [Diálogos MatDialog]
-            ModalConfirm[ConfirmationModalComponent: Reserva]
-            ModalWait[ConfirmationModalComponent: Waitlist]
-        end
-    end
-
-    subgraph SharedDumb [libs/shared/layouts - Dumb Components]
-        Step1[StepCedulaComponent]
-        Step2[StepPersonalInfoComponent]
-        Step3[StepProcedureSelectionComponent]
-    end
-
-    subgraph BackendGateway [services/api-gateway :3000/api]
-        Gateway[API Gateway HTTP]
-    end
-
-    AppShell -->|Module Federation loadRemote| EntryRoutes
-    ShellNav -->|Ruta /agendador-citas| RemoteEntry
-    EntryRoutes --> RemoteEntry
-    RemoteEntry --> Tab1
-    RemoteEntry --> Tab2
-    RemoteEntry --> Tab3
-
-    Tab1 --> AgendarCita
-    AgendarCita --> Step1
-    AgendarCita --> Step2
-    AgendarCita --> Step3
-    AgendarCita --> ModalConfirm
-    AgendarCita --> ModalWait
-
-    Step1 -.->|Signals: stepForm| AgendarCita
-    Step2 -.->|Signals: form / history| AgendarCita
-    Step3 -.->|Signals: dates / submitAppointment / joinWaitlist| AgendarCita
-
-    AgendarCita -.->|Pendiente Integración HTTP| Gateway
+    Shell -->|Lazy load Module Federation| Remote
+    Remote --> CalComp
+    CalComp -->|inject()| SSOT
+    SSOT -->|GET /api/appointments/available-dates| API
+    SSOT -->|GET /api/doctors| API
+    SSOT -->|GET /api/procedures| API
+    API -->|appointments.get-available-dates RMQ| GC
+    API -->|appointments.get-available-dates RMQ| Mongo
+    GC -->|isSynced + busyIntervals| API
+    API -->|IDayAvailability[]| SSOT
+    SSOT -->|weekDays Signal| CalComp
 ```
 
 ---
 
-## 3. Contratos de Datos, Modelos e Interfaces
+## 3. Estado Reactivo — Signals (SSOT)
 
-### A. Interfaces de Presentación UI (`@nx-boilerplate/layouts`)
+El `AppointmentLogicService` es el **único responsable** de la lógica de estado de la feature. Los componentes solo leen Signals públicos de solo lectura (`asReadonly()`).
 
-Definidas en `libs/shared/layouts/src/lib/models/appointment-steps.models.ts`:
+### Signals Públicos
 
-| Interfaz | Campos Principales | Propósito |
+| Signal | Tipo | Descripción |
 |---|---|---|
-| `PatientHistory` | `cedula`, `nombreCompleto`, `ultimosProcedimientos`, `recomendaciones` | Datos clínicos y antecedentes del paciente para el paso 2. |
-| `ProcedureItem` | `id`, `nombre`, `fecha`, `profesional` | Procedimiento previo registrado en el historial médico. |
-| `AvailableDate` | `id`, `fecha`, `hora`, `profesional?`, `disponible` | Slot horario para selección de turnos en el paso 3. |
-| `MedicalProcedureOption`| `id`, `nombre`, `duracion`, `especialidad` | Opción del catálogo para el autocompletado en el paso 3. |
-| `TabItemConfig` | `id`, `label`, `icon`, `disabled`, `contentTemplate` | Configuración para `TabsCollectionComponent`. |
-| `ConfirmationModalData<T>`| `title`, `text`, `actions` | Payload genérico para `ConfirmationModalComponent`. |
+| `weekDays` | `Signal<CalendarDay[]>` | Disponibilidad semanal computada (grilla completa con slots disponibles y reservados) |
+| `activeProfessional` | `Signal<IProfessionalSummary \| null>` | Médico actualmente seleccionado en el calendario |
+| `availableProfessionals` | `Signal<IProfessionalSummary[]>` | Catálogo completo de especialistas activos |
+| `isLoadingCalendar` | `Signal<boolean>` | Estado de carga del fetch de disponibilidad semanal |
+| `currentWeekOffset` | `Signal<number>` | Offset de semana (0 = actual, 1 = siguiente, -1 = anterior) |
+| `procedures` | `Signal<IProcedure[]>` | Catálogo de procedimientos médicos |
+| `patientHistory` | `Signal<IPatientHistory \| null>` | Historial del paciente consultado |
 
-### B. Mapeo hacia Contratos Canónicos del Backend (`@nx-boilerplate/api-interfaces`)
+### Signals Privados (con `#`)
 
-Para la conexión definitiva con los microservicios y el API Gateway, la capa de datos mapeará las interfaces visuales a los contratos globales:
+| Signal | Descripción |
+|---|---|
+| `#currentWeekOffset` | Fuente de verdad del offset de semana (solo mutable internamente) |
+| `#isLoadingCalendar` | Control de estado de carga |
+| `#weekDays` | Estado de la grilla semanal (solo escritura interna) |
+| `#activeProfessional` | Médico activo (solo escritura interna) |
+| `#availableProfessionals` | Catálogo de médicos (solo escritura interna) |
 
-| Contrato Backend | Ubicación en Monorepo | Endpoint API Gateway |
+### Reactivity — `effect()`
+
+```typescript
+// En el constructor del servicio
+effect(() => {
+  const doctor = this.#activeProfessional();
+  const offset = this.#currentWeekOffset();
+  if (doctor?.email) {
+    this.#fetchCalendarWeek(doctor.email, offset);
+  }
+});
+```
+
+Cada vez que cambia `#activeProfessional` o `#currentWeekOffset`, el `effect` dispara automáticamente `#fetchCalendarWeek` sin intervención del componente.
+
+---
+
+## 4. Contratos de Datos e Interfaces
+
+### A. Interfaces de Contrato (`@nx-boilerplate/api-interfaces`)
+
+| Interfaz | Propósito |
+|---|---|
+| `CalendarDay` | Día del calendario: `date`, `label`, `subLabel`, `slots[]`, `isToday`, `isPast`, `isAvailable`, `isCalendarSynced?`, `doctorEmail?` |
+| `TimeSlot` | Slot de tiempo: `id`, `time`, `status`, `reservedBy?`, `mergedCount?` |
+| `SlotStatus` | Union type: `'disponible' \| 'reservado' \| 'seleccionado'` |
+| `IDayAvailability` | Respuesta del backend por día: `date`, `dayName`, `slots[]`, `isCalendarSynced` |
+| `ISlotDisplay` | Slot crudo del backend: `startTime`, `endTime`, `display` |
+| `IProfessionalSummary` | Médico: `nombres`, `apellidos`, `cedula`, `email`, `profesion` |
+| `IProcedure` | Procedimiento médico con `id`, `nombre`, `duracion`, `especialidad` |
+
+### B. API de Signals del `CalendarioCitasComponent` (Smart Component)
+
+| Propiedad / Computed | Tipo | Descripción |
 |---|---|---|
-| `IPatientHistory` | `libs/shared/api-interfaces/src/lib/patient.interface.ts` | `GET /api/patients/:id/history` |
-| `IProcedure` | `libs/shared/api-interfaces/src/lib/procedure.interface.ts` | `GET /api/procedures` |
-| `IProfessionalSummary` | `libs/shared/api-interfaces/src/lib/procedure.interface.ts` | `GET /api/procedures/:id/doctors` |
-| `IAvailableDate` / `IDayAvailability` | `libs/shared/api-interfaces/src/lib/appointment.interface.ts` | `GET /api/appointments/available-dates` |
-| `ICreateAppointmentRequest` | `libs/shared/api-interfaces/src/lib/appointment.interface.ts` | `POST /api/appointments` |
-| `ICreateWaitlistRequest` | `libs/shared/api-interfaces/src/lib/appointment.interface.ts` | `POST /api/appointments/waitlist` |
-| `IApiResponse<T>` | `libs/shared/api-interfaces/src/lib/api-response.interface.ts` | Envoltorio estándar (Envelope Pattern) |
+| `weekDays` | `Signal<CalendarDay[]>` | Inyectado directo del SSOT |
+| `activeProfessional` | `Signal<IProfessionalSummary\|null>` | Inyectado del SSOT |
+| `availableProfessionals` | `Signal<IProfessionalSummary[]>` | Inyectado del SSOT |
+| `isLoading` | `Signal<boolean>` | Alias de `isLoadingCalendar` del SSOT |
+| `selectedSlot` | `Signal<TimeSlot\|null>` | Estado local del slot seleccionado |
+| `calendarTitle` | `computed()` | Título del calendario con nombre del médico activo |
+| `currentDateRange` | `computed()` | Rango de fechas de la semana visible (`"5 oct - 10 oct de 2026"`) |
+| `isCurrentWeek` | `computed()` | `true` cuando `currentWeekOffset === 0` |
 
 ---
 
-## 4. Estructura de Vistas y Componentes
+## 5. Lógica de Disponibilidad — Pipeline Interno
 
-### A. Vista Contenedora: `RemoteEntryComponent`
-* **Ubicación:** `apps/agendador-citas/src/app/remote-entry/remote-entry.component.ts`
-* **Mecanismo:** Consume `TabsCollectionComponent` proyectando 3 `ng-template` independientes mediante `viewChild()` y un `computed()` puro:
-  1. `appointmentTab`: Incrusta `<app-agendar-cita />`.
-  2. `calendarTab`: Incrusta `<app-calendario-citas />` (vista de calendario).
-  3. `professionalsTab`: Incrusta `<app-lista-profesionales />` (directorio de médicos).
+El método `#fetchCalendarWeek` ejecuta el siguiente pipeline tras cada cambio de médico u offset:
 
-### B. Orquestador Principal: `AgendarCitaComponent`
-* **Ubicación:** `apps/agendador-citas/src/app/components/agendar-cita/agendar-cita.component.ts`
-* **Patrón:** Smart Component con `ChangeDetectionStrategy.OnPush` y formulación reactiva fuertemente tipada con `FormBuilder`.
-* **Estructura del Stepper:**
-  * **Paso 1 (Identificación):**
-    * Componente: `StepCedulaComponent` (`input.required<FormGroup>()`).
-    * Validación: Requerido y regex numérico (`Validators.pattern(/^[0-9]+$/)`).
-    * Acción: `verifyCedula()` comprueba el documento y precarga reactivamente los datos del paciente y el historial.
-  * **Paso 2 (Datos del Paciente):**
-    * Componente: `StepPersonalInfoComponent`.
-    * Inputs: `form` (`FormGroup`), `history` (`PatientHistory | null`).
-    * Controles: `nombre`, `apellidos`, `correo`, `celular`, `recordatorioWhatsapp`.
-    * Visualización: Resumen del historial médico con badge de tratamientos anteriores y recomendaciones clínicas.
-  * **Paso 3 (Procedimiento y Fecha):**
-    * Componente: `StepProcedureSelectionComponent`.
-    * Inputs: `form` (`FormGroup`), `dates` (`AvailableDate[]`).
-    * Outputs: `submitAppointment` (dispara modal de reserva), `joinWaitlist` (dispara modal de lista de espera).
-    * Autocompletado: Búsqueda reactiva con `MatAutocomplete` filtrando catálogo de procedimientos.
-  * **Modales y Diálogos:**
-    * Inyecta `MatDialog` vía `inject(MatDialog)`.
-    * Presenta confirmaciones con `ConfirmationModalComponent` con tipado estricto `ConfirmationModalData<boolean>`.
-
-### C. Componentes de Consulta (Placeholders Actuales):
-* **`CalendarioCitasComponent`:** Base visual para agenda semanal y mensual de turnos.
-* **`ListaProfesionalesComponent`:** Directorio médico para consultar perfiles y horarios de trabajo de los doctores facultados.
-
----
-
-## 5. Puntos de Entrada y Configuración Module Federation
-
-### A. Exposición MFE (`module-federation.config.ts`)
-```typescript
-import { ModuleFederationConfig } from '@nx/module-federation';
-
-const config: ModuleFederationConfig = {
-  name: 'agendador-citas',
-  exposes: {
-    './Routes': 'apps/agendador-citas/src/app/remote-entry/entry.routes.ts',
-  },
-};
-
-export default config;
+```
+1. API Gateway → GET /api/appointments/available-dates
+         ↓
+2. IDayAvailability[] (con isCalendarSynced por día)
+         ↓
+3. Por cada día (Lunes–Sábado):
+   ├── isSunday || isPast? → { isAvailable: false, slots: [] }
+   ├── isCalendarSynced === false? → { isCalendarSynced: false, doctorEmail }
+   └── Normal:
+       ├── Generar grilla completa #generateDailySlotGrid()
+       │   → 14 slots: 07:00–19:00, 45 min, excluyendo almuerzo 12:00–13:00
+       ├── Comparar contra Set de displays disponibles del backend
+       ├── Marcar disponible / reservado
+       └── #mergeConsecutiveBusySlots() → fusionar bloques reservados consecutivos
 ```
 
-### B. Enrutamiento Remoto (`entry.routes.ts`)
-```typescript
-import { Route } from '@angular/router';
-import { RemoteEntryComponent } from './remote-entry.component';
+### `#generateDailySlotGrid()` — Grilla Canónica Diaria
 
-export const remoteRoutes: Route[] = [
-  { path: '', component: RemoteEntryComponent },
-];
+Genera los **14 slots laborales** en hora Colombia:
+
+| Horario (COL) | Nota |
+|---|---|
+| 07:00 – 07:45 | |
+| 07:45 – 08:30 | |
+| 08:30 – 09:15 | |
+| 09:15 – 10:00 | |
+| 10:00 – 10:45 | |
+| 10:45 – 11:30 | |
+| ~~11:30 – 12:15~~ | Excluido (solapa con almuerzo) |
+| ~~12:15 – 13:00~~ | Excluido (solapa con almuerzo) |
+| 13:00 – 13:45 | |
+| 13:45 – 14:30 | |
+| 14:30 – 15:15 | |
+| 15:15 – 16:00 | |
+| 16:00 – 16:45 | |
+| 16:45 – 17:30 | |
+| 17:30 – 18:15 | |
+| 18:15 – 19:00 | |
+
+### `#mergeConsecutiveBusySlots()` — Fusión de Bloques Ocupados
+
+Los slots `reservado` consecutivos se fusionan en un único bloque con rango combinado y `mergedCount` para el template:
+
 ```
-
-### C. Consumo desde `app-shell` (`app-shell/src/app/app.routes.ts`)
-```typescript
-import { Route } from '@angular/router';
-import { loadRemote } from '@module-federation/enhanced/runtime';
-
-export const appRoutes: Route[] = [
-  {
-    path: 'agendador-citas',
-    loadChildren: () =>
-      loadRemote<typeof import('agendador-citas/Routes')>(
-        'agendador-citas/Routes'
-      ).then((m) => m!.remoteRoutes),
-  },
-];
+[13:00-13:45 reservado] + [13:45-14:30 reservado] + [14:30-15:15 reservado]
+         ↓
+[13:00-15:15 reservado, mergedCount: 3]
 ```
 
 ---
 
-## 6. Dependencias y Límites Arquitectónicos (Nx)
+## 6. Estados Visuales del Calendario
 
-### A. Dependencias Consumidas
-* **`@nx-boilerplate/layouts`:** Componentes de presentación (Dumb UI): `TabsCollectionComponent`, `StepCedulaComponent`, `StepPersonalInfoComponent`, `StepProcedureSelectionComponent`, `ConfirmationModalComponent`.
-* **`@nx-boilerplate/theme`:** Sistema de diseño MD3 (`--sys-color-*`, tipografía, iconos `material-symbols-outlined`).
-* **Angular Material:** `@angular/material/stepper`, `@angular/material/button`, `@angular/material/icon`, `@angular/material/dialog`, `@angular/material/form-field`, `@angular/material/input`, `@angular/material/autocomplete`, `@angular/material/card`.
+### Columna de Día
 
-### B. Límites Arquitectónicos
-* **Scope Frontend:** Etiquetado con `["scope:frontend", "type:app"]`. No puede importar directamente módulos de backend (`libs/backend/*` o `services/*`).
-* **Zoneless & Signals:** Configurado con `provideZonelessChangeDetection()` en `app.config.ts`.
-* **Zero-Legacy:** Prohibido el uso de constructores de inyección (`inject()` mandatorio) y decoradores `@Input()` / `@Output()` (Signals obligatorios).
+| Estado | Condición | Visualización |
+|---|---|---|
+| **Disponible** | `isAvailable: true` | Columna normal con grilla de slots |
+| **No disponible** | `isAvailable: false` (pasado / domingo) | Placeholder gris con ícono `event_busy` |
+| **No sincronizado** | `isCalendarSynced: false` | Placeholder ámbar con ícono `sync_problem` + email del médico |
+| **Hoy** | `isToday: true` | Borde primario, fecha con píldora azul |
 
----
+### Slot Individual
 
-## 7. Diagnóstico Actual y Hoja de Ruta de Integración
-
-| Funcionalidad | Estado Actual | Integración Pendiente (Roadmap) |
-|---|:---:|---|
-| **Estructura Visual y Stepper** | ✅ 100% Maquetado | Ajuste de estilos menores si MD3 sufre variaciones. |
-| **Búsqueda de Cédula** | ⚠️ Mock (`'123456'`) | Conectar a `GET /api/patients/:id/history` vía servicio HTTP. |
-| **Catálogo de Procedimientos** | ⚠️ Estático en UI | Consumir desde endpoint o maestro de procedimientos. |
-| **Horarios Disponibles** | ⚠️ 3 slots fijos | Conectar a `GET /api/appointments/available-dates` pasando filtros de doctor y procedimiento. |
-| **Confirmación de Cita** | ⚠️ `console.log()` | Conectar a `POST /api/appointments` con payload `ICreateAppointmentRequest`. |
-| **Lista de Espera** | ⚠️ `console.log()` | Conectar a `POST /api/appointments/waitlist` con payload `ICreateWaitlistRequest`. |
-| **Calendario y Profesionales** | ⚠️ Placeholders | Implementar vistas completas consumiendo APIs de médicos y agenda. |
+| Estado CSS | Condición | Visualización |
+|---|---|---|
+| `time-slot--disponible` | `status === 'disponible'` | Borde azul izquierdo, hover elevado |
+| `time-slot--reservado` | `status === 'reservado'` | Fondo rayado diagonal, cursor `not-allowed` |
+| `time-slot--reservado time-slot--merged` | `status === 'reservado' && mergedCount > 1` | Fondo rayado + ícono `lock` + rango completo + etiqueta "No disponible" |
+| `time-slot--seleccionado` | slot seleccionado por usuario | Fondo azul sólido, sombra elevada |
 
 ---
 
-## 8. Comandos de Verificación (Nx)
+## 7. Componentes del MFE
+
+### `CalendarioCitasComponent`
+
+- **Tipo:** Smart Component (inyecta `AppointmentLogicService`)
+- **Selector:** `app-calendario-citas`
+- **Change Detection:** `OnPush`
+- **Responsabilidades:** Filtro de médico, navegación semanal, renderizado del grid, selección de slot
+
+### `ListaProfesionalesComponent`
+
+- **Tipo:** UI Component
+- **Selector:** `app-lista-profesionales`
+
+### `AgendarCitaComponent`
+
+- **Tipo:** UI Component / Form
+- **Selector:** `app-agendar-cita`
+
+---
+
+## 8. Module Federation
+
+El MFE `agendador-citas` se expone como Remote en el `app-shell` Host:
+
+```typescript
+// webpack.config.ts
+exposes: {
+  './Routes': 'apps/agendador-citas/src/app/remote-entry/entry.routes.ts'
+}
+```
+
+**Puerto de desarrollo:** `4201`  
+**publicHost:** `http://localhost:4201`
+
+---
+
+## 9. Dependencias y Límites Arquitectónicos
+
+**Módulos que consume:**
+- `@nx-boilerplate/api-interfaces` — `CalendarDay`, `TimeSlot`, `SlotStatus`, `IDayAvailability`, `IProfessionalSummary`, `IProcedure`, `IApiResponse`
+- `@nx-boilerplate/data-access` — `ApiClientService` (HTTP con interceptores)
+- `@nx-boilerplate/shared/utils` — `getColombiaToday()`, `normalizeDate()`, `formatDateYMD()`, `getWeekSchedule()`
+- `@nx-boilerplate/theme` — Tokens MD3 (`--sys-color-*`, `--mdc-*`) para estilos
+- `@angular/material` — `MatButtonModule`, `MatIconModule`, `MatFormFieldModule`, `MatSelectModule`
+
+**Módulos que lo consumen:**
+- `app-shell` — Host MFE que carga este Remote por Module Federation
+
+---
+
+## 10. Variables de Entorno / Configuración
+
+| Configuración | Valor | Descripción |
+|---|---|---|
+| Puerto del Remote | `4201` | `serve` en desarrollo |
+| URL del API Gateway | `http://localhost:3000` | Configurado en el proxy del `app-shell` |
+
+---
+
+## 11. Comandos de Verificación (Nx)
 
 ```bash
-# Servir de forma independiente (Standalone Remote en puerto 4201)
-npx nx serve agendador-citas --port=4201
+# Servir en desarrollo (como Remote independiente)
+npx nx serve agendador-citas
 
-# Servir de forma integrada con el Shell (Puerto 4200)
+# Servir completo (Host + Remote integrado)
 npx nx serve app-shell
 
-# Compilar proyecto en modo desarrollo
-npx nx build agendador-citas --configuration=development
+# Compilar para producción
+npx nx build agendador-citas
 
-# Compilar en modo producción
-npx nx build agendador-citas --configuration=production
+# Ejecutar pruebas unitarias
+npx nx test agendador-citas
 
-# Ejecutar validaciones de lint y fronteras de módulos
+# Validar límites arquitectónicos
 npx nx lint agendador-citas
 ```
