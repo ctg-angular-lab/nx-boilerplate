@@ -16,6 +16,7 @@ import {
   CreateWaitlistBodyDto,
   GetAvailableDatesQueryDto,
 } from '../dtos/appointment-gateway.dto';
+import { getWeekWindow } from '@nx-boilerplate/utils';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -28,11 +29,26 @@ export class AppointmentsController {
   async getAvailableDates(
     @Query() query: GetAvailableDatesQueryDto,
   ): Promise<IAvailableDate[] | IDayAvailability[]> {
+    let startDate = query.startDate;
+    let endDate = query.endDate;
+
+    if (!startDate || !endDate) {
+      const window = getWeekWindow(0);
+      startDate = startDate || window.startDate;
+      endDate = endDate || window.endDate;
+    }
+
+    const payload = {
+      ...query,
+      startDate,
+      endDate,
+    };
+
     return firstValueFrom(
       this.schedulingClient
         .send<IAvailableDate[] | IDayAvailability[]>(
           'appointments.get-available-dates',
-          query,
+          payload,
         )
         .pipe(timeout(10000)),
     );

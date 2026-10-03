@@ -35,8 +35,11 @@ export class SchedulingMessageController {
 
     // Consulta por rango semanal optimizada
     if (payload.startDate && payload.endDate) {
-      const start = new Date(payload.startDate);
-      const end = new Date(payload.endDate);
+      const [sYear, sMonth, sDay] = payload.startDate.split('-').map(Number);
+      const start = new Date(sYear, sMonth - 1, sDay, 0, 0, 0, 0);
+
+      const [eYear, eMonth, eDay] = payload.endDate.split('-').map(Number);
+      const end = new Date(eYear, eMonth - 1, eDay, 23, 59, 59, 999);
 
       return this.schedulingDomainService.getAvailableSlotsForRange(
         doctorEmail,
@@ -47,7 +50,13 @@ export class SchedulingMessageController {
     }
 
     // Consulta de día único (retrocompatibilidad)
-    const targetDate = payload.targetDate ? new Date(payload.targetDate) : new Date();
+    let targetDate: Date;
+    if (payload.targetDate) {
+      const [tYear, tMonth, tDay] = payload.targetDate.split('-').map(Number);
+      targetDate = new Date(tYear, tMonth - 1, tDay, 0, 0, 0, 0);
+    } else {
+      targetDate = new Date();
+    }
 
     const slots = await this.schedulingDomainService.getAvailableSlots(
       doctorEmail,

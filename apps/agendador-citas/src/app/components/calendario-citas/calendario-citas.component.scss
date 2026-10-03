@@ -219,6 +219,48 @@
       color: var(--sys-color-outline, #79747e);
     }
   }
+
+  &__unsynced {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 36px 8px;
+    gap: 6px;
+    text-align: center;
+    min-height: 480px;
+
+    &-icon {
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+      color: #f59e0b; // ámbar warning
+    }
+
+    &-title {
+      font-family: var(--mat-sys-body-medium-font, inherit);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #b45309;
+    }
+
+    &-email {
+      font-family: var(--mat-sys-body-medium-font, inherit);
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--sys-color-outline, #79747e);
+      word-break: break-all;
+      max-width: 100%;
+    }
+
+    &-hint {
+      font-family: var(--mat-sys-body-medium-font, inherit);
+      font-size: 0.72rem;
+      font-weight: 400;
+      color: var(--sys-color-outline, #79747e);
+      font-style: italic;
+    }
+  }
 }
 
 // ----------------------------------------------------
@@ -273,10 +315,50 @@
       var(--sys-color-surface-container-high, #e2e8f0) 6px,
       var(--sys-color-surface-container-high, #e2e8f0) 12px
     );
-    border: 1px solid var(--sys-color-outline-variant, #e0e0e0);
+    border: 1px dashed var(--sys-color-outline-variant, #cdd0d4);
+    border-left: 4px solid var(--sys-color-outline-variant, #cdd0d4);
     color: var(--sys-color-outline, #64748b);
     cursor: not-allowed;
     opacity: 0.85;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 14px 12px;
+
+    // Bloque fusionado: más altura para representar la duración
+    &.time-slot--merged {
+      padding: 20px 12px;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+
+      .time-slot__merged-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+        color: var(--sys-color-outline, #79747e);
+      }
+
+      .time-slot__time {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        .time-slot__merged-range {
+          font-size: 0.82rem;
+          font-weight: 700;
+          color: var(--sys-color-outline, #64748b);
+        }
+
+        .time-slot__merged-label {
+          font-size: 0.72rem;
+          font-weight: 400;
+          color: var(--sys-color-outline, #79747e);
+          letter-spacing: 0.02em;
+        }
+      }
+    }
 
     .time-slot__time {
       color: var(--sys-color-outline, #64748b);

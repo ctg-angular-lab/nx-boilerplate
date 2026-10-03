@@ -1,4 +1,14 @@
-import { CalendarDay, TimeSlot } from '@nx-boilerplate/api-interfaces';
+import { CalendarDay, TimeSlot, IWeekWindow } from '@nx-boilerplate/api-interfaces';
+
+/**
+ * Formatea una fecha local a YYYY-MM-DD
+ */
+export function formatDateYMD(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 /**
  * Convierte minutos desde medianoche a formato 12 horas (ej. 08:45 AM)
@@ -33,6 +43,65 @@ export function getColombiaToday(): Date {
  */
 export function normalizeDate(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+}
+
+/**
+ * Calcula la ventana laboral (lunes a sábado, sin domingos) según el offset semanal.
+ * Para la semana actual (offset 0), inicia desde hoy y va hasta el sábado.
+ */
+export function getWeekWindow(offsetWeeks = 0, referenceDate?: Date): IWeekWindow {
+  const today = referenceDate ? normalizeDate(referenceDate) : getColombiaToday();
+  const dayOfWeek = today.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
+
+  const mondayOffset = dayOfWeek === 0 ? 1 : 1 - dayOfWeek;
+  const baseMonday = new Date(today);
+  baseMonday.setDate(today.getDate() + mondayOffset);
+
+  const targetMonday = new Date(baseMonday);
+  targetMonday.setDate(baseMonday.getDate() + offsetWeeks * 7);
+
+  const targetSaturday = new Date(targetMonday);
+  targetSaturday.setDate(targetMonday.getDate() + 5);
+
+  if (offsetWeeks === 0) {
+    if (dayOfWeek === 0) {
+      return {
+        startDate: formatDateYMD(targetMonday),
+        endDate: formatDateYMD(targetSaturday),
+        totalDays: 6,
+        offsetWeeks: 0,
+      };
+    } else {
+      const diffToSaturday = 6 - dayOfWeek;
+      const thisSaturday = new Date(today);
+      thisSaturday.setDate(today.getDate() + diffToSaturday);
+      const totalDays = 6 - dayOfWeek + 1;
+
+      return {
+        startDate: formatDateYMD(today),
+        endDate: formatDateYMD(thisSaturday),
+        totalDays,
+        offsetWeeks: 0,
+      };
+    }
+  }
+
+  return {
+    startDate: formatDateYMD(targetMonday),
+    endDate: formatDateYMD(targetSaturday),
+    totalDays: 6,
+    offsetWeeks,
+  };
+}
+
+/**
+ * Retorna el array de 7 días (Lunes a Domingo) y la ventana calculada para iterar en la vista de calendario
+ */
+export function getWeekSchedule(offsetWeeks = 0, referenceDate?: Date): { days: Date[]; window: IWeekWindow } {
+  const window = getWeekWindow(offsetWeeks, referenceDate);
+  const weekRange = getColombiaWeekRange(offsetWeeks);
+
+  return { days: weekRange.days, window };
 }
 
 /**

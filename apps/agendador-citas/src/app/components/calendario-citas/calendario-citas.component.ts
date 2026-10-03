@@ -4,7 +4,6 @@ import {
   signal,
   computed,
   inject,
-  effect,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -40,6 +39,11 @@ export class CalendarioCitasComponent {
   readonly availableProfessionals = this.appointmentLogic.availableProfessionals;
 
   /**
+   * Estado de carga de la disponibilidad semanal
+   */
+  readonly isLoading = this.appointmentLogic.isLoadingCalendar;
+
+  /**
    * Título compuesto que reactivamente incluye el nombre del profesional activo
    */
   readonly calendarTitle = computed(() => {
@@ -59,14 +63,9 @@ export class CalendarioCitasComponent {
   }
 
   /**
-   * Offset de semana respecto a la semana actual de Colombia (0 = actual, 1 = próxima, ...)
-   */
-  readonly selectedWeekOffset = signal<number>(0);
-
-  /**
    * Indica si la vista actual corresponde a la semana actual (impide ir al pasado)
    */
-  readonly isCurrentWeek = computed(() => this.selectedWeekOffset() === 0);
+  readonly isCurrentWeek = computed(() => this.appointmentLogic.currentWeekOffset() === 0);
 
   /**
    * Enlace reactivo directo con el Signal inmutable del servicio
@@ -104,20 +103,12 @@ export class CalendarioCitasComponent {
     return `${startDay} ${startMonth} - ${endDay} ${endMonth} de ${year}`;
   });
 
-  constructor() {
-    // Sincroniza la disponibilidad cada vez que cambia la semana visualizada
-    effect(() => {
-      const offset = this.selectedWeekOffset();
-      this.appointmentLogic.loadMockWeekAvailability(offset);
-    });
-  }
-
   /**
    * Regresa inmediatamente a la semana actual de Colombia
    */
   goToToday(): void {
     if (!this.isCurrentWeek()) {
-      this.selectedWeekOffset.set(0);
+      this.appointmentLogic.goToToday();
       this.selectedSlot.set(null);
     }
   }
@@ -126,8 +117,8 @@ export class CalendarioCitasComponent {
    * Retrocede una semana (bloqueado si ya está en la semana actual)
    */
   previousWeek(): void {
-    if (this.selectedWeekOffset() > 0) {
-      this.selectedWeekOffset.update((offset) => offset - 1);
+    if (!this.isCurrentWeek()) {
+      this.appointmentLogic.previousWeek();
       this.selectedSlot.set(null);
     }
   }
@@ -136,7 +127,7 @@ export class CalendarioCitasComponent {
    * Avanza a la semana siguiente
    */
   nextWeek(): void {
-    this.selectedWeekOffset.update((offset) => offset + 1);
+    this.appointmentLogic.nextWeek();
     this.selectedSlot.set(null);
   }
 

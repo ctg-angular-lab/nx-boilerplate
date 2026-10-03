@@ -5,6 +5,8 @@ export interface TimeSlot {
   time: string;
   status: SlotStatus;
   reservedBy?: string;
+  /** Cantidad de slots de 45 min que agrupa este bloque (solo en slots 'reservado' fusionados > 1) */
+  mergedCount?: number;
 }
 
 export interface CalendarDay {
@@ -15,6 +17,10 @@ export interface CalendarDay {
   isToday: boolean;
   isAvailable?: boolean;
   isPast?: boolean;
+  /** false cuando el bot no tiene acceso al calendario del médico */
+  isCalendarSynced?: boolean;
+  /** Email del médico, usado para el mensaje de placeholder de no sincronizado */
+  doctorEmail?: string;
 }
 
 export interface IAvailableWeekRange {

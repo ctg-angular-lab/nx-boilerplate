@@ -8,9 +8,9 @@ import {
 } from 'class-validator';
 
 export class GetAvailableDatesQueryDto {
-  @IsString({ message: 'El ID del procedimiento es requerido' })
-  @IsNotEmpty({ message: 'El ID del procedimiento no puede estar vacío' })
-  procedureId!: string;
+  @IsString({ message: 'El ID del procedimiento debe ser una cadena' })
+  @IsOptional()
+  procedureId?: string;
 
   @IsEmail({}, { message: 'El formato de correo del médico no es válido' })
   @IsOptional()

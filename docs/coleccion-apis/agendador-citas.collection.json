@@ -215,7 +215,7 @@
                 {
                   "key": "procedureId",
                   "value": "PROC-EST-001",
-                  "description": "ID del procedimiento (requerido)"
+                  "description": "ID del procedimiento (opcional)"
                 },
                 {
                   "key": "doctorEmail",
@@ -235,6 +235,37 @@
               ]
             },
             "description": "Paso 4 (Recomendado): Consulta optimizada en una sola llamada de red a Google Calendar para toda la semana. Retorna los días organizados con sus slots disponibles."
+          }
+        },
+        {
+          "name": "05B - Disponibilidad Semanal General por Médico (Fechas Dinámicas)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/appointments/available-dates?doctorEmail=camilotabares.portafolio@gmail.com",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "appointments",
+                "available-dates"
+              ],
+              "query": [
+                {
+                  "key": "doctorEmail",
+                  "value": "camilotabares.portafolio@gmail.com",
+                  "description": "Correo del médico (calcula automáticamente la ventana laboral de la semana actual)"
+                }
+              ]
+            },
+            "description": "Consulta de agenda general del médico sin procedimiento. El API Gateway calcula dinámicamente el rango desde hoy hasta el próximo sábado laboral."
           }
         },
         {

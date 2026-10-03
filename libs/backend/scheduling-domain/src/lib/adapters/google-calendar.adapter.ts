@@ -4,6 +4,7 @@ import { google, calendar_v3 } from 'googleapis';
 import * as fs from 'fs';
 import {
   ICalendarProvider,
+  ICalendarBusyResult,
   ITimeSlot,
   ICreateAppointmentEvent,
 } from '../ports/calendar-provider.port';
@@ -54,7 +55,7 @@ export class GoogleCalendarAdapter implements ICalendarProvider {
     }
   }
 
-  async getBusyIntervals(calendarEmail: string, fromDate: Date, toDate: Date): Promise<ITimeSlot[]> {
+  async getBusyIntervals(calendarEmail: string, fromDate: Date, toDate: Date): Promise<ICalendarBusyResult> {
     try {
       const response = await this.calendarClient.freebusy.query({
         requestBody: {
@@ -67,23 +68,34 @@ export class GoogleCalendarAdapter implements ICalendarProvider {
 
       const calendars = response.data.calendars;
       if (!calendars || !calendars[calendarEmail]) {
-        return [];
+        this.logger.warn(`Google Calendar no retornó entrada para ${calendarEmail}. Marcando como no sincronizado.`);
+        return { intervals: [], isSynced: false };
       }
 
-      const busyList = calendars[calendarEmail].busy || [];
-      const slots: ITimeSlot[] = [];
-      for (const item of busyList) {
-        if (item.start && item.end) {
-          slots.push({
-            start: new Date(item.start),
-            end: new Date(item.end),
-          });
-        }
+      if (calendars[calendarEmail].errors && calendars[calendarEmail].errors!.length > 0) {
+        this.logger.warn(
+          `Google Calendar reportó errores de acceso para ${calendarEmail} ` +
+          `(${calendars[calendarEmail].errors!.map((e) => e.reason).join(', ')}). Marcando como no sincronizado.`
+        );
+        return { intervals: [], isSynced: false };
       }
-      return slots;
+
+      // Lectura exitosa: el bot tiene acceso al calendario
+      const busyList = calendars[calendarEmail].busy || [];
+      const intervals: ITimeSlot[] = busyList
+        .filter((item) => item.start && item.end)
+        .map((item) => ({
+          start: new Date(item.start!),
+          end: new Date(item.end!),
+        }));
+
+      return { intervals, isSynced: true };
     } catch (error) {
-      this.logger.error(`Fallo consultando freebusy para ${calendarEmail}: ${(error as Error).message}`);
-      throw new RpcException(`Error al consultar disponibilidad en Google Calendar: ${(error as Error).message}`);
+      this.logger.warn(
+        `No se pudo sincronizar Google Calendar para ${calendarEmail} (${(error as Error).message}). ` +
+        `Marcando como no sincronizado.`
+      );
+      return { intervals: [], isSynced: false };
     }
   }
 

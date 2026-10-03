@@ -28,7 +28,7 @@
         mat-stroked-button
         type="button"
         class="calendar-header__btn-today"
-        [disabled]="isCurrentWeek()"
+        [disabled]="isCurrentWeek() || isLoading()"
         (click)="goToToday()"
       >
         Hoy
@@ -40,7 +40,7 @@
           type="button"
           class="semana-ant"
           aria-label="Semana anterior"
-          [disabled]="isCurrentWeek()"
+          [disabled]="isCurrentWeek() || isLoading()"
           (click)="previousWeek()"
         >
           <mat-icon class="material-symbols-outlined">chevron_left</mat-icon>
@@ -51,6 +51,7 @@
           type="button"
           class="semana-post"
           aria-label="Semana siguiente"
+          [disabled]="isLoading()"
           (click)="nextWeek()"
         >
           <mat-icon class="material-symbols-outlined">chevron_right</mat-icon>
@@ -73,7 +74,17 @@
             <span class="calendar-column__date-label">{{ day.subLabel }}</span>
           </div>
 
-          @if (day.isAvailable === false) {
+          @if (day.isCalendarSynced === false) {
+            <!-- Placeholder: médico sin calendario sincronizado -->
+            <div class="calendar-column__unsynced" aria-label="Calendario no sincronizado">
+              <mat-icon class="material-symbols-outlined calendar-column__unsynced-icon">
+                sync_problem
+              </mat-icon>
+              <span class="calendar-column__unsynced-title">No sincronizado</span>
+              <span class="calendar-column__unsynced-email">{{ day.doctorEmail }}</span>
+              <span class="calendar-column__unsynced-hint">Calendario no conectado con la aplicación</span>
+            </div>
+          } @else if (day.isAvailable === false) {
             <div class="calendar-column__unavailable" aria-label="Día no disponible">
               <mat-icon class="material-symbols-outlined calendar-column__unavailable-icon">
                 event_busy
@@ -88,13 +99,24 @@
                   class="time-slot"
                   [class.time-slot--disponible]="slot.status === 'disponible' && !isSlotSelected(slot)"
                   [class.time-slot--reservado]="slot.status === 'reservado'"
+                  [class.time-slot--merged]="slot.status === 'reservado' && (slot.mergedCount ?? 1) > 1"
                   [class.time-slot--seleccionado]="isSlotSelected(slot)"
                   [disabled]="slot.status === 'reservado'"
                   (click)="onSlotClick(slot)"
                 >
-                  <span class="time-slot__time">{{ slot.time }}</span>
-                  @if (slot.status === 'reservado' && slot.reservedBy) {
-                    <span class="time-slot__reserved-by">{{ slot.reservedBy }}</span>
+                  @if (slot.status === 'reservado' && (slot.mergedCount ?? 1) > 1) {
+                    <!-- Bloque fusionado: ícono + rango + etiqueta -->
+                    <mat-icon class="material-symbols-outlined time-slot__merged-icon">lock</mat-icon>
+                    <span class="time-slot__time">
+                      <span class="time-slot__merged-range">{{ slot.time }}</span>
+                      <span class="time-slot__merged-label">No disponible</span>
+                    </span>
+                  } @else {
+                    <!-- Slot normal (disponible, seleccionado o reservado simple) -->
+                    <span class="time-slot__time">{{ slot.time }}</span>
+                    @if (slot.status === 'reservado' && slot.reservedBy) {
+                      <span class="time-slot__reserved-by">{{ slot.reservedBy }}</span>
+                    }
                   }
                 </button>
               }
