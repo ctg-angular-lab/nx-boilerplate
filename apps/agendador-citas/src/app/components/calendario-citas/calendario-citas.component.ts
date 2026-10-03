@@ -10,7 +10,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
-import { TimeSlot } from '@nx-boilerplate/api-interfaces';
+import { MatDialog } from '@angular/material/dialog';
+import { CalendarDay, TimeSlot } from '@nx-boilerplate/api-interfaces';
+import {
+  AgendarModalComponent,
+  AgendarModalData,
+  AgendarModalResult,
+} from '@nx-boilerplate/layouts';
 import { AppointmentLogicService } from '../../services/appointment-logic.service';
 
 @Component({
@@ -29,6 +35,7 @@ import { AppointmentLogicService } from '../../services/appointment-logic.servic
 })
 export class CalendarioCitasComponent {
   private readonly appointmentLogic = inject(AppointmentLogicService);
+  private readonly dialog = inject(MatDialog);
 
   readonly baseTitle = signal<string>('Calendario');
 
@@ -132,13 +139,38 @@ export class CalendarioCitasComponent {
   }
 
   /**
-   * Maneja la selección / deselección de un slot disponible
+   * Maneja el clic en un slot disponible para abrir el modal de confirmación de agendamiento
    */
-  onSlotClick(slot: TimeSlot): void {
+  onSlotClick(slot: TimeSlot, day: CalendarDay): void {
     if (slot.status === 'reservado') {
       return;
     }
+
     this.selectedSlot.set(this.selectedSlot()?.id === slot.id ? null : slot);
+
+    const professional = this.activeProfessional();
+    const nombreProfesional = professional
+      ? `${professional.nombres} ${professional.apellidos}`.trim()
+      : 'Profesional seleccionado';
+
+    const fechaFormateada = `${day.label} ${day.subLabel} | ${slot.time}`;
+
+    const dialogRef = this.dialog.open<
+      AgendarModalComponent,
+      AgendarModalData,
+      AgendarModalResult
+    >(AgendarModalComponent, {
+      data: {
+        profesional: nombreProfesional,
+        fecha: fechaFormateada,
+        professional: nombreProfesional,
+        dateRange: fechaFormateada,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      console.log('Resultado del modal:', result);
+    });
   }
 
   /**

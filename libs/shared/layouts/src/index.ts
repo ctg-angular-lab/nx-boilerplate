@@ -4,9 +4,11 @@ export * from './lib/models/tabs-collection.models';
 export * from './lib/models/metric-card.models';
 export * from './lib/models/appointment-steps.models';
 export * from './lib/models/confirmation-modal.models';
+export * from './lib/modals/models/agendar-modal.models';
 
 // Modals
 export * from './lib/modals/confirmation-modal/confirmation-modal.component';
+export * from './lib/modals/agendar-modal/agendar-modal.component';
 
 // Components
 export * from './lib/data-table/data-table.component';

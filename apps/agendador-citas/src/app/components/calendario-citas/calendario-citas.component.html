@@ -102,7 +102,7 @@
                   [class.time-slot--merged]="slot.status === 'reservado' && (slot.mergedCount ?? 1) > 1"
                   [class.time-slot--seleccionado]="isSlotSelected(slot)"
                   [disabled]="slot.status === 'reservado'"
-                  (click)="onSlotClick(slot)"
+                  (click)="onSlotClick(slot, day)"
                 >
                   @if (slot.status === 'reservado' && (slot.mergedCount ?? 1) > 1) {
                     <!-- Bloque fusionado: ícono + rango + etiqueta -->

@@ -53,6 +53,10 @@ export interface ICreateAppointmentRequest {
   fecha?: string;
   hora?: string;
   notes?: string;
+  doctorCedula?: string;
+  patientNationalId?: string;
+  patientEmail?: string;
+  procedureId?: string;
 }
 
 export interface ICreateWaitlistRequest {
