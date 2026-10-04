@@ -467,6 +467,9 @@ export class AppointmentLogicService {
       map((backendDays) => {
         const calendarDays = this.#mapToCalendarDays(days, backendDays, fullDailyGrid, doctorEmail);
         const hasAvailable = calendarDays.some((d) => d.slots.some((s) => s.status === 'disponible'));
+        console.log(
+          `[Calendario] Offset ${offset}: ${backendDays.length} días recibidos del backend. ¿Tiene turnos libres?: ${hasAvailable}`
+        );
         return { calendarDays, offset, hasAvailable };
       })
     );
@@ -481,9 +484,15 @@ export class AppointmentLogicService {
   ): Observable<{ calendarDays: CalendarDay[]; offset: number; hasAvailable: boolean }> {
     return this.#fetchWeekData(doctorEmail, currentOffset).pipe(
       switchMap((res) => {
-        if (res.hasAvailable || currentOffset >= 3) {
+        if (res.hasAvailable) {
+          console.log(`[Calendario] Turnos disponibles encontrados en offset ${currentOffset}. Deteniendo búsqueda.`);
           return of(res);
         }
+        if (currentOffset >= 3) {
+          console.warn(`[Calendario] Límite de 4 semanas alcanzado sin disponibilidad.`);
+          return of(res);
+        }
+        console.log(`[Calendario] Sin turnos en offset ${currentOffset}. Avanzando a offset ${currentOffset + 1}...`);
         return this.#searchAvailableWeek(doctorEmail, currentOffset + 1);
       })
     );
