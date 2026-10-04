@@ -29,7 +29,6 @@ import {
 } from '@nx-boilerplate/layouts';
 import {
   IBookingPatient,
-  ICreateAppointmentRequest,
   IProfessionalSummary,
 } from '@nx-boilerplate/api-interfaces';
 import { AppointmentLogicService } from '../../services/appointment-logic.service';
@@ -158,7 +157,15 @@ export class AgendarCitaComponent {
         console.log('Doctores asignados al procedimiento:', doctors);
       });
 
-    this.destroyRef.onDestroy(() => sub.unsubscribe());
+    // Escucha el evento de confirmación exitosa de agendamiento para resetear el formulario
+    const successSub = this.appointmentLogic.bookingSuccess$.subscribe(() => {
+      this.form.reset();
+    });
+
+    this.destroyRef.onDestroy(() => {
+      sub.unsubscribe();
+      successSub.unsubscribe();
+    });
   }
 
   /**
@@ -169,78 +176,6 @@ export class AgendarCitaComponent {
     if (cedula) {
       this.appointmentLogic.verifyPatient(cedula);
     }
-  }
-
-  /**
-   * Mapea el estado consolidado del formulario y envía la mutación para agendar la cita
-   */
-  submitAppointment(): void {
-    if (this.form.invalid) {
-      return;
-    }
-
-    const step1 = this.step1Group.getRawValue();
-    const step2 = this.step2Group.getRawValue();
-    const step3 = this.step3Group.getRawValue();
-
-    const payload: ICreateAppointmentRequest = {
-      cedula: step1.cedula ?? '',
-      nombre: step2.nombre ?? '',
-      apellidos: step2.apellidos ?? '',
-      correo: step2.correo ?? '',
-      celular: step2.celular ?? '',
-      recordatorioWhatsapp: !!step2.recordatorioWhatsapp,
-      procedimientoId: step3.procedimientoId ?? '',
-    };
-
-    this.appointmentLogic.createAppointment(payload).subscribe({
-      next: () => {
-        this.openConfirmationModal();
-      },
-      error: (error) => {
-        console.error('Error al registrar la cita médica:', error);
-      },
-    });
-  }
-
-  /**
-   * Orquesta la apertura del modal de confirmación con los datos dinámicos de la cita
-   */
-  openConfirmationModal(): void {
-    const nombre = this.step2Group.get('nombre')?.value || '';
-    const apellido = this.step2Group.get('apellidos')?.value || '';
-
-    const modalData: ConfirmationModalData<boolean> = {
-      title: 'Confirmación de cita',
-      text: `Sr(a) ${nombre} ${apellido}, su solicitud de cita ha sido procesada exitosamente.`,
-      actions: [
-        { label: 'Aceptar', color: 'primary', value: true },
-        { label: 'Cerrar', color: 'default', value: false },
-      ],
-    };
-
-    const dialogRef = this.dialog.open<
-      ConfirmationModalComponent,
-      ConfirmationModalData<boolean>,
-      boolean
-    >(ConfirmationModalComponent, {
-      data: modalData,
-      width: '450px',
-      disableClose: true,
-    });
-
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        console.log('Modal cerrado tras confirmación');
-      }
-    });
-  }
-
-  /**
-   * Manejador del submit emitido desde el paso 3 del Stepper
-   */
-  onAppointmentSubmitted(): void {
-    this.submitAppointment();
   }
 
   /**

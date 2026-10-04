@@ -221,7 +221,36 @@ export class CalendarioCitasComponent {
     });
 
     dialogRef.afterClosed().subscribe((result) => {
-      console.log('Resultado del modal:', result);
+      if (result?.agendar) {
+        this.appointmentLogic.bookSlot(slot, result.notes).subscribe({
+          next: () => {
+            this.openSuccessModal();
+            this.selectedSlot.set(null);
+          },
+          error: (error) => {
+            console.error('Error al confirmar la cita médica:', error);
+          },
+        });
+      }
+    });
+  }
+
+  /**
+   * Despliega el modal de confirmación exitosa del agendamiento
+   */
+  openSuccessModal(): void {
+    const modalData: ConfirmationModalData<boolean> = {
+      title: '¡Cita Confirmada con Éxito!',
+      text: 'Tu cita médica ha sido agendada correctamente. Hemos enviado los detalles a tu correo electrónico registrado.',
+      actions: [
+        { label: 'Aceptar', color: 'primary', value: true },
+      ],
+    };
+
+    this.dialog.open(ConfirmationModalComponent, {
+      data: modalData,
+      width: '450px',
+      disableClose: true,
     });
   }
 

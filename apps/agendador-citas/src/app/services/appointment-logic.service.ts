@@ -5,11 +5,18 @@ import {
   computed,
   DestroyRef,
 } from '@angular/core';
-import { Observable, Subject, catchError, map, of, switchMap } from 'rxjs';
+import {
+  Observable,
+  Subject,
+  catchError,
+  map,
+  of,
+  switchMap,
+  tap,
+} from 'rxjs';
 import { ApiClientService } from '@nx-boilerplate/data-access';
 import {
   IApiResponse,
-  ICreateAppointmentRequest,
   ICreateAppointmentBody,
   IDayAvailability,
   ISlotDisplay,
@@ -49,6 +56,12 @@ export class AppointmentLogicService {
    * Pipeline reactivo de consultas de calendario para evitar condiciones de carrera (switchMap)
    */
   readonly #calendarFetch$ = new Subject<CalendarFetchRequest>();
+
+  /**
+   * Notifica a los componentes cuando una cita ha sido confirmada exitosamente
+   */
+  readonly #bookingSuccess$ = new Subject<void>();
+  public readonly bookingSuccess$ = this.#bookingSuccess$.asObservable();
 
   /**
    * Identificador de la pestaña activa en el orquestador principal
@@ -544,10 +557,47 @@ export class AppointmentLogicService {
   }
 
   /**
-   * @deprecated Usado temporalmente por AgendarCitaComponent (legacy). Usar confirmBooking() en el nuevo flujo.
+   * Orquesta la creación y confirmación de la cita médica a partir del turno seleccionado
+   * y el contexto activo, limpiando el estado y actualizando la navegación al finalizar.
    */
-  createAppointment(payload: ICreateAppointmentRequest): Observable<IApiResponse<unknown>> {
-    return this.apiClient.post<unknown>('/api/appointments', payload);
+  bookSlot(slot: TimeSlot, notes?: string): Observable<IApiResponse<unknown>> {
+    const ctx = this.#bookingContext();
+    if (!ctx) {
+      throw new Error('No se puede agendar cita sin un contexto de paciente y procedimiento.');
+    }
+    const doctor = this.#activeProfessional();
+    if (!doctor) {
+      throw new Error('No se puede agendar cita sin un profesional médico seleccionado.');
+    }
+    if (!slot.startTime || !slot.endTime) {
+      throw new Error(
+        `El turno seleccionado (${slot.time}) carece de timestamps ISO (startTime / endTime).`
+      );
+    }
+
+    const patientFullName = `${ctx.patient.nombre} ${ctx.patient.apellidos}`.trim();
+
+    const body: ICreateAppointmentBody = {
+      doctorEmail: doctor.email,
+      doctorCedula: doctor.cedula,
+      patientNationalId: ctx.patient.cedula,
+      patientFullName,
+      patientEmail: ctx.patient.correo,
+      procedureId: ctx.procedure.idProcedimiento,
+      procedureName: ctx.procedure.nombreProcedimiento,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      ...(notes ? { notes } : {}),
+    };
+
+    return this.confirmBooking(body).pipe(
+      tap(() => {
+        this.clearBookingContext();
+        this.refreshCalendar();
+        this.#bookingSuccess$.next();
+        this.setActiveTab(AGENDADOR_TABS.FORM);
+      })
+    );
   }
 
   /**
