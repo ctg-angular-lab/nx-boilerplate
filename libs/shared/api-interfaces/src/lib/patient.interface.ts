@@ -18,3 +18,12 @@ export interface IPatientHistory {
   ultimosProcedimientos: IProcedureItem[];
   recomendaciones: string;
 }
+
+export interface ICreatePatientRequest {
+  cedula: string;
+  nombre: string;
+  apellidos: string;
+  correo: string;
+  celular: string;
+}
+

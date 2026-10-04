@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { FindPatientByNationalIdDto } from '@nx-boilerplate/shared-dtos';
+import { CreatePatientDto, FindPatientByNationalIdDto } from '@nx-boilerplate/shared-dtos';
 import { IPatientHistory } from '@nx-boilerplate/api-interfaces';
 import { PatientsDomainService } from '@nx-boilerplate/backend/patients-domain';
 
@@ -14,4 +14,12 @@ export class PatientsMessageController {
   ): Promise<IPatientHistory> {
     return this.patientsDomainService.findByNationalId(payload.nationalId);
   }
+
+  @MessagePattern('patients.create')
+  async createPatient(
+    @Payload() payload: CreatePatientDto
+  ): Promise<IPatientHistory> {
+    return this.patientsDomainService.createPatient(payload);
+  }
 }
+

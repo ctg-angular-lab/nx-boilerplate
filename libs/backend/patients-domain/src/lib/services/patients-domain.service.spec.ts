@@ -39,6 +39,13 @@ describe('PatientsDomainService', () => {
               }
               return Promise.resolve(null);
             }),
+            create: vi.fn().mockImplementation((data) => {
+              return Promise.resolve({
+                ...data,
+                ultimosProcedimientos: [],
+                recomendaciones: '',
+              });
+            }),
           },
         },
       ],
@@ -76,6 +83,49 @@ describe('PatientsDomainService', () => {
           status: 'error',
           code: 404,
           message: 'Paciente no encontrado con el documento proporcionado',
+        })
+      );
+    }
+  });
+
+  it('debe registrar un nuevo paciente exitosamente si la cédula no existe', async () => {
+    const newPatientData = {
+      cedula: '55667788',
+      nombre: 'Carlos',
+      apellidos: 'Ramírez',
+      correo: 'carlos.ramirez@example.com',
+      celular: '3151234567',
+    };
+
+    const result = await service.createPatient(newPatientData);
+
+    expect(result).toBeDefined();
+    expect(result.cedula).toBe('55667788');
+    expect(result.nombre).toBe('Carlos');
+    expect(repository.create).toHaveBeenCalledWith(newPatientData);
+  });
+
+  it('debe lanzar RpcException 409 si el paciente ya existe al intentar registrarlo', async () => {
+    const existingPatientData = {
+      cedula: '1020304050',
+      nombre: 'Laura Sofía',
+      apellidos: 'Gómez',
+      correo: 'laura.gomez@example.com',
+      celular: '3001234567',
+    };
+
+    try {
+      await service.createPatient(existingPatientData);
+      expect.unreachable('Se esperaba que lanzara RpcException 409');
+    } catch (error: unknown) {
+      expect(error).toBeInstanceOf(RpcException);
+      const rpcError = error as RpcException;
+      const errPayload = rpcError.getError();
+      expect(errPayload).toEqual(
+        expect.objectContaining({
+          status: 'error',
+          code: 409,
+          message: 'El paciente con cédula 1020304050 ya se encuentra registrado',
         })
       );
     }

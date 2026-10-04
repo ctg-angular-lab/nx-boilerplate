@@ -1,6 +1,6 @@
-import { Controller, Get, Inject, Param } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Inject, Param, Post } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { FindPatientByNationalIdDto } from '@nx-boilerplate/shared-dtos';
+import { CreatePatientDto, FindPatientByNationalIdDto } from '@nx-boilerplate/shared-dtos';
 import { IPatientHistory } from '@nx-boilerplate/api-interfaces';
 import { firstValueFrom } from 'rxjs';
 
@@ -21,4 +21,18 @@ export class PatientsController {
       ),
     );
   }
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  async createPatient(
+    @Body() createPatientDto: CreatePatientDto,
+  ): Promise<IPatientHistory> {
+    return firstValueFrom(
+      this.patientsClient.send<IPatientHistory>(
+        'patients.create',
+        createPatientDto,
+      ),
+    );
+  }
 }
+
