@@ -12,11 +12,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { ICreateAppointmentRequest } from '@nx-boilerplate/api-interfaces';
+import { IBookingPatient } from '@nx-boilerplate/api-interfaces';
 import {
   AgendarModalData,
   AgendarModalResult,
-  IAgendarModalPatient,
 } from '../models/agendar-modal.models';
 
 @Component({
@@ -44,11 +43,11 @@ export class AgendarModalComponent {
 
   // Estado reactivo gobernado con Signals
   readonly title = signal<string>(this.data?.title?.trim() || 'Consulta de Evaluación');
-  readonly dateRange = signal<string>(this.data?.dateRange || this.data?.fecha || '');
+  readonly dateRange = signal<string>(this.data?.dateRange || '');
   readonly professional = signal<string>(
-    this.data?.professional?.trim() || this.data?.profesional?.trim() || 'Profesional seleccionado'
+    this.data?.professional?.trim() || 'Profesional seleccionado'
   );
-  readonly patient = signal<IAgendarModalPatient | ICreateAppointmentRequest | null | undefined>(
+  readonly patient = signal<IBookingPatient | null | undefined>(
     this.data?.patient ?? null
   );
 
@@ -70,12 +69,7 @@ export class AgendarModalComponent {
 
   readonly patientDocument = computed(() => {
     const p = this.patient();
-    if (!p) return null;
-    return (
-      p.cedula ||
-      ('patientNationalId' in p ? (p as ICreateAppointmentRequest).patientNationalId : null) ||
-      null
-    );
+    return p?.cedula?.trim() || null;
   });
 
   toggleNotes(): void {

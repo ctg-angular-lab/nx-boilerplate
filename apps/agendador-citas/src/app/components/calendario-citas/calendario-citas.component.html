@@ -1,4 +1,27 @@
 <section class="calendar-card">
+  <!-- Banner de modo agendamiento contextual -->
+  @if (isBookingMode()) {
+    <div class="calendar-booking-banner">
+      <div class="calendar-booking-banner__info">
+        <mat-icon class="calendar-booking-banner__icon">person_check</mat-icon>
+        <span class="calendar-booking-banner__text">
+          Agendando para: <strong>{{ bookingContext()?.patient?.nombre }} {{ bookingContext()?.patient?.apellidos }}</strong>
+          · <em>{{ bookingContext()?.procedure?.nombreProcedimiento }}</em>
+        </span>
+      </div>
+      <button
+        mat-button
+        color="warn"
+        type="button"
+        class="calendar-booking-banner__btn-cancel"
+        (click)="cancelBookingFlow()"
+      >
+        <mat-icon>close</mat-icon>
+        Cancelar
+      </button>
+    </div>
+  }
+
   <!-- Cabecera de Filtros -->
   <div class="calendar-filters">
     <mat-form-field appearance="outline" class="calendar-filters__select" subscriptSizing="dynamic">

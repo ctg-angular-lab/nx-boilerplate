@@ -80,6 +80,12 @@ export class CalendarioCitasComponent {
   readonly weekDays = this.appointmentLogic.weekDays;
 
   /**
+   * Estado de flujo de agendamiento contextual proveniente del Stepper
+   */
+  readonly isBookingMode = this.appointmentLogic.isBookingMode;
+  readonly bookingContext = this.appointmentLogic.bookingContext;
+
+  /**
    * Slot seleccionado actualmente
    */
   readonly selectedSlot = signal<TimeSlot | null>(null);
@@ -139,6 +145,13 @@ export class CalendarioCitasComponent {
   }
 
   /**
+   * Cancela el modo de agendamiento contextual regresando a consulta general
+   */
+  cancelBookingFlow(): void {
+    this.appointmentLogic.clearBookingContext();
+  }
+
+  /**
    * Maneja el clic en un slot disponible para abrir el modal de confirmación de agendamiento
    */
   onSlotClick(slot: TimeSlot, day: CalendarDay): void {
@@ -154,6 +167,7 @@ export class CalendarioCitasComponent {
       : 'Profesional seleccionado';
 
     const fechaFormateada = `${day.label} ${day.subLabel} | ${slot.time}`;
+    const bookingCtx = this.bookingContext();
 
     const dialogRef = this.dialog.open<
       AgendarModalComponent,
@@ -161,10 +175,10 @@ export class CalendarioCitasComponent {
       AgendarModalResult
     >(AgendarModalComponent, {
       data: {
-        profesional: nombreProfesional,
-        fecha: fechaFormateada,
+        title: bookingCtx?.procedure?.nombreProcedimiento || 'Consulta de Evaluación',
         professional: nombreProfesional,
         dateRange: fechaFormateada,
+        patient: bookingCtx?.patient ?? null,
       },
     });
 
