@@ -1,10 +1,12 @@
-import { Injectable, inject, signal, effect } from '@angular/core';
+import { Injectable, inject, signal, effect, computed } from '@angular/core';
 import { Observable, catchError, map, of } from 'rxjs';
 import { ApiClientService } from '@nx-boilerplate/data-access';
 import {
   IApiResponse,
   ICreateAppointmentRequest,
+  ICreateAppointmentBody,
   IDayAvailability,
+  ISlotDisplay,
   IPatientHistory,
   IProcedure,
   IProfessionalSummary,
@@ -19,12 +21,35 @@ import {
   formatDateYMD,
   getWeekSchedule,
 } from '@nx-boilerplate/shared/utils';
+import {
+  AGENDADOR_TABS,
+  AgendadorTabId,
+  IBookingContext,
+} from '../models/booking.models';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AppointmentLogicService {
   private readonly apiClient = inject(ApiClientService);
+
+  /**
+   * Identificador de la pestaña activa en el orquestador principal
+   * SSOT centralizado en el servicio.
+   */
+  readonly #activeTab = signal<AgendadorTabId>(AGENDADOR_TABS.FORM);
+  public readonly activeTab = this.#activeTab.asReadonly();
+
+  /**
+   * Contexto del flujo de agendamiento en curso (paciente, procedimiento y doctor seleccionado en el stepper)
+   */
+  readonly #bookingContext = signal<IBookingContext | null>(null);
+  public readonly bookingContext = this.#bookingContext.asReadonly();
+
+  /**
+   * Indica reactivamente si la aplicación se encuentra en modo agendamiento guiado
+   */
+  public readonly isBookingMode = computed(() => this.#bookingContext() !== null);
 
   /**
    * Estado reactivo interno para el historial del paciente consultado
@@ -108,6 +133,33 @@ export class AppointmentLogicService {
    */
   goToToday(): void {
     this.#currentWeekOffset.set(0);
+  }
+
+  /**
+   * Actualiza la pestaña activa en el flujo
+   */
+  setActiveTab(id: AgendadorTabId): void {
+    this.#activeTab.set(id);
+  }
+
+  /**
+   * Inicia el flujo de agendamiento guiado desde el Stepper hacia el Calendario:
+   * 1. Almacena el contexto completo del paciente y procedimiento.
+   * 2. Resuelve y selecciona al doctor contra el catálogo activo.
+   * 3. Navega reactivamente a la pestaña del Calendario.
+   */
+  startBookingFlow(ctx: IBookingContext): void {
+    this.#bookingContext.set(ctx);
+    const knownDoctor = this.#availableProfessionals().find((p) => p.cedula === ctx.doctor.cedula);
+    this.selectProfessional(knownDoctor ?? ctx.doctor);
+    this.setActiveTab(AGENDADOR_TABS.CALENDAR);
+  }
+
+  /**
+   * Limpia el contexto temporal de agendamiento
+   */
+  clearBookingContext(): void {
+    this.#bookingContext.set(null);
   }
 
   /**
@@ -268,17 +320,22 @@ export class AppointmentLogicService {
             };
           }
 
-          // Set de displays disponibles para búsqueda O(1)
-          const availableDisplays = new Set(
-            (backendDay?.slots ?? []).map((s) => s.display)
+          // Mapa de displays a slots backend para lookup O(1) y conservación de timestamps ISO
+          const availableByDisplay = new Map<string, ISlotDisplay>(
+            (backendDay?.slots ?? []).map((s) => [s.display, s])
           );
 
-          // Grilla completa con estado por slot
-          const rawSlots: TimeSlot[] = fullDailyGrid.map((display, index) => ({
-            id: `${dateStr}-slot-${index}`,
-            time: display,
-            status: availableDisplays.has(display) ? ('disponible' as SlotStatus) : ('reservado' as SlotStatus),
-          }));
+          // Grilla completa con estado por slot y timestamps ISO preservados
+          const rawSlots: TimeSlot[] = fullDailyGrid.map((display, index) => {
+            const backendSlot = availableByDisplay.get(display);
+            return {
+              id: `${dateStr}-slot-${index}`,
+              time: display,
+              status: backendSlot ? ('disponible' as SlotStatus) : ('reservado' as SlotStatus),
+              startTime: backendSlot?.startTime,
+              endTime: backendSlot?.endTime,
+            };
+          });
 
           // Fusionar franjas ocupadas consecutivas en un único bloque
           const slots = this.#mergeConsecutiveBusySlots(rawSlots);
@@ -370,9 +427,16 @@ export class AppointmentLogicService {
   }
 
   /**
-   * Orquesta la mutación para agendar una nueva cita médica.
+   * @deprecated Usado temporalmente por AgendarCitaComponent (legacy). Usar confirmBooking() en el nuevo flujo.
    */
   createAppointment(payload: ICreateAppointmentRequest): Observable<IApiResponse<unknown>> {
     return this.apiClient.post<unknown>('/api/appointments', payload);
+  }
+
+  /**
+   * Orquesta la mutación para crear y confirmar la cita médica contra el API Gateway (POST /api/appointments)
+   */
+  confirmBooking(body: ICreateAppointmentBody): Observable<IApiResponse<unknown>> {
+    return this.apiClient.post<unknown>('/api/appointments', body);
   }
 }
