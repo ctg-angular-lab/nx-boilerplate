@@ -14,6 +14,7 @@ import {
 import { AgendarCitaComponent } from '../components/agendar-cita/agendar-cita.component';
 import { CalendarioCitasComponent } from '../components/calendario-citas/calendario-citas.component';
 import { ListaProfesionalesComponent } from '../components/lista-profesionales/lista-profesionales.component';
+import { AGENDADOR_TABS } from '../models/booking.models';
 
 @Component({
   selector: 'app-agendador-citas-entry',
@@ -42,19 +43,19 @@ export class RemoteEntryComponent {
    */
   private readonly rawTabs = signal<Omit<TabItemConfig, 'contentTemplate'>[]>([
     {
-      id: 1,
+      id: AGENDADOR_TABS.FORM,
       label: 'Agendar Cita',
       icon: 'calendar_add_on',
       disabled: false,
     },
     {
-      id: 2,
+      id: AGENDADOR_TABS.CALENDAR,
       label: 'Calendario',
       icon: 'dataset',
       disabled: false,
     },
     {
-      id: 3,
+      id: AGENDADOR_TABS.PROFESSIONALS,
       label: 'Profesionales Disponibles',
       icon: 'article_person',
       disabled: false,

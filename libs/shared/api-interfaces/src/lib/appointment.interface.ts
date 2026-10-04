@@ -40,6 +40,27 @@ export interface IMedicalProcedureOption {
   especialidad: string;
 }
 
+export interface IBookingPatient {
+  cedula: string;
+  nombre: string;
+  apellidos: string;
+  correo: string;
+  celular: string;
+}
+
+export interface ICreateAppointmentBody {
+  doctorEmail: string;
+  doctorCedula: string;
+  patientNationalId: string;
+  patientFullName: string;
+  patientEmail: string;
+  procedureId: string;
+  procedureName: string;
+  startTime: string;
+  endTime: string;
+  notes?: string;
+}
+
 export interface ICreateAppointmentRequest {
   cedula: string;
   nombre: string;
