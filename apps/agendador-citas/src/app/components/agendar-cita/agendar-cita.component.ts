@@ -28,6 +28,7 @@ import {
   AvailableDate,
 } from '@nx-boilerplate/layouts';
 import {
+  IBookingPatient,
   ICreateAppointmentRequest,
   IProfessionalSummary,
 } from '@nx-boilerplate/api-interfaces';
@@ -274,4 +275,34 @@ export class AgendarCitaComponent {
       }
     });
   }
+
+  /**
+   * Navega hacia el calendario contextualizando la selección de profesional, paciente y procedimiento
+   */
+  onViewCalendar(doctor: IProfessionalSummary): void {
+    const step1 = this.step1Group.getRawValue();
+    const step2 = this.step2Group.getRawValue();
+    const step3 = this.step3Group.getRawValue();
+    const procId = step3.procedimientoId;
+
+    const procedure = this.procedures().find(
+      (p) => p.idProcedimiento === procId || (p as unknown as { id?: string }).id === procId
+    );
+    if (!procedure) return;
+
+    const patient: IBookingPatient = {
+      cedula: step1.cedula?.trim() || '',
+      nombre: step2.nombre?.trim() || '',
+      apellidos: step2.apellidos?.trim() || '',
+      correo: step2.correo?.trim() || '',
+      celular: step2.celular?.trim() || '',
+    };
+
+    this.appointmentLogic.startBookingFlow({
+      patient,
+      procedure,
+      doctor,
+    });
+  }
 }
+

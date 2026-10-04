@@ -68,6 +68,7 @@
           [dates]="availableDates()"
           (submitAppointment)="onAppointmentSubmitted()"
           (joinWaitlist)="onWaitlistRequested()"
+          (viewCalendar)="onViewCalendar($event)"
         />
       </div>
     </mat-step>

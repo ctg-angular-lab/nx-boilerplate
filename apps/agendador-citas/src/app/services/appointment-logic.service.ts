@@ -11,7 +11,6 @@ import {
   IProcedure,
   IProfessionalSummary,
   CalendarDay,
-  IAvailableWeekRangesResponse,
   TimeSlot,
   SlotStatus,
 } from '@nx-boilerplate/api-interfaces';

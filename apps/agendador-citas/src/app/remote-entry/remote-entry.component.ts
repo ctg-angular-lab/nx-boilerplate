@@ -1,6 +1,7 @@
 import {
   Component,
   ChangeDetectionStrategy,
+  inject,
   signal,
   viewChild,
   TemplateRef,
@@ -14,7 +15,8 @@ import {
 import { AgendarCitaComponent } from '../components/agendar-cita/agendar-cita.component';
 import { CalendarioCitasComponent } from '../components/calendario-citas/calendario-citas.component';
 import { ListaProfesionalesComponent } from '../components/lista-profesionales/lista-profesionales.component';
-import { AGENDADOR_TABS } from '../models/booking.models';
+import { AGENDADOR_TABS, AgendadorTabId } from '../models/booking.models';
+import { AppointmentLogicService } from '../services/appointment-logic.service';
 
 @Component({
   selector: 'app-agendador-citas-entry',
@@ -31,12 +33,23 @@ import { AGENDADOR_TABS } from '../models/booking.models';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RemoteEntryComponent {
+  protected readonly appointmentLogic = inject(AppointmentLogicService);
+
   // Query Signals de los ng-template proyectados en la vista
   private readonly appointmentTpl =
     viewChild<TemplateRef<void>>('appointmentTab');
   private readonly calendarTpl = viewChild<TemplateRef<void>>('calendarTab');
   private readonly professionalsTpl =
     viewChild<TemplateRef<void>>('professionalsTab');
+
+  /**
+   * Sincroniza la pestaña activa con el servicio de orquestación
+   */
+  onActiveTabChange(id: string | number | undefined): void {
+    if (typeof id === 'number') {
+      this.appointmentLogic.setActiveTab(id as AgendadorTabId);
+    }
+  }
 
   /**
    * Estado base reactivo de configuración de pestañas

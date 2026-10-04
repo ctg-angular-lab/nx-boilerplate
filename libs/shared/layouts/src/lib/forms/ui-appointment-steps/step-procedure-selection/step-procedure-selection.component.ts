@@ -2,7 +2,6 @@ import {
   Component,
   ChangeDetectionStrategy,
   input,
-  signal,
   computed,
   output,
 } from '@angular/core';
@@ -79,6 +78,11 @@ export class StepProcedureSelectionComponent {
    * Evento emitido al unirse a la lista de espera
    */
   readonly joinWaitlist = output<void>();
+
+  /**
+   * Evento emitido al pulsar 'Ver calendario' sobre un profesional específico
+   */
+  readonly viewCalendar = output<IProfessionalSummary>();
 
   /**
    * Control local para búsqueda y autocompletado de procedimiento

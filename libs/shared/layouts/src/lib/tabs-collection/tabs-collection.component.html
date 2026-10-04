@@ -2,6 +2,7 @@
   <mat-tab-group
     [selectedIndex]="selectedIndex()"
     (selectedIndexChange)="onSelectedIndexChange($event)"
+    [preserveContent]="preserveContent()"
     animationDuration="200ms"
   >
     @for (tab of tabs(); track tab.id) {
