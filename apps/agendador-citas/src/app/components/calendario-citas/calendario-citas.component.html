@@ -83,87 +83,107 @@
     </div>
   </header>
 
-  <!-- Grid del Calendario (Fase 2) -->
-  <div class="calendar-grid-wrapper">
-    <div class="calendar-grid">
-      @for (day of weekDays(); track day.date.toISOString()) {
-        <div
-          class="calendar-column"
-          [class.calendar-column--today]="day.isToday"
-          [class.calendar-column--unavailable]="day.isAvailable === false"
-        >
-          <div class="calendar-column__header">
-            <span class="calendar-column__day-label">{{ day.label }}</span>
-            <span class="calendar-column__date-label">{{ day.subLabel }}</span>
-          </div>
+  <!-- Grid del Calendario / Estado Vacío -->
+  @if (calendarError(); as errorMsg) {
+    <div class="calendar-empty-state">
+      <div class="calendar-empty-state__icon-box">
+        <mat-icon class="calendar-empty-state__icon">event_busy</mat-icon>
+      </div>
+      <h4 class="calendar-empty-state__title">Sin disponibilidad cercana</h4>
+      <p class="calendar-empty-state__message">{{ errorMsg }}</p>
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        class="calendar-empty-state__btn"
+        (click)="onWaitlistFromCalendar()"
+      >
+        <mat-icon>notification_add</mat-icon>
+        Unirme a lista de espera
+      </button>
+    </div>
+  } @else {
+    <div class="calendar-grid-wrapper">
+      <div class="calendar-grid">
+        @for (day of weekDays(); track day.date.toISOString()) {
+          <div
+            class="calendar-column"
+            [class.calendar-column--today]="day.isToday"
+            [class.calendar-column--unavailable]="day.isAvailable === false"
+          >
+            <div class="calendar-column__header">
+              <span class="calendar-column__day-label">{{ day.label }}</span>
+              <span class="calendar-column__date-label">{{ day.subLabel }}</span>
+            </div>
 
-          @if (day.isCalendarSynced === false) {
-            <!-- Placeholder: médico sin calendario sincronizado -->
-            <div class="calendar-column__unsynced" aria-label="Calendario no sincronizado">
-              <mat-icon class="material-symbols-outlined calendar-column__unsynced-icon">
-                sync_problem
-              </mat-icon>
-              <span class="calendar-column__unsynced-title">No sincronizado</span>
-              <span class="calendar-column__unsynced-email">{{ day.doctorEmail }}</span>
-              <span class="calendar-column__unsynced-hint">Calendario no conectado con la aplicación</span>
-            </div>
-          } @else if (day.isAvailable === false) {
-            <div class="calendar-column__unavailable" aria-label="Día no disponible">
-              <mat-icon class="material-symbols-outlined calendar-column__unavailable-icon">
-                event_busy
-              </mat-icon>
-              <span class="calendar-column__unavailable-text">No disponible</span>
-            </div>
-          } @else {
-            <div class="calendar-column__slots">
-              @for (slot of day.slots; track slot.id) {
-                <button
-                  type="button"
-                  class="time-slot"
-                  [class.time-slot--disponible]="slot.status === 'disponible' && !isSlotSelected(slot)"
-                  [class.time-slot--reservado]="slot.status === 'reservado'"
-                  [class.time-slot--merged]="slot.status === 'reservado' && (slot.mergedCount ?? 1) > 1"
-                  [class.time-slot--seleccionado]="isSlotSelected(slot)"
-                  [disabled]="slot.status === 'reservado'"
-                  (click)="onSlotClick(slot, day)"
-                >
-                  @if (slot.status === 'reservado' && (slot.mergedCount ?? 1) > 1) {
-                    <!-- Bloque fusionado: ícono + rango + etiqueta -->
-                    <mat-icon class="material-symbols-outlined time-slot__merged-icon">lock</mat-icon>
-                    <span class="time-slot__time">
-                      <span class="time-slot__merged-range">{{ slot.time }}</span>
-                      <span class="time-slot__merged-label">No disponible</span>
-                    </span>
-                  } @else {
-                    <!-- Slot normal (disponible, seleccionado o reservado simple) -->
-                    <span class="time-slot__time">{{ slot.time }}</span>
-                    @if (slot.status === 'reservado' && slot.reservedBy) {
-                      <span class="time-slot__reserved-by">{{ slot.reservedBy }}</span>
+            @if (day.isCalendarSynced === false) {
+              <!-- Placeholder: médico sin calendario sincronizado -->
+              <div class="calendar-column__unsynced" aria-label="Calendario no sincronizado">
+                <mat-icon class="material-symbols-outlined calendar-column__unsynced-icon">
+                  sync_problem
+                </mat-icon>
+                <span class="calendar-column__unsynced-title">No sincronizado</span>
+                <span class="calendar-column__unsynced-email">{{ day.doctorEmail }}</span>
+                <span class="calendar-column__unsynced-hint">Calendario no conectado con la aplicación</span>
+              </div>
+            } @else if (day.isAvailable === false) {
+              <div class="calendar-column__unavailable" aria-label="Día no disponible">
+                <mat-icon class="material-symbols-outlined calendar-column__unavailable-icon">
+                  event_busy
+                </mat-icon>
+                <span class="calendar-column__unavailable-text">No disponible</span>
+              </div>
+            } @else {
+              <div class="calendar-column__slots">
+                @for (slot of day.slots; track slot.id) {
+                  <button
+                    type="button"
+                    class="time-slot"
+                    [class.time-slot--disponible]="slot.status === 'disponible' && !isSlotSelected(slot)"
+                    [class.time-slot--reservado]="slot.status === 'reservado'"
+                    [class.time-slot--merged]="slot.status === 'reservado' && (slot.mergedCount ?? 1) > 1"
+                    [class.time-slot--seleccionado]="isSlotSelected(slot)"
+                    [disabled]="slot.status === 'reservado'"
+                    (click)="onSlotClick(slot, day)"
+                  >
+                    @if (slot.status === 'reservado' && (slot.mergedCount ?? 1) > 1) {
+                      <!-- Bloque fusionado: ícono + rango + etiqueta -->
+                      <mat-icon class="material-symbols-outlined time-slot__merged-icon">lock</mat-icon>
+                      <span class="time-slot__time">
+                        <span class="time-slot__merged-range">{{ slot.time }}</span>
+                        <span class="time-slot__merged-label">No disponible</span>
+                      </span>
+                    } @else {
+                      <!-- Slot normal (disponible, seleccionado o reservado simple) -->
+                      <span class="time-slot__time">{{ slot.time }}</span>
+                      @if (slot.status === 'reservado' && slot.reservedBy) {
+                        <span class="time-slot__reserved-by">{{ slot.reservedBy }}</span>
+                      }
                     }
-                  }
-                </button>
-              }
-            </div>
-          }
-        </div>
-      }
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
     </div>
-  </div>
 
-  <!-- Leyenda Inferior (Fase 2) -->
-  <footer class="calendar-legend">
-    <div class="calendar-legend__item">
-      <span class="legend-swatch legend-swatch--disponible"></span>
-      <span class="calendar-legend__label">Disponible</span>
-    </div>
-    <div class="calendar-legend__item">
-      <span class="legend-swatch legend-swatch--reservado"></span>
-      <span class="calendar-legend__label">No disponible</span>
-    </div>
-    <div class="calendar-legend__item">
-      <span class="legend-swatch legend-swatch--seleccionado"></span>
-      <span class="calendar-legend__label">Seleccionado</span>
-    </div>
-  </footer>
+    <!-- Leyenda Inferior (Fase 2) -->
+    <footer class="calendar-legend">
+      <div class="calendar-legend__item">
+        <span class="legend-swatch legend-swatch--disponible"></span>
+        <span class="calendar-legend__label">Disponible</span>
+      </div>
+      <div class="calendar-legend__item">
+        <span class="legend-swatch legend-swatch--reservado"></span>
+        <span class="calendar-legend__label">No disponible</span>
+      </div>
+      <div class="calendar-legend__item">
+        <span class="legend-swatch legend-swatch--seleccionado"></span>
+        <span class="calendar-legend__label">Seleccionado</span>
+      </div>
+    </footer>
+  }
 </section>
 

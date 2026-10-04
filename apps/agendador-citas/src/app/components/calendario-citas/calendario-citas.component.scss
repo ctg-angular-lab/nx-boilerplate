@@ -476,3 +476,55 @@
   }
 }
 
+.calendar-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  background-color: var(--sys-color-surface-container-low, #f7f9fc);
+  border-radius: var(--sys-shape-corner-large, 16px);
+  border: 1px dashed var(--sys-color-outline-variant, #cac4d0);
+  gap: 16px;
+  margin: 16px 0;
+
+  &__icon-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background-color: var(--sys-color-error-container, #ffdad6);
+    color: var(--sys-color-on-error-container, #410002);
+  }
+
+  &__icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: var(--mat-sys-title-medium-size, 1.15rem);
+    font-weight: 600;
+    color: var(--sys-color-on-surface, #1d1b20);
+  }
+
+  &__message {
+    margin: 0;
+    max-width: 480px;
+    font-size: var(--mat-sys-body-medium-size, 0.95rem);
+    line-height: 1.5;
+    color: var(--sys-color-on-surface-variant, #49454f);
+  }
+
+  &__btn {
+    margin-top: 8px;
+    font-weight: 600;
+  }
+}
+
+

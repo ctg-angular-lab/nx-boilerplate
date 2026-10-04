@@ -16,6 +16,8 @@ import {
   AgendarModalComponent,
   AgendarModalData,
   AgendarModalResult,
+  ConfirmationModalComponent,
+  ConfirmationModalData,
 } from '@nx-boilerplate/layouts';
 import { AppointmentLogicService } from '../../services/appointment-logic.service';
 
@@ -86,6 +88,11 @@ export class CalendarioCitasComponent {
   readonly bookingContext = this.appointmentLogic.bookingContext;
 
   /**
+   * Advertencia o error de disponibilidad (sin turnos en 4 semanas)
+   */
+  readonly calendarError = this.appointmentLogic.calendarError;
+
+  /**
    * Slot seleccionado actualmente
    */
   readonly selectedSlot = signal<TimeSlot | null>(null);
@@ -149,6 +156,37 @@ export class CalendarioCitasComponent {
    */
   cancelBookingFlow(): void {
     this.appointmentLogic.clearBookingContext();
+  }
+
+  /**
+   * Permite al paciente registrarse en la lista de espera cuando no hay cupos en 4 semanas
+   */
+  onWaitlistFromCalendar(): void {
+    const professional = this.activeProfessional();
+    const doctorName = professional
+      ? `${professional.nombres} ${professional.apellidos}`.trim()
+      : 'el profesional';
+
+    const modalData: ConfirmationModalData<boolean> = {
+      title: 'Lista de Espera',
+      text: `¿Desea registrarse en la lista de espera con ${doctorName}? Le notificaremos automáticamente tan pronto se libere un turno.`,
+      actions: [
+        { label: 'Unirme a la lista', color: 'primary', value: true },
+        { label: 'Cancelar', color: 'default', value: false },
+      ],
+    };
+
+    const dialogRef = this.dialog.open(ConfirmationModalComponent, {
+      data: modalData,
+      width: '450px',
+      disableClose: true,
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        console.log('Paciente anotado en lista de espera para:', doctorName);
+      }
+    });
   }
 
   /**
