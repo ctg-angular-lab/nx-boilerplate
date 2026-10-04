@@ -251,10 +251,11 @@ export class AppointmentLogicService {
   }
 
   /**
-   * Limpia el contexto temporal de agendamiento
+   * Limpia el contexto temporal de agendamiento y el historial del paciente verificado
    */
   clearBookingContext(): void {
     this.#bookingContext.set(null);
+    this._patientHistory.set(null);
   }
 
   /**

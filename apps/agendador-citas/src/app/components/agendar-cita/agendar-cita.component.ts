@@ -6,6 +6,7 @@ import {
   signal,
   computed,
   effect,
+  viewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -14,7 +15,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { MatStepperModule } from '@angular/material/stepper';
+import { MatStepper, MatStepperModule } from '@angular/material/stepper';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
@@ -57,6 +58,7 @@ export class AgendarCitaComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly title = signal<string>('Formulario de Agendamiento');
+  readonly stepper = viewChild<MatStepper>('stepper');
 
   /**
    * FormGroup fuertemente tipado con 3 sub-grupos
@@ -157,9 +159,12 @@ export class AgendarCitaComponent {
         console.log('Doctores asignados al procedimiento:', doctors);
       });
 
-    // Escucha el evento de confirmación exitosa de agendamiento para resetear el formulario
+    // Escucha el evento de confirmación exitosa de agendamiento para resetear el formulario y volver al paso 1
     const successSub = this.appointmentLogic.bookingSuccess$.subscribe(() => {
       this.form.reset();
+      this.procedureDoctors.set([]);
+      this.doctorsLoaded.set(false);
+      this.stepper()?.reset();
     });
 
     this.destroyRef.onDestroy(() => {
