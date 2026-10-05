@@ -18,6 +18,7 @@ import { ApiClientService } from '@nx-boilerplate/data-access';
 import {
   IApiResponse,
   ICreateAppointmentBody,
+  ICreatePatientRequest,
   IDayAvailability,
   ISlotDisplay,
   IPatientHistory,
@@ -90,6 +91,12 @@ export class AppointmentLogicService {
    * Signal público de solo lectura para consumo directo en templates y componentes.
    */
   readonly patientHistory = this._patientHistory.asReadonly();
+
+  /**
+   * Indica si el paciente consultado en el paso 1 no existe en el sistema y requiere registro
+   */
+  readonly #isNewPatient = signal<boolean>(false);
+  public readonly isNewPatient = this.#isNewPatient.asReadonly();
 
   /**
    * Catálogo de procedimientos médicos cargados desde MongoDB Atlas
@@ -256,6 +263,7 @@ export class AppointmentLogicService {
   clearBookingContext(): void {
     this.#bookingContext.set(null);
     this._patientHistory.set(null);
+    this.#isNewPatient.set(false);
   }
 
   /**
@@ -525,6 +533,7 @@ export class AppointmentLogicService {
     const cleanCedula = cedula?.trim();
     if (!cleanCedula) {
       this._patientHistory.set(null);
+      this.#isNewPatient.set(false);
       return;
     }
 
@@ -532,14 +541,37 @@ export class AppointmentLogicService {
       .get<IPatientHistory>(`/api/patients/${cleanCedula}`)
       .pipe(
         map((response) => response.data),
+        tap((patient) => {
+          if (patient) {
+            this.#isNewPatient.set(false);
+          } else {
+            this.#isNewPatient.set(true);
+          }
+        }),
         catchError((error) => {
           console.warn(`Paciente con cédula ${cleanCedula} no encontrado o error en gateway:`, error);
+          this._patientHistory.set(null);
+          this.#isNewPatient.set(true);
           return of(null);
         })
       )
       .subscribe((patient) => {
         this._patientHistory.set(patient);
       });
+  }
+
+  /**
+   * Registra un nuevo paciente en la BD (POST /api/patients) antes de avanzar al paso 3
+   */
+  createPatient(patientData: ICreatePatientRequest): Observable<IApiResponse<IPatientHistory>> {
+    return this.apiClient.post<IPatientHistory>('/api/patients', patientData).pipe(
+      tap((response) => {
+        const savedPatient: IPatientHistory =
+          response.data ?? (response as unknown as IPatientHistory);
+        this.#isNewPatient.set(false);
+        this._patientHistory.set(savedPatient);
+      })
+    );
   }
 
   /**

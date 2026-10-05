@@ -30,6 +30,7 @@ import {
 } from '@nx-boilerplate/layouts';
 import {
   IBookingPatient,
+  ICreatePatientRequest,
   IProfessionalSummary,
 } from '@nx-boilerplate/api-interfaces';
 import { AppointmentLogicService } from '../../services/appointment-logic.service';
@@ -54,11 +55,12 @@ import { AppointmentLogicService } from '../../services/appointment-logic.servic
 export class AgendarCitaComponent {
   private readonly fb = inject(FormBuilder);
   private readonly dialog = inject(MatDialog);
-  private readonly appointmentLogic = inject(AppointmentLogicService);
+  public readonly appointmentLogic = inject(AppointmentLogicService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly title = signal<string>('Formulario de Agendamiento');
-  readonly stepper = viewChild<MatStepper>('stepper');
+  readonly stepper = viewChild.required(MatStepper);
+  readonly isSubmittingPatient = signal<boolean>(false);
 
   /**
    * FormGroup fuertemente tipado con 3 sub-grupos
@@ -181,6 +183,47 @@ export class AgendarCitaComponent {
     if (cedula) {
       this.appointmentLogic.verifyPatient(cedula);
     }
+  }
+
+  /**
+   * Maneja el avance del paso 2: Si el paciente es nuevo, lo registra en MongoDB
+   * antes de avanzar al paso 3 de selección de procedimiento.
+   */
+  onStep2Submit(): void {
+    if (this.form.controls.step2.invalid) {
+      this.form.controls.step2.markAllAsTouched();
+      return;
+    }
+
+    if (!this.appointmentLogic.isNewPatient()) {
+      this.stepper().next();
+      return;
+    }
+
+    const cedula = this.step1Group.controls['cedula'].value?.trim() || '';
+    const step2Values = this.step2Group.getRawValue();
+
+    const patientData: ICreatePatientRequest = {
+      cedula,
+      nombre: step2Values.nombre?.trim() || '',
+      apellidos: step2Values.apellidos?.trim() || '',
+      correo: step2Values.correo?.trim() || '',
+      celular: step2Values.celular?.trim() || '',
+      ultimosProcedimientos: [],
+      recomendaciones: '',
+    };
+
+    this.isSubmittingPatient.set(true);
+    this.appointmentLogic.createPatient(patientData).subscribe({
+      next: () => {
+        this.isSubmittingPatient.set(false);
+        this.stepper().next();
+      },
+      error: (error) => {
+        this.isSubmittingPatient.set(false);
+        console.error('Error al registrar nuevo paciente:', error);
+      },
+    });
   }
 
   /**

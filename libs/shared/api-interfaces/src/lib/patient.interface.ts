@@ -25,5 +25,7 @@ export interface ICreatePatientRequest {
   apellidos: string;
   correo: string;
   celular: string;
+  ultimosProcedimientos?: IProcedureItem[];
+  recomendaciones?: string;
 }
 

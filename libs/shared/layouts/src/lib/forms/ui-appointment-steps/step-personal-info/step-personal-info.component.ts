@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -34,6 +34,16 @@ export class StepPersonalInfoComponent {
    * Historial clínico del paciente verificado
    */
   readonly history = input<PatientHistory | null>(null);
+
+  /**
+   * Indica si el paciente es nuevo en el sistema
+   */
+  readonly isNewPatient = input<boolean>(false);
+
+  /**
+   * Evento emitido para guardar y continuar con el siguiente paso
+   */
+  readonly saveAndContinue = output<void>();
 
   /**
    * Helpers para validación visual de errores
