@@ -105,8 +105,8 @@ export class PatientsRepository implements OnModuleInit {
   async create(patientData: ICreatePatientRequest): Promise<IPatientHistory> {
     const createdPatient = new this.patientModel({
       ...patientData,
-      ultimosProcedimientos: [],
-      recomendaciones: '',
+      ultimosProcedimientos: patientData.ultimosProcedimientos ?? [],
+      recomendaciones: patientData.recomendaciones ?? '',
     });
     const saved = await createdPatient.save();
     return {

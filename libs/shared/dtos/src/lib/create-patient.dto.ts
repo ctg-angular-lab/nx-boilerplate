@@ -1,5 +1,13 @@
-import { IsEmail, IsNotEmpty, IsString, Length, Matches } from 'class-validator';
-import { ICreatePatientRequest } from '@nx-boilerplate/api-interfaces';
+import {
+  IsArray,
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Length,
+  Matches,
+} from 'class-validator';
+import { ICreatePatientRequest, IProcedureItem } from '@nx-boilerplate/api-interfaces';
 
 export class CreatePatientDto implements ICreatePatientRequest {
   @IsString({ message: 'La cédula debe ser una cadena de texto' })
@@ -25,4 +33,13 @@ export class CreatePatientDto implements ICreatePatientRequest {
   @IsString({ message: 'El celular debe ser una cadena de texto' })
   @IsNotEmpty({ message: 'El celular es obligatorio' })
   celular!: string;
+
+  @IsOptional()
+  @IsArray({ message: 'Los últimos procedimientos deben ser una lista' })
+  ultimosProcedimientos?: IProcedureItem[];
+
+  @IsOptional()
+  @IsString({ message: 'Las recomendaciones deben ser una cadena de texto' })
+  recomendaciones?: string;
 }
+
