@@ -17,6 +17,7 @@ import {
 import { ApiClientService } from '@nx-boilerplate/data-access';
 import {
   IApiResponse,
+  IAreaCode,
   ICreateAppointmentBody,
   ICreatePatientRequest,
   IDayAvailability,
@@ -141,9 +142,16 @@ export class AppointmentLogicService {
   readonly #availableProfessionals = signal<IProfessionalSummary[]>([]);
   public readonly availableProfessionals = this.#availableProfessionals.asReadonly();
 
+  /**
+   * Catálogo de códigos de área telefónicos e indicativos internacionales
+   */
+  readonly #areaCodes = signal<IAreaCode[]>([]);
+  public readonly areaCodes = this.#areaCodes.asReadonly();
+
   constructor() {
     this.loadProcedures();
     this.fetchActiveProfessionals();
+    this.fetchAreaCodes();
 
     // Sincronización reactiva con switchMap para cancelar consultas anteriores y evitar condiciones de carrera
     const sub = this.#calendarFetch$
@@ -285,6 +293,32 @@ export class AppointmentLogicService {
         if (doctors.length > 0 && !this.#activeProfessional()) {
           this.selectProfessional(doctors[0]);
         }
+      });
+  }
+
+  /**
+   * Consulta el catálogo de códigos de área telefónicos desde el API Gateway (GET /api/area-codes)
+   */
+  fetchAreaCodes(): void {
+    this.apiClient
+      .get<IAreaCode[]>('/api/area-codes')
+      .pipe(
+        map((res) => {
+          const items = res.data ?? [];
+          return items.map((item) => ({
+            ...item,
+            patternString: item.patternString ?? item.pattern ?? '',
+          }));
+        }),
+        catchError((error) => {
+          console.error('Error al cargar códigos de área desde API Gateway:', error);
+          return of([]);
+        })
+      )
+      .subscribe({
+        next: (data) => {
+          this.#areaCodes.set(data);
+        },
       });
   }
 

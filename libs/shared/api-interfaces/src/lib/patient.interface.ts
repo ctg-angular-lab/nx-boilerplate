@@ -29,3 +29,5 @@ export interface ICreatePatientRequest {
   recomendaciones?: string;
 }
 
+export type { IAreaCode } from './area-code.interface';
+

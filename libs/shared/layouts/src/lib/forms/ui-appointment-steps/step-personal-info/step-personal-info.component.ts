@@ -4,8 +4,10 @@ import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
+import { IAreaCode } from '@nx-boilerplate/api-interfaces';
 import { PatientHistory } from '../../../models/appointment-steps.models';
 
 @Component({
@@ -17,6 +19,7 @@ import { PatientHistory } from '../../../models/appointment-steps.models';
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
     MatCheckboxModule,
     MatIconModule,
   ],
@@ -25,35 +28,27 @@ import { PatientHistory } from '../../../models/appointment-steps.models';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StepPersonalInfoComponent {
-  /**
-   * Sub-grupo del formulario del paso 2
-   */
   readonly form = input.required<FormGroup>();
-
-  /**
-   * Historial clínico del paciente verificado
-   */
   readonly history = input<PatientHistory | null>(null);
-
-  /**
-   * Indica si el paciente es nuevo en el sistema
-   */
   readonly isNewPatient = input<boolean>(false);
-
-  /**
-   * Evento emitido para guardar y continuar con el siguiente paso
-   */
+  readonly areaCodes = input<IAreaCode[]>([]);
   readonly saveAndContinue = output<void>();
 
-  /**
-   * Helpers para validación visual de errores
-   */
   hasError(controlName: string, errorType: string): boolean {
     const control = this.form().get(controlName);
     return !!(
       control &&
       control.hasError(errorType) &&
       (control.dirty || control.touched)
+    );
+  }
+
+  getPhoneErrorMessage(): string {
+    const code = this.form().get('indicativo')?.value;
+    const selected = this.areaCodes().find((a) => a.code === code);
+    return (
+      selected?.errorMessage ||
+      'Formato de teléfono celular no válido para el país seleccionado'
     );
   }
 }

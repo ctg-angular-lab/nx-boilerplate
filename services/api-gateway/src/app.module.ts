@@ -5,6 +5,7 @@ import { PatientsController } from './controllers/patients.controller';
 import { AppointmentsController } from './controllers/appointments.controller';
 import { ProceduresController } from './controllers/procedures.controller';
 import { DoctorsController } from './controllers/doctors.controller';
+import { AreaCodesController } from './controllers/area-codes.controller';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { DoctorsController } from './controllers/doctors.controller';
     AppointmentsController,
     ProceduresController,
     DoctorsController,
+    AreaCodesController
   ],
 })
 export class AppModule {}

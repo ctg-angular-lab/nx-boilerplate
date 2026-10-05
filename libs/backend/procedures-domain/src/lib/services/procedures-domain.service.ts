@@ -4,6 +4,7 @@ import {
   IActiveProfessional,
   IProcedure,
   IProfessionalSummary,
+  IAreaCode,
 } from '@nx-boilerplate/api-interfaces';
 import { ProceduresRepository } from '../repositories/procedures.repository';
 
@@ -63,5 +64,10 @@ export class ProceduresDomainService {
   async getAllDoctors(): Promise<IActiveProfessional[]> {
     return this.proceduresRepository.findAllDoctors();
   }
+
+  async getAllAreaCodes(): Promise<IAreaCode[]> {
+    return this.proceduresRepository.findAllAreaCodes();
+  }
+
 }
 

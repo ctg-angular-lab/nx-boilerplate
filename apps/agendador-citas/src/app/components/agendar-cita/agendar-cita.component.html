@@ -39,6 +39,7 @@
           [form]="form.controls.step2"
           [history]="patientHistory()"
           [isNewPatient]="appointmentLogic.isNewPatient()"
+          [areaCodes]="appointmentLogic.areaCodes()"
           (saveAndContinue)="onStep2Submit()"
         />
 

@@ -77,6 +77,35 @@
     width: 100%;
   }
 
+  .phone-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    width: 100%;
+
+    &__code {
+      flex: 0 0 130px;
+    }
+
+    &__number {
+      flex: 1;
+    }
+
+    &__option {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    &__flag {
+      font-size: 1.125rem;
+    }
+
+    &__code-text {
+      font-weight: 500;
+    }
+  }
+
   .whatsapp-option {
     margin-top: 4px;
   }
