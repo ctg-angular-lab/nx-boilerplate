@@ -571,6 +571,10 @@ export class AppointmentLogicService {
       return;
     }
 
+    if (this._patientHistory()?.cedula !== cleanCedula) {
+      this._patientHistory.set(null);
+    }
+
     this.apiClient
       .get<IPatientHistory>(`/api/patients/${cleanCedula}`)
       .pipe(

@@ -127,6 +127,21 @@ export class AgendarCitaComponent {
           indicativo,
           numeroCelular,
         });
+      } else {
+        this.step2Group.reset({
+          nombre: '',
+          apellidos: '',
+          correo: '',
+          indicativo: '+57',
+          numeroCelular: '',
+          recordatorioWhatsapp: false,
+        });
+        this.step2Group.markAsPristine();
+        this.step2Group.markAsUntouched();
+        const step2 = this.stepper()?.steps?.get(1);
+        if (step2) {
+          step2.interacted = false;
+        }
       }
     });
 
@@ -189,6 +204,20 @@ export class AgendarCitaComponent {
   verifyCedula(): void {
     const cedula = this.step1Group.controls['cedula'].value;
     if (cedula) {
+      this.step2Group.reset({
+        nombre: '',
+        apellidos: '',
+        correo: '',
+        indicativo: '+57',
+        numeroCelular: '',
+        recordatorioWhatsapp: false,
+      });
+      this.step2Group.markAsPristine();
+      this.step2Group.markAsUntouched();
+      const step2 = this.stepper()?.steps?.get(1);
+      if (step2) {
+        step2.interacted = false;
+      }
       this.appointmentLogic.verifyPatient(cedula);
     }
   }
