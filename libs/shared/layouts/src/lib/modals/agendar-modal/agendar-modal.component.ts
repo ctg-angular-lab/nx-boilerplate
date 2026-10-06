@@ -81,6 +81,14 @@ export class AgendarModalComponent {
     this.dialogRef.close(result);
   }
 
+  onGoToStepper(): void {
+    const result: AgendarModalResult = {
+      agendar: false,
+      goToStepper: true,
+    };
+    this.dialogRef.close(result);
+  }
+
   onConfirm(): void {
     if (!this.patient()) {
       return;

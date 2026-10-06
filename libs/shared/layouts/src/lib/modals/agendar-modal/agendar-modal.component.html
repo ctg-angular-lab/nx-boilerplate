@@ -62,6 +62,14 @@
           <div class="empty-text">
             <strong>Sin paciente asignado</strong>
             <p>Se requiere un paciente válido para autorizar el agendamiento.</p>
+            <button
+              type="button"
+              class="stepper-link-btn"
+              (click)="onGoToStepper()"
+            >
+              Volver a Agendar cita
+              <mat-icon class="material-symbols-outlined link-icon">arrow_forward</mat-icon>
+            </button>
           </div>
         </div>
       }

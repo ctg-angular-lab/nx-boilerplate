@@ -10,5 +10,6 @@ export interface AgendarModalData {
 export interface AgendarModalResult {
   agendar: boolean;
   notes?: string;
+  goToStepper?: boolean;
 }
 

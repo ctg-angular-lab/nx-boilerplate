@@ -20,6 +20,7 @@ import {
   ConfirmationModalData,
 } from '@nx-boilerplate/layouts';
 import { AppointmentLogicService } from '../../services/appointment-logic.service';
+import { AGENDADOR_TABS } from '../../models/booking.models';
 
 @Component({
   selector: 'app-calendario-citas',
@@ -221,6 +222,12 @@ export class CalendarioCitasComponent {
     });
 
     dialogRef.afterClosed().subscribe((result) => {
+      if (result?.goToStepper) {
+        this.appointmentLogic.setActiveTab(AGENDADOR_TABS.FORM);
+        this.selectedSlot.set(null);
+        return;
+      }
+
       if (result?.agendar) {
         this.appointmentLogic.bookSlot(slot, result.notes).subscribe({
           next: () => {

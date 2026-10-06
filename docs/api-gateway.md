@@ -28,9 +28,9 @@ graph LR
     PR["procedures-service\n(procedures_queue)"]
 
     FE -->|REST HTTP| GW
-    GW -->|patients.find-by-national-id| RMQ
+    GW -->|patients.find-by-national-id / patients.create| RMQ
     GW -->|appointments.*| RMQ
-    GW -->|procedures.* / doctors.*| RMQ
+    GW -->|procedures.* / doctors.* / area-codes.*| RMQ
     RMQ --> PS
     RMQ --> SC
     RMQ --> PR
@@ -50,20 +50,24 @@ graph LR
 | `IAvailableDate` | `appointment.interface.ts` | Slot puntual de disponibilidad (legado) |
 | `IDayAvailability` | `appointment.interface.ts` | Disponibilidad diaria agrupada con `isCalendarSynced` |
 | `ISlotDisplay` | `appointment.interface.ts` | Slot individual con `startTime`, `endTime` y `display` |
-| `IPatientHistory` | `patient.interface.ts` | Historial completo de paciente con citas |
+| `IPatientHistory` | `patient.interface.ts` | Historial completo de paciente con citas y procedimientos |
+| `ICreatePatientRequest` | `patient.interface.ts` | Payload de solicitud para registrar nuevo paciente |
+| `IAreaCode` | `patient.interface.ts` | Catálogo de indicativos internacionales, banderas y regex |
 | `IProcedure` | `procedure.interface.ts` | Procedimiento médico con duración y especialidad |
 | `IProfessionalSummary` | `procedure.interface.ts` | Resumen de médico especialista (nombre, email, cédula) |
 | `IActiveProfessional` | `procedure.interface.ts` | Médico activo con datos ampliados |
 | `IApiResponse<T>` | `api-response.interface.ts` | Sobre de respuesta canónico `{ success, statusCode, message, data }` |
 | `IWeekWindow` | `appointment.interface.ts` | Ventana semanal `{ startDate, endDate, totalDays, offsetWeeks }` |
 
-### B. DTOs y Validación Runtime (Gateway local — `src/dtos/`)
+### B. DTOs y Validación Runtime
 
-| DTO | Campos | Decoradores clave | Propósito |
-|---|---|---|---|
-| `GetAvailableDatesQueryDto` | `procedureId?`, `doctorEmail?`, `targetDate?`, `startDate?`, `endDate?` | `@IsEmail`, `@IsDateString`, `@IsOptional` | Query params para disponibilidad semanal |
-| `CreateAppointmentBodyDto` | `doctorEmail`, `doctorCedula`, `patientNationalId`, `patientFullName`, `patientEmail`, `procedureId`, `procedureName`, `startTime`, `endTime`, `notes?` | `@IsEmail`, `@IsISO8601`, `@IsNotEmpty` | Payload de creación de cita |
-| `CreateWaitlistBodyDto` | `patientNationalId`, `patientFullName`, `patientEmail`, `patientPhone`, `procedureId`, `preferredDoctorEmail?` | `@IsEmail`, `@IsNotEmpty` | Payload de inscripción a lista de espera |
+| DTO | Ubicación | Campos | Decoradores clave | Propósito |
+|---|---|---|---|---|
+| `GetAvailableDatesQueryDto` | `src/dtos/` | `procedureId?`, `doctorEmail?`, `targetDate?`, `startDate?`, `endDate?` | `@IsEmail`, `@IsDateString`, `@IsOptional` | Query params para disponibilidad semanal |
+| `CreateAppointmentBodyDto` | `src/dtos/` | `doctorEmail`, `doctorCedula`, `patientNationalId`, `patientFullName`, `patientEmail`, `procedureId`, `procedureName`, `startTime`, `endTime`, `notes?` | `@IsEmail`, `@IsISO8601`, `@IsNotEmpty` | Payload de creación de cita |
+| `CreateWaitlistBodyDto` | `src/dtos/` | `patientNationalId`, `patientFullName`, `patientEmail`, `patientPhone`, `procedureId`, `preferredDoctorEmail?` | `@IsEmail`, `@IsNotEmpty` | Payload de inscripción a lista de espera |
+| `FindPatientByNationalIdDto` | `@nx-boilerplate/shared-dtos` | `nationalId` | `@IsString`, `@IsNotEmpty` | Parámetro de ruta para consultar paciente |
+| `CreatePatientDto` | `@nx-boilerplate/shared-dtos` | `cedula`, `nombre`, `apellidos`, `correo`, `celular`, `ultimosProcedimientos?`, `recomendaciones?` | `@IsString`, `@IsEmail`, `@IsOptional` | Payload de registro de nuevo paciente |
 
 ---
 
@@ -171,6 +175,22 @@ Retorna el historial completo del paciente (citas pasadas, datos personales).
 
 **Patrón RMQ:** `patients.find-by-national-id` · **Cola:** `patients_queue`
 
+#### `POST /api/patients`
+
+Registra un nuevo paciente en la base de datos (MongoDB Atlas a través de `patients-service`). Se invoca automáticamente desde el MFE `agendador-citas` cuando se ingresa una cédula no registrada en el Stepper antes de avanzar a la selección de horario.
+
+| Campo Body | Tipo | Requerido | Descripción |
+|---|---|---|---|
+| `cedula` | `string` | Sí | Documento de identidad único |
+| `nombre` | `string` | Sí | Nombres del paciente |
+| `apellidos` | `string` | Sí | Apellidos del paciente |
+| `correo` | `string (email)` | Sí | Correo electrónico de contacto |
+| `celular` | `string` | Sí | Teléfono celular con indicativo internacional |
+| `ultimosProcedimientos` | `array` | No | Lista de procedimientos clínicos previos (default: `[]`) |
+| `recomendaciones` | `string` | No | Observaciones o recomendaciones médicas (default: `""`) |
+
+**Respuesta `201 Created`** · **Patrón RMQ:** `patients.create` · **Cola:** `patients_queue`
+
 ---
 
 ### 4.3 `ProceduresController` — `/api/procedures`
@@ -195,7 +215,42 @@ Lista los médicos que atienden el procedimiento dado.
 
 ---
 
-### 4.4 `DoctorsController` — `/api/doctors`
+### 4.4 `AreaCodesController` — `/api/area-codes`
+
+#### `GET /api/area-codes`
+
+Retorna el catálogo maestro de códigos de área e indicativos internacionales para validación y formateo de números celulares en formularios de agendamiento.
+
+**Respuesta `200 OK`:**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Operación realizada exitosamente",
+  "data": [
+    {
+      "code": "+57",
+      "country": "Colombia",
+      "flag": "🇨🇴",
+      "patternString": "^3\\d{9}$",
+      "errorMessage": "El número celular debe iniciar por 3 y tener 10 dígitos (Colombia)."
+    },
+    {
+      "code": "+1",
+      "country": "Estados Unidos / Canadá",
+      "flag": "🇺🇸",
+      "patternString": "^\\d{10}$",
+      "errorMessage": "El número celular debe contener exactamente 10 dígitos."
+    }
+  ]
+}
+```
+
+**Patrón RMQ:** `area-codes.get-all` · **Cola:** `procedures_queue` · **Timeout:** 5 000 ms
+
+---
+
+### 4.5 `DoctorsController` — `/api/doctors`
 
 #### `GET /api/doctors`
 
@@ -205,7 +260,7 @@ Lista todos los especialistas activos del sistema.
 
 ---
 
-### 4.5 `HealthController` — `/api/health`
+### 4.6 `HealthController` — `/api/health`
 
 #### `GET /api/health`
 
