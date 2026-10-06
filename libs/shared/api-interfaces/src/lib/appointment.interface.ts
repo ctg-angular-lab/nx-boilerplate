@@ -1,18 +1,25 @@
+export type SlotStatusType = 
+  | 'AVAILABLE'          
+  | 'TENTATIVE'          
+  | 'CONFIRMED'          
+  | 'BLOCKED_PERSONAL';  
+
 export interface ISlotDisplay {
-  startTime: string;
-  endTime: string;
-  display: string;
+  startTime: string;       
+  endTime: string;         
+  display: string;         
+  title: string;           
+  status: SlotStatusType;  
+  colorId: string | null;  
+  isBookable: boolean;     
+  googleEventId?: string;  
 }
 
 export interface IDayAvailability {
   date: string;
   dayName: string;
-  slots: ISlotDisplay[];
-  /**
-   * true  → el calendario del doctor está sincronizado con el bot (datos de Google Calendar reales)
-   * false → el bot no tiene acceso al calendario del doctor
-   */
   isCalendarSynced: boolean;
+  slots: ISlotDisplay[];
 }
 
 export interface IGetAvailableDatesRequest {

@@ -1,14 +1,14 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
-import { IDayAvailability, ISlotDisplay } from '@nx-boilerplate/api-interfaces';
+import { IDayAvailability, ISlotDisplay, SlotStatusType } from '@nx-boilerplate/api-interfaces';
 import {
   CALENDAR_PROVIDER,
+  ICalendarEventItem,
   ICalendarProvider,
   ITimeSlot,
 } from '../ports/calendar-provider.port';
 import { AppointmentRepository } from '../repositories/appointment.repository';
 import { Appointment, AppointmentStatus } from '../schemas/appointment.schema';
-
 
 export interface IBookAppointmentCommand {
   doctorEmail: string;
@@ -120,21 +120,16 @@ export class SchedulingDomainService {
     const rangeEnd = new Date(endDate);
     rangeEnd.setHours(23, 59, 59, 999);
 
-    // 2. Consulta ÚNICA a Google Calendar y MongoDB para todo el rango
-    const [calendarResult, mongoAppointments] = await Promise.all([
-      this.calendarProvider.getBusyIntervals(doctorEmail, rangeStart, rangeEnd),
+    // 2. Consulta de eventos en Google Calendar y MongoDB para todo el rango
+    let isCalendarSynced = true;
+    const [googleEvents, mongoAppointments] = await Promise.all([
+      this.calendarProvider.getEventsInRange(doctorEmail, rangeStart, rangeEnd).catch((err) => {
+        this.logger.warn(`No se pudo sincronizar Google Calendar para ${doctorEmail}: ${err.message}`);
+        isCalendarSynced = false;
+        return [] as ICalendarEventItem[];
+      }),
       this.appointmentRepository.findByDoctorAndDateRange(doctorEmail, rangeStart, rangeEnd),
     ]);
-
-    const { intervals: googleBusy, isSynced: isCalendarSynced } = calendarResult;
-
-    const allBusyIntervals: ITimeSlot[] = [
-      ...googleBusy,
-      ...mongoAppointments.map((apt) => ({
-        start: new Date(apt.startTime),
-        end: new Date(apt.endTime),
-      })),
-    ];
 
     const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     const result: IDayAvailability[] = [];
@@ -168,34 +163,72 @@ export class SchedulingDomainService {
         const lunchEnd = new Date(currentDay);
         lunchEnd.setHours(13, 0, 0, 0);
 
-        const dayBusy = [
-          { start: lunchStart, end: lunchEnd },
-          ...allBusyIntervals.filter((busy) => {
-            return busy.start.getTime() < workEnd.getTime() && busy.end.getTime() > workStart.getTime();
-          }),
-        ];
-
         let currentSlotStart = new Date(workStart);
         while (currentSlotStart.getTime() + slotDurationMs <= workEnd.getTime()) {
           const currentSlotEnd = new Date(currentSlotStart.getTime() + slotDurationMs);
+          const startH = String(currentSlotStart.getHours()).padStart(2, '0');
+          const startM = String(currentSlotStart.getMinutes()).padStart(2, '0');
+          const endH = String(currentSlotEnd.getHours()).padStart(2, '0');
+          const endM = String(currentSlotEnd.getMinutes()).padStart(2, '0');
+          const display = `${startH}:${startM} - ${endH}:${endM}`;
 
-          const hasOverlap = dayBusy.some((busy) => {
-            return (
-              currentSlotStart.getTime() < busy.end.getTime() &&
-              currentSlotEnd.getTime() > busy.start.getTime()
-            );
+          // Evaluar colisión contra eventos enriquecidos de Google Calendar
+          const matchingGoogle = googleEvents.find((evt) => {
+            return currentSlotStart.getTime() < evt.end.getTime() && currentSlotEnd.getTime() > evt.start.getTime();
           });
 
-          if (!hasOverlap) {
-            const startH = String(currentSlotStart.getHours()).padStart(2, '0');
-            const startM = String(currentSlotStart.getMinutes()).padStart(2, '0');
-            const endH = String(currentSlotEnd.getHours()).padStart(2, '0');
-            const endM = String(currentSlotEnd.getMinutes()).padStart(2, '0');
+          // Evaluar colisión contra citas en MongoDB
+          const matchingMongo = mongoAppointments.find((apt) => {
+            const aptStart = new Date(apt.startTime).getTime();
+            const aptEnd = new Date(apt.endTime).getTime();
+            return currentSlotStart.getTime() < aptEnd && currentSlotEnd.getTime() > aptStart;
+          });
 
+          // Evaluar si es horario de almuerzo (12:00 a 13:00)
+          const isLunch =
+            currentSlotStart.getTime() < lunchEnd.getTime() && currentSlotEnd.getTime() > lunchStart.getTime();
+
+          if (matchingGoogle) {
             daySlots.push({
               startTime: currentSlotStart.toISOString(),
               endTime: currentSlotEnd.toISOString(),
-              display: `${startH}:${startM} - ${endH}:${endM}`,
+              display,
+              title: matchingGoogle.summary || 'Ocupado',
+              status: matchingGoogle.isCreatedByApp ? matchingGoogle.derivedStatus : 'BLOCKED_PERSONAL',
+              colorId: matchingGoogle.colorId,
+              isBookable: false,
+              googleEventId: matchingGoogle.id,
+            });
+          } else if (matchingMongo) {
+            daySlots.push({
+              startTime: currentSlotStart.toISOString(),
+              endTime: currentSlotEnd.toISOString(),
+              display,
+              title: matchingMongo.procedureName || 'Cita Reservada',
+              status: (matchingMongo.status as SlotStatusType) || 'CONFIRMED',
+              colorId: matchingMongo.colorId || '5',
+              isBookable: false,
+              googleEventId: matchingMongo.googleCalendarEventId,
+            });
+          } else if (isLunch) {
+            daySlots.push({
+              startTime: currentSlotStart.toISOString(),
+              endTime: currentSlotEnd.toISOString(),
+              display,
+              title: 'Almuerzo',
+              status: 'BLOCKED_PERSONAL',
+              colorId: null,
+              isBookable: false,
+            });
+          } else {
+            daySlots.push({
+              startTime: currentSlotStart.toISOString(),
+              endTime: currentSlotEnd.toISOString(),
+              display,
+              title: 'Espacio disponible',
+              status: 'AVAILABLE',
+              colorId: null,
+              isBookable: true,
             });
           }
 
@@ -217,7 +250,6 @@ export class SchedulingDomainService {
 
     return result;
   }
-
 
   /**
    * Reserva una cita verificando disponibilidad previa, registrando en Google Calendar y persistiendo en MongoDB.
@@ -261,7 +293,8 @@ export class SchedulingDomainService {
         procedureName: command.procedureName,
         startTime: start,
         endTime: end,
-        status: AppointmentStatus.CONFIRMED,
+        status: AppointmentStatus.TENTATIVE,
+        colorId: '5',
         googleCalendarEventId: googleEventId,
         notes: command.notes,
       });

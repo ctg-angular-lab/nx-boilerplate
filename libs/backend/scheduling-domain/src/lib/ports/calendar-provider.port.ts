@@ -1,6 +1,19 @@
+import { SlotStatusType } from '@nx-boilerplate/api-interfaces';
+
 export interface ITimeSlot {
   start: Date;
   end: Date;
+}
+
+/** Resultado de un evento procesado de Google Calendar */
+export interface ICalendarEventItem {
+  id: string;
+  summary: string;
+  start: Date;
+  end: Date;
+  colorId: string | null;
+  isCreatedByApp: boolean;
+  derivedStatus: Extract<SlotStatusType, 'TENTATIVE' | 'CONFIRMED'>;
 }
 
 /** Resultado de consultar el calendario de un médico */
@@ -26,7 +39,13 @@ export interface ICreateAppointmentEvent {
 
 export interface ICalendarProvider {
   /**
-   * Consulta intervalos ocupados (busy) mediante el endpoint freebusy de Google Calendar.
+   * Obtiene eventos de Google Calendar mapeados con reglas de veto y estado derivado.
+   * Filtra y excluye los evaluados como CANCELLED.
+   */
+  getEventsInRange(doctorEmail: string, fromDate: Date, toDate: Date): Promise<ICalendarEventItem[]>;
+
+  /**
+   * Consulta intervalos ocupados (busy).
    * Retorna también si la sincronización fue exitosa (isSynced).
    */
   getBusyIntervals(calendarEmail: string, fromDate: Date, toDate: Date): Promise<ICalendarBusyResult>;

@@ -62,7 +62,7 @@ describe('SchedulingDomainService', () => {
 
     expect(appointment).toBeDefined();
     expect(appointment.appointmentId).toContain('APT-');
-    expect(appointment.status).toBe(AppointmentStatus.CONFIRMED);
+    expect(appointment.status).toBe(AppointmentStatus.TENTATIVE);
     expect(appointment.googleCalendarEventId).toContain('mock-google-id-');
   });
 
@@ -72,7 +72,7 @@ describe('SchedulingDomainService', () => {
     const doctorEmail = 'camilotabares.portafolio@gmail.com';
     const durationMinutes = 45;
 
-    const spyGetBusy = vi.spyOn(mockCalendarAdapter, 'getBusyIntervals');
+    const spyGetEvents = vi.spyOn(mockCalendarAdapter, 'getEventsInRange');
     const spyFindMongo = vi.spyOn(mockAppointmentRepository, 'findByDoctorAndDateRange');
 
     const result = await service.getAvailableSlotsForRange(
@@ -83,7 +83,7 @@ describe('SchedulingDomainService', () => {
     );
 
     // Debe ejecutar exactamente una llamada al proveedor de calendario y a Mongo para todo el rango
-    expect(spyGetBusy).toHaveBeenCalledTimes(1);
+    expect(spyGetEvents).toHaveBeenCalledTimes(1);
     expect(spyFindMongo).toHaveBeenCalledTimes(1);
 
     expect(result.length).toBeGreaterThanOrEqual(6);

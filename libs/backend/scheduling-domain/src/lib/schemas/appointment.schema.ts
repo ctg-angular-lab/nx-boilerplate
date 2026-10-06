@@ -4,6 +4,8 @@ import { HydratedDocument } from 'mongoose';
 export type AppointmentDocument = HydratedDocument<Appointment>;
 
 export enum AppointmentStatus {
+  AVAILABLE = 'AVAILABLE',
+  TENTATIVE = 'TENTATIVE',
   CONFIRMED = 'CONFIRMED',
   CANCELLED = 'CANCELLED',
   COMPLETED = 'COMPLETED',
@@ -42,12 +44,22 @@ export class Appointment {
   endTime!: Date;
 
   @Prop({
-    type: String,
     required: true,
-    enum: Object.values(AppointmentStatus),
-    default: AppointmentStatus.CONFIRMED,
+    enum: ['AVAILABLE', 'TENTATIVE', 'CONFIRMED', 'CANCELLED', 'COMPLETED'],
+    default: 'TENTATIVE',
+    index: true,
   })
-  status!: AppointmentStatus;
+  status!: string;
+
+  @Prop({
+    required: true,
+    enum: ['needsAction', 'accepted', 'declined', 'tentative'],
+    default: 'needsAction',
+  })
+  patientResponseStatus!: string;
+
+  @Prop({ default: '5' })
+  colorId!: string;
 
   @Prop()
   googleCalendarEventId?: string;

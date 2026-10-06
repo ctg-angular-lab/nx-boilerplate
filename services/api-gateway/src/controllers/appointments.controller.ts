@@ -57,11 +57,17 @@ export class AppointmentsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async createAppointment(@Body() body: CreateAppointmentBodyDto) {
-    return firstValueFrom(
+    const result = await firstValueFrom(
       this.schedulingClient
         .send('appointments.create', body)
         .pipe(timeout(10000)),
     );
+
+    return {
+      ...result,
+      status: 'TENTATIVE',
+      colorId: '5',
+    };
   }
 
   @Post('waitlist')

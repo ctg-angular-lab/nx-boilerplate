@@ -133,6 +133,8 @@ export class SchedulingMessageController {
       message: 'Cita reservada y sincronizada exitosamente con Google Calendar',
       appointmentId: appointment.appointmentId,
       googleCalendarEventId: appointment.googleCalendarEventId,
+      status: appointment.status || 'TENTATIVE',
+      colorId: appointment.colorId || '5',
       startTime: appointment.startTime,
       endTime: appointment.endTime,
       doctor: DEFAULT_DOCTOR.name,
