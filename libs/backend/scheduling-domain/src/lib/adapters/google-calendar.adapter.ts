@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import {
   ICalendarProvider,
   ICalendarBusyResult,
+  ICalendarEventItem,
   ITimeSlot,
   ICreateAppointmentEvent,
 } from '../ports/calendar-provider.port';
@@ -55,45 +56,85 @@ export class GoogleCalendarAdapter implements ICalendarProvider {
     }
   }
 
-  async getBusyIntervals(calendarEmail: string, fromDate: Date, toDate: Date): Promise<ICalendarBusyResult> {
+  async getEventsInRange(doctorEmail: string, fromDate: Date, toDate: Date): Promise<ICalendarEventItem[]> {
     try {
-      const response = await this.calendarClient.freebusy.query({
-        requestBody: {
-          timeMin: fromDate.toISOString(),
-          timeMax: toDate.toISOString(),
-          timeZone: 'America/Bogota',
-          items: [{ id: calendarEmail }],
-        },
+      const response = await this.calendarClient.events.list({
+        calendarId: doctorEmail,
+        timeMin: fromDate.toISOString(),
+        timeMax: toDate.toISOString(),
+        singleEvents: true,
+        orderBy: 'startTime',
       });
 
-      const calendars = response.data.calendars;
-      if (!calendars || !calendars[calendarEmail]) {
-        this.logger.warn(`Google Calendar no retornó entrada para ${calendarEmail}. Marcando como no sincronizado.`);
-        return { intervals: [], isSynced: false };
-      }
+      const rawItems = response.data.items || [];
+      const validEvents: ICalendarEventItem[] = [];
 
-      if (calendars[calendarEmail].errors && calendars[calendarEmail].errors!.length > 0) {
-        this.logger.warn(
-          `Google Calendar reportó errores de acceso para ${calendarEmail} ` +
-          `(${calendars[calendarEmail].errors!.map((e) => e.reason).join(', ')}). Marcando como no sincronizado.`
+      for (const event of rawItems) {
+        const startIso = event.start?.dateTime || event.start?.date;
+        const endIso = event.end?.dateTime || event.end?.date;
+        if (!startIso || !endIso) {
+          continue;
+        }
+
+        const attendees = event.attendees || [];
+        const doctorAttendee = attendees.find((a) => a.email?.toLowerCase() === doctorEmail.toLowerCase());
+        const patientAttendee = attendees.find((a) => a.email?.toLowerCase() !== doctorEmail.toLowerCase());
+
+        const doctorResponse = doctorAttendee?.responseStatus;
+        const patientResponse = patientAttendee?.responseStatus;
+
+        // Regla de Veto
+        let derivedStatus: 'CANCELLED' | 'CONFIRMED' | 'TENTATIVE';
+        if (doctorResponse === 'declined' || patientResponse === 'declined' || event.status === 'cancelled') {
+          derivedStatus = 'CANCELLED';
+        } else if (patientResponse === 'accepted' || event.status === 'confirmed') {
+          derivedStatus = 'CONFIRMED';
+        } else {
+          derivedStatus = 'TENTATIVE';
+        }
+
+        // Excluir eventos cancelados o vetados
+        if (derivedStatus === 'CANCELLED') {
+          continue;
+        }
+
+        const isCreatedByApp = Boolean(
+          event.summary?.startsWith('Cita Médica:') || event.description?.includes('Procedimiento:')
         );
-        return { intervals: [], isSynced: false };
+
+        validEvents.push({
+          id: event.id || '',
+          summary: event.summary || '',
+          start: new Date(startIso),
+          end: new Date(endIso),
+          colorId: event.colorId || null,
+          isCreatedByApp,
+          derivedStatus,
+        });
       }
 
-      // Lectura exitosa: el bot tiene acceso al calendario
-      const busyList = calendars[calendarEmail].busy || [];
-      const intervals: ITimeSlot[] = busyList
-        .filter((item) => item.start && item.end)
-        .map((item) => ({
-          start: new Date(item.start!),
-          end: new Date(item.end!),
-        }));
+      return validEvents;
+    } catch (error) {
+      this.logger.warn(
+        `Error al obtener eventos de Google Calendar para ${doctorEmail}: ${(error as Error).message}`
+      );
+      throw error;
+    }
+  }
+
+  async getBusyIntervals(calendarEmail: string, fromDate: Date, toDate: Date): Promise<ICalendarBusyResult> {
+    try {
+      const events = await this.getEventsInRange(calendarEmail, fromDate, toDate);
+      const intervals: ITimeSlot[] = events.map((event) => ({
+        start: event.start,
+        end: event.end,
+      }));
 
       return { intervals, isSynced: true };
     } catch (error) {
       this.logger.warn(
         `No se pudo sincronizar Google Calendar para ${calendarEmail} (${(error as Error).message}). ` +
-        `Marcando como no sincronizado.`
+          `Marcando como no sincronizado.`
       );
       return { intervals: [], isSynced: false };
     }
@@ -103,9 +144,12 @@ export class GoogleCalendarAdapter implements ICalendarProvider {
     try {
       const response = await this.calendarClient.events.insert({
         calendarId: eventData.doctorEmail,
+        sendUpdates: 'all',
         requestBody: {
           summary: `Cita Médica: ${eventData.procedureName} - ${eventData.patientFullName}`,
           description: `Procedimiento: ${eventData.procedureName}\nPaciente: ${eventData.patientFullName}\nCorreo Paciente: ${eventData.patientEmail}\nNotas: ${eventData.notes || 'Ninguna'}`,
+          status: 'tentative',
+          colorId: '5',
           start: {
             dateTime: eventData.startTime.toISOString(),
             timeZone: 'America/Bogota',
@@ -114,6 +158,16 @@ export class GoogleCalendarAdapter implements ICalendarProvider {
             dateTime: eventData.endTime.toISOString(),
             timeZone: 'America/Bogota',
           },
+          attendees: [
+            {
+              email: eventData.doctorEmail,
+              responseStatus: 'accepted',
+            },
+            {
+              email: eventData.patientEmail,
+              displayName: eventData.patientFullName,
+            },
+          ],
           reminders: {
             useDefault: false,
             overrides: [

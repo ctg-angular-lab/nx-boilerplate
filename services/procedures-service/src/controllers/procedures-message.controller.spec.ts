@@ -30,6 +30,7 @@ describe('ProceduresMessageController', () => {
             getByDoctor: vi.fn().mockResolvedValue(mockProcedures),
             getDoctorsByProcedureId: vi.fn().mockResolvedValue([]),
             getAllDoctors: vi.fn().mockResolvedValue([]),
+            getAllAreaCodes: vi.fn().mockResolvedValue([]),
           },
         },
       ],
@@ -113,6 +114,32 @@ describe('ProceduresMessageController', () => {
 
     expect(result).toEqual(mockAllDoctors);
     expect(service.getAllDoctors).toHaveBeenCalled();
+  });
+
+  it('debe atender area-codes.get-all delegando al servicio', async () => {
+    const mockAreaCodes = [
+      {
+        code: '+57',
+        country: 'Colombia',
+        flag: '🇨🇴',
+        pattern: '^3\\d{9}$',
+        errorMessage: 'Debe empezar por 3 y tener 10 dígitos',
+      },
+      {
+        code: '+1',
+        country: 'Estados Unidos',
+        flag: '🇺🇸',
+        pattern: '^\\d{10}$',
+        errorMessage: 'Debe tener 10 dígitos',
+      },
+    ];
+
+    vi.spyOn(service, 'getAllAreaCodes').mockResolvedValueOnce(mockAreaCodes as never);
+
+    const result = await controller.getAllAreaCodes();
+
+    expect(result).toEqual(mockAreaCodes);
+    expect(service.getAllAreaCodes).toHaveBeenCalled();
   });
 });
 

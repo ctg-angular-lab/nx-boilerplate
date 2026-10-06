@@ -10,8 +10,17 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
-import { TimeSlot } from '@nx-boilerplate/api-interfaces';
+import { MatDialog } from '@angular/material/dialog';
+import { CalendarDay, TimeSlot } from '@nx-boilerplate/api-interfaces';
+import {
+  AgendarModalComponent,
+  AgendarModalData,
+  AgendarModalResult,
+  ConfirmationModalComponent,
+  ConfirmationModalData,
+} from '@nx-boilerplate/layouts';
 import { AppointmentLogicService } from '../../services/appointment-logic.service';
+import { AGENDADOR_TABS } from '../../models/booking.models';
 
 @Component({
   selector: 'app-calendario-citas',
@@ -29,6 +38,7 @@ import { AppointmentLogicService } from '../../services/appointment-logic.servic
 })
 export class CalendarioCitasComponent {
   private readonly appointmentLogic = inject(AppointmentLogicService);
+  private readonly dialog = inject(MatDialog);
 
   readonly baseTitle = signal<string>('Calendario');
 
@@ -71,6 +81,17 @@ export class CalendarioCitasComponent {
    * Enlace reactivo directo con el Signal inmutable del servicio
    */
   readonly weekDays = this.appointmentLogic.weekDays;
+
+  /**
+   * Estado de flujo de agendamiento contextual proveniente del Stepper
+   */
+  readonly isBookingMode = this.appointmentLogic.isBookingMode;
+  readonly bookingContext = this.appointmentLogic.bookingContext;
+
+  /**
+   * Advertencia o error de disponibilidad (sin turnos en 4 semanas)
+   */
+  readonly calendarError = this.appointmentLogic.calendarError;
 
   /**
    * Slot seleccionado actualmente
@@ -132,13 +153,113 @@ export class CalendarioCitasComponent {
   }
 
   /**
-   * Maneja la selección / deselección de un slot disponible
+   * Cancela el modo de agendamiento contextual regresando a consulta general
    */
-  onSlotClick(slot: TimeSlot): void {
+  cancelBookingFlow(): void {
+    this.appointmentLogic.clearBookingContext();
+  }
+
+  /**
+   * Permite al paciente registrarse en la lista de espera cuando no hay cupos en 4 semanas
+   */
+  onWaitlistFromCalendar(): void {
+    const professional = this.activeProfessional();
+    const doctorName = professional
+      ? `${professional.nombres} ${professional.apellidos}`.trim()
+      : 'el profesional';
+
+    const modalData: ConfirmationModalData<boolean> = {
+      title: 'Lista de Espera',
+      text: `¿Desea registrarse en la lista de espera con ${doctorName}? Le notificaremos automáticamente tan pronto se libere un turno.`,
+      actions: [
+        { label: 'Unirme a la lista', color: 'primary', value: true },
+        { label: 'Cancelar', color: 'default', value: false },
+      ],
+    };
+
+    const dialogRef = this.dialog.open(ConfirmationModalComponent, {
+      data: modalData,
+      width: '450px',
+      disableClose: true,
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        console.log('Paciente anotado en lista de espera para:', doctorName);
+      }
+    });
+  }
+
+  /**
+   * Maneja el clic en un slot disponible para abrir el modal de confirmación de agendamiento
+   */
+  onSlotClick(slot: TimeSlot, day: CalendarDay): void {
     if (slot.status === 'reservado') {
       return;
     }
+
     this.selectedSlot.set(this.selectedSlot()?.id === slot.id ? null : slot);
+
+    const professional = this.activeProfessional();
+    const nombreProfesional = professional
+      ? `${professional.nombres} ${professional.apellidos}`.trim()
+      : 'Profesional seleccionado';
+
+    const fechaFormateada = `${day.label} ${day.subLabel} | ${slot.time}`;
+    const bookingCtx = this.bookingContext();
+
+    const dialogRef = this.dialog.open<
+      AgendarModalComponent,
+      AgendarModalData,
+      AgendarModalResult
+    >(AgendarModalComponent, {
+      data: {
+        title: bookingCtx?.procedure?.nombreProcedimiento || 'Consulta de Evaluación',
+        professional: nombreProfesional,
+        dateRange: fechaFormateada,
+        patient: bookingCtx?.patient ?? null,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result?.goToStepper) {
+        this.appointmentLogic.setActiveTab(AGENDADOR_TABS.FORM);
+        this.selectedSlot.set(null);
+        return;
+      }
+
+      if (result?.agendar) {
+        this.appointmentLogic.bookSlot(slot, result.notes).subscribe({
+          next: (response) => {
+            console.log('Cita agendada exitosamente', response);
+            this.openSuccessModal();
+            this.selectedSlot.set(null);
+          },
+          error: (err) => {
+            console.error('Error agendando la cita', err);
+          },
+        });
+      }
+    });
+  }
+
+  /**
+   * Despliega el modal de confirmación exitosa del agendamiento
+   */
+  openSuccessModal(): void {
+    const modalData: ConfirmationModalData<boolean> = {
+      title: '¡Cita Confirmada con Éxito!',
+      text: 'Tu cita médica ha sido agendada correctamente. Hemos enviado los detalles a tu correo electrónico registrado.',
+      actions: [
+        { label: 'Aceptar', color: 'primary', value: true },
+      ],
+    };
+
+    this.dialog.open(ConfirmationModalComponent, {
+      data: modalData,
+      width: '450px',
+      disableClose: true,
+    });
   }
 
   /**

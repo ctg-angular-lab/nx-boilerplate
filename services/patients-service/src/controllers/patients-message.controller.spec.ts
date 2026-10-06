@@ -26,6 +26,7 @@ describe('PatientsMessageController', () => {
           provide: PatientsDomainService,
           useValue: {
             findByNationalId: vi.fn().mockResolvedValue(mockPatient),
+            createPatient: vi.fn().mockResolvedValue(mockPatient),
           },
         },
       ],
@@ -46,4 +47,19 @@ describe('PatientsMessageController', () => {
     expect(service.findByNationalId).toHaveBeenCalledWith('1020304050');
     expect(result).toEqual(mockPatient);
   });
+
+  it('debe delegar la creación de paciente al servicio de dominio con el payload recibido', async () => {
+    const payload = {
+      cedula: '1020304050',
+      nombre: 'Laura Sofía',
+      apellidos: 'Gómez',
+      correo: 'laura.gomez@example.com',
+      celular: '3001234567',
+    };
+    const result = await controller.createPatient(payload);
+
+    expect(service.createPatient).toHaveBeenCalledWith(payload);
+    expect(result).toEqual(mockPatient);
+  });
 });
+

@@ -1,6 +1,11 @@
 <div class="agendador-citas-view-container">
-  <!-- Colección de pestañas modular con carga lazy -->
-  <app-tabs-collection [tabs]="tabs()" />
+  <!-- Colección de pestañas modular con preservación de estado del DOM -->
+  <app-tabs-collection
+    [tabs]="tabs()"
+    [preserveContent]="true"
+    [activeTabId]="appointmentLogic.activeTab()"
+    (activeTabIdChange)="onActiveTabChange($event)"
+  />
 
   <!-- Template para Tab 1: Agendar Cita -->
   <ng-template #appointmentTab>

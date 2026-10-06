@@ -1,0 +1,310 @@
+:host {
+  display: block;
+}
+
+.agendar-modal-container {
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  max-width: 520px;
+  background-color: var(--sys-color-surface);
+  color: var(--sys-color-on-surface);
+  box-sizing: border-box;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+
+  .header-icon-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background-color: var(--sys-color-primary-container);
+    color: var(--sys-color-on-primary-container);
+
+    mat-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      width: 26px;
+      height: 26px;
+      line-height: 1;
+    }
+  }
+
+  .header-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      line-height: 1.25;
+      padding: 0;
+      margin: 0;
+      color: var(--sys-color-on-surface);
+
+      // Neutraliza el strut vertical de 40px inyectado por Material MDC
+      &::before {
+        display: none;
+      }
+    }
+
+    .modal-subtitle {
+      font-size: 0.875rem;
+      line-height: 1.35;
+      margin: 0.125rem 0 0;
+      color: var(--sys-color-on-surface-variant);
+    }
+  }
+}
+
+.modal-content {
+  padding: 0.25rem 0 !important;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.details-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background-color: var(--sys-color-surface-container-low);
+  border: 1px solid var(--sys-color-outline-variant);
+
+  .detail-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+
+    .detail-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      color: var(--sys-color-primary);
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .detail-info {
+      display: flex;
+      flex-direction: column;
+
+      .detail-label {
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--sys-color-on-surface-variant);
+      }
+
+      .detail-value {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: var(--sys-color-on-surface);
+        line-height: 1.35;
+
+        &.highlight {
+          color: var(--sys-color-primary);
+        }
+      }
+    }
+  }
+}
+
+.patient-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    .section-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: var(--sys-color-on-surface-variant);
+    }
+
+    .section-title {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--sys-color-on-surface-variant);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  }
+
+  .patient-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    background-color: var(--sys-color-surface-container-lowest);
+    border: 1px solid var(--sys-color-outline-variant);
+
+    .patient-avatar {
+      color: var(--sys-color-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      mat-icon {
+        font-size: 32px;
+        width: 32px;
+        height: 32px;
+      }
+    }
+
+    .patient-data {
+      display: flex;
+      flex-direction: column;
+
+      .patient-name {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: var(--sys-color-on-surface);
+      }
+
+      .patient-id {
+        font-size: 0.8125rem;
+        color: var(--sys-color-on-surface-variant);
+      }
+    }
+  }
+
+  .patient-empty-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    background-color: var(--sys-color-error-container);
+    color: var(--sys-color-on-error-container);
+
+    .alert-icon {
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .empty-text {
+      strong {
+        display: block;
+        font-size: 0.875rem;
+      }
+      p {
+        margin: 0.125rem 0 0;
+        font-size: 0.75rem;
+        opacity: 0.9;
+      }
+
+      .stepper-link-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        margin-top: 0.5rem;
+        padding: 0;
+        background: none;
+        border: none;
+        color: inherit;
+        font-family: inherit;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        text-decoration: underline;
+        cursor: pointer;
+        transition: opacity 0.2s ease-in-out;
+
+        &:hover {
+          opacity: 0.8;
+        }
+
+        .link-icon {
+          font-size: 16px;
+          width: 16px;
+          height: 16px;
+        }
+      }
+    }
+  }
+}
+
+.notes-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  .toggle-notes-btn {
+    align-self: flex-start;
+    padding: 0 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--sys-color-primary);
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      margin-right: 0.375rem;
+    }
+  }
+
+  .notes-field-wrapper {
+    margin-top: 0.25rem;
+
+    .w-full {
+      width: 100%;
+    }
+
+    textarea {
+      margin-top: 10px;
+
+      &::placeholder {
+        font-size: calc(1em - 2px);
+      }
+    }
+  }
+}
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1.25rem 0 0 !important;
+  margin: 0;
+  border-top: 1px solid var(--sys-color-outline-variant);
+
+  .action-btn {
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 0 1.25rem;
+    height: 40px;
+
+    mat-icon {
+      margin-right: 0.25rem;
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+  }
+}

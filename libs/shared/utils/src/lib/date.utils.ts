@@ -111,10 +111,10 @@ export function getWeekSchedule(offsetWeeks = 0, referenceDate?: Date): { days: 
 export function getColombiaWeekRange(offsetWeeks = 0): { start: Date; end: Date; days: Date[] } {
   const today = getColombiaToday();
   const dayOfWeek = today.getDay(); // 0 = Domingo, 1 = Lunes, ...
-  const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const mondayOffset = dayOfWeek === 0 ? 1 : 1 - dayOfWeek;
 
   const monday = new Date(today);
-  monday.setDate(today.getDate() + diffToMonday + offsetWeeks * 7);
+  monday.setDate(today.getDate() + mondayOffset + offsetWeeks * 7);
 
   const days: Date[] = [];
   for (let i = 0; i < 7; i++) {

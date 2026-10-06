@@ -49,6 +49,136 @@
           }
         },
         {
+          "name": "01B - Registro de Paciente Nuevo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"1020304050\",\n  \"nombre\": \"Laura Sofía\",\n  \"apellidos\": \"Gómez Restrepo\",\n  \"correo\": \"laura.gomez@example.com\",\n  \"celular\": \"+573001234567\",\n  \"recomendaciones\": \"Primera consulta estética - Paciente prefiere anestesia tópica\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/patients",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "patients"
+              ]
+            },
+            "description": "Registro de nuevo paciente cuando la identificación previa retorna 404. Almacena los datos personales (cédula, nombres, correo, celular con código de área) en MongoDB Atlas."
+          },
+          "response": [
+            {
+              "name": "201 Created - Paciente Registrado con Éxito",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cedula\": \"1020304050\",\n  \"nombre\": \"Laura Sofía\",\n  \"apellidos\": \"Gómez Restrepo\",\n  \"correo\": \"laura.gomez@example.com\",\n  \"celular\": \"+573001234567\",\n  \"recomendaciones\": \"Primera consulta estética - Paciente prefiere anestesia tópica\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/patients",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "patients"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"statusCode\": 201,\n  \"message\": \"Operación realizada exitosamente\",\n  \"data\": {\n    \"cedula\": \"1020304050\",\n    \"nombre\": \"Laura Sofía\",\n    \"apellidos\": \"Gómez Restrepo\",\n    \"correo\": \"laura.gomez@example.com\",\n    \"celular\": \"+573001234567\",\n    \"ultimosProcedimientos\": [],\n    \"recomendaciones\": \"Primera consulta estética - Paciente prefiere anestesia tópica\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "01C - Listar Códigos de Área Telefónicos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/area-codes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "area-codes"
+              ]
+            },
+            "description": "Obtiene la lista de países y prefijos telefónicos internacionales (colección codigosArea en MongoDB Atlas) ordenada alfabéticamente para popular el selector de indicativos telefónicos en el formulario de datos personales."
+          },
+          "response": [
+            {
+              "name": "200 OK - Catálogo de Códigos de Área",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/area-codes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "area-codes"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"Operación realizada exitosamente\",\n  \"data\": [\n    {\n      \"code\": \"+57\",\n      \"country\": \"Colombia\",\n      \"flag\": \"🇨🇴\",\n      \"pattern\": \"^3\\\\d{9}$\",\n      \"errorMessage\": \"Debe empezar por 3 y tener 10 dígitos\"\n    },\n    {\n      \"code\": \"+593\",\n      \"country\": \"Ecuador\",\n      \"flag\": \"🇪🇨\",\n      \"pattern\": \"^9\\\\d{8}$\",\n      \"errorMessage\": \"Debe empezar por 9 y tener 9 dígitos\"\n    },\n    {\n      \"code\": \"+34\",\n      \"country\": \"España\",\n      \"flag\": \"🇪🇸\",\n      \"pattern\": \"^[67]\\\\d{8}$\",\n      \"errorMessage\": \"Debe empezar por 6 o 7 y tener 9 dígitos\"\n    },\n    {\n      \"code\": \"+507\",\n      \"country\": \"Panamá\",\n      \"flag\": \"🇵🇦\",\n      \"pattern\": \"^6\\\\d{7}$\",\n      \"errorMessage\": \"Debe empezar por 6 y tener 8 dígitos\"\n    },\n    {\n      \"code\": \"+1\",\n      \"country\": \"USA/Canadá\",\n      \"flag\": \"🇺🇸/🇨🇦\",\n      \"pattern\": \"^[2-9]\\\\d{9}$\",\n      \"errorMessage\": \"Debe tener 10 dígitos válidos\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
           "name": "02 - Listar Procedimientos Disponibles (Paso 2)",
           "request": {
             "method": "GET",

@@ -6,6 +6,7 @@ import {
   signal,
   computed,
   effect,
+  viewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -14,7 +15,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { MatStepperModule } from '@angular/material/stepper';
+import { MatStepper, MatStepperModule } from '@angular/material/stepper';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
@@ -28,7 +29,8 @@ import {
   AvailableDate,
 } from '@nx-boilerplate/layouts';
 import {
-  ICreateAppointmentRequest,
+  IBookingPatient,
+  ICreatePatientRequest,
   IProfessionalSummary,
 } from '@nx-boilerplate/api-interfaces';
 import { AppointmentLogicService } from '../../services/appointment-logic.service';
@@ -53,14 +55,11 @@ import { AppointmentLogicService } from '../../services/appointment-logic.servic
 export class AgendarCitaComponent {
   private readonly fb = inject(FormBuilder);
   private readonly dialog = inject(MatDialog);
-  private readonly appointmentLogic = inject(AppointmentLogicService);
+  public readonly appointmentLogic = inject(AppointmentLogicService);
   private readonly destroyRef = inject(DestroyRef);
-
   readonly title = signal<string>('Formulario de Agendamiento');
-
-  /**
-   * FormGroup fuertemente tipado con 3 sub-grupos
-   */
+  readonly stepper = viewChild.required(MatStepper);
+  readonly isSubmittingPatient = signal<boolean>(false);
   readonly form = this.fb.group({
     step1: this.fb.group({
       cedula: ['', [Validators.required, Validators.pattern(/^[0-9]+$/)]],
@@ -69,57 +68,28 @@ export class AgendarCitaComponent {
       nombre: ['', [Validators.required]],
       apellidos: ['', [Validators.required]],
       correo: ['', [Validators.required, Validators.email]],
-      celular: ['', [Validators.required]],
+      indicativo: ['+57', [Validators.required]],
+      numeroCelular: ['', [Validators.required, Validators.pattern(/^3\d{9}$/)]],
       recordatorioWhatsapp: [false],
     }),
     step3: this.fb.group({
       procedimientoId: ['', [Validators.required]],
     }),
   });
-
-  /**
-   * Getters tipados para acceso a los sub-grupos del formulario
-   */
   get step1Group(): FormGroup {
     return this.form.controls.step1;
   }
-
   get step2Group(): FormGroup {
     return this.form.controls.step2;
   }
-
   get step3Group(): FormGroup {
     return this.form.controls.step3;
   }
-
-  /**
-   * Conexión directa con la Signal de historial de paciente gestionada por el servicio de dominio
-   */
   readonly patientHistory = this.appointmentLogic.patientHistory;
-
-  /**
-   * Catálogo reactivo de procedimientos médicos cargados desde el backend
-   */
   readonly procedures = this.appointmentLogic.procedures;
-
-  /**
-   * Señal nativa para las fechas disponibles (libre de toSignal y de problemas de Injection Context)
-   */
   readonly availableDates = signal<AvailableDate[]>([]);
-
-  /**
-   * Médicos profesionales asignados al procedimiento seleccionado
-   */
   readonly procedureDoctors = signal<IProfessionalSummary[]>([]);
-
-  /**
-   * Indica si la consulta de doctores del procedimiento ha finalizado
-   */
   readonly doctorsLoaded = signal<boolean>(false);
-
-  /**
-   * Información consolidada del paciente del Paso 2 para el mensaje de lista de espera
-   */
   readonly patientInfo = computed(() => {
     const rawStep2 = this.step2Group.getRawValue();
     return {
@@ -129,20 +99,75 @@ export class AgendarCitaComponent {
   });
 
   constructor() {
-    // Sincronización reactiva con Signals: auto-llenado del Paso 2
+    this.appointmentLogic.fetchAreaCodes();
+
     effect(() => {
       const patient = this.patientHistory();
       if (patient) {
+        let indicativo = '+57';
+        let numeroCelular = patient.celular?.trim() ?? '';
+
+        const areaCodes = this.appointmentLogic.areaCodes();
+        const matched = areaCodes.find((a) => numeroCelular.startsWith(a.code));
+        if (matched) {
+          indicativo = matched.code;
+          numeroCelular = numeroCelular.slice(matched.code.length);
+        } else if (numeroCelular.startsWith('+')) {
+          const match = numeroCelular.match(/^(\+\d{1,4})(.*)$/);
+          if (match) {
+            indicativo = match[1];
+            numeroCelular = match[2];
+          }
+        }
+
         this.step2Group.patchValue({
           nombre: patient.nombre ?? '',
           apellidos: patient.apellidos ?? '',
           correo: patient.correo ?? '',
-          celular: patient.celular ?? '',
+          indicativo,
+          numeroCelular,
         });
+      } else {
+        this.step2Group.reset({
+          nombre: '',
+          apellidos: '',
+          correo: '',
+          indicativo: '+57',
+          numeroCelular: '',
+          recordatorioWhatsapp: false,
+        });
+        this.step2Group.markAsPristine();
+        this.step2Group.markAsUntouched();
+        const step2 = this.stepper()?.steps?.get(1);
+        if (step2) {
+          step2.interacted = false;
+        }
       }
     });
 
-    // Escucha reactiva de selección de procedimiento: consulta los doctores asignados
+    const indicativoSub = this.form.controls.step2.controls.indicativo.valueChanges
+      .subscribe((code) => {
+        const areaCodes = this.appointmentLogic.areaCodes();
+        const selected = areaCodes.find((a) => a.code === code);
+        const pattern = selected?.patternString ?? selected?.pattern;
+
+        if (pattern) {
+          try {
+            const regex = new RegExp(pattern);
+            this.form.controls.step2.controls.numeroCelular.setValidators([
+              Validators.required,
+              Validators.pattern(regex),
+            ]);
+          } catch (e) {
+            console.error('Error al compilar regex de código de área:', e);
+            this.form.controls.step2.controls.numeroCelular.setValidators([Validators.required]);
+          }
+        } else {
+          this.form.controls.step2.controls.numeroCelular.setValidators([Validators.required]);
+        }
+        this.form.controls.step2.controls.numeroCelular.updateValueAndValidity();
+      });
+
     const sub = this.form.controls.step3.controls.procedimientoId.valueChanges
       .pipe(
         filter((id): id is string => typeof id === 'string' && id.trim().length > 0),
@@ -157,94 +182,85 @@ export class AgendarCitaComponent {
         console.log('Doctores asignados al procedimiento:', doctors);
       });
 
-    this.destroyRef.onDestroy(() => sub.unsubscribe());
+    const successSub = this.appointmentLogic.bookingSuccess$.subscribe(() => {
+      this.form.reset({
+        step2: {
+          indicativo: '+57',
+          recordatorioWhatsapp: false,
+        },
+      });
+      this.procedureDoctors.set([]);
+      this.doctorsLoaded.set(false);
+      this.stepper()?.reset();
+    });
+
+    this.destroyRef.onDestroy(() => {
+      indicativoSub.unsubscribe();
+      sub.unsubscribe();
+      successSub.unsubscribe();
+    });
   }
 
-  /**
-   * Dispara la verificación de la cédula ingresada en el paso 1
-   */
   verifyCedula(): void {
     const cedula = this.step1Group.controls['cedula'].value;
     if (cedula) {
+      this.step2Group.reset({
+        nombre: '',
+        apellidos: '',
+        correo: '',
+        indicativo: '+57',
+        numeroCelular: '',
+        recordatorioWhatsapp: false,
+      });
+      this.step2Group.markAsPristine();
+      this.step2Group.markAsUntouched();
+      const step2 = this.stepper()?.steps?.get(1);
+      if (step2) {
+        step2.interacted = false;
+      }
       this.appointmentLogic.verifyPatient(cedula);
     }
   }
 
-  /**
-   * Mapea el estado consolidado del formulario y envía la mutación para agendar la cita
-   */
-  submitAppointment(): void {
-    if (this.form.invalid) {
+
+  onStep2Submit(): void {
+    if (this.form.controls.step2.invalid) {
+      this.form.controls.step2.markAllAsTouched();
       return;
     }
 
-    const step1 = this.step1Group.getRawValue();
-    const step2 = this.step2Group.getRawValue();
-    const step3 = this.step3Group.getRawValue();
+    if (!this.appointmentLogic.isNewPatient()) {
+      this.stepper().next();
+      return;
+    }
 
-    const payload: ICreateAppointmentRequest = {
-      cedula: step1.cedula ?? '',
-      nombre: step2.nombre ?? '',
-      apellidos: step2.apellidos ?? '',
-      correo: step2.correo ?? '',
-      celular: step2.celular ?? '',
-      recordatorioWhatsapp: !!step2.recordatorioWhatsapp,
-      procedimientoId: step3.procedimientoId ?? '',
+    const cedula = this.step1Group.controls['cedula'].value?.trim() || '';
+    const step2Values = this.step2Group.getRawValue();
+    const celularCompleto = `${step2Values.indicativo?.trim() || ''}${step2Values.numeroCelular?.trim() || ''}`.trim();
+
+    const patientData: ICreatePatientRequest = {
+      cedula,
+      nombre: step2Values.nombre?.trim() || '',
+      apellidos: step2Values.apellidos?.trim() || '',
+      correo: step2Values.correo?.trim() || '',
+      celular: celularCompleto,
+      ultimosProcedimientos: [],
+      recomendaciones: '',
     };
 
-    this.appointmentLogic.createAppointment(payload).subscribe({
+    this.isSubmittingPatient.set(true);
+    this.appointmentLogic.createPatient(patientData).subscribe({
       next: () => {
-        this.openConfirmationModal();
+        this.isSubmittingPatient.set(false);
+        this.stepper().next();
       },
       error: (error) => {
-        console.error('Error al registrar la cita médica:', error);
+        this.isSubmittingPatient.set(false);
+        console.error('Error al registrar nuevo paciente:', error);
       },
     });
   }
 
-  /**
-   * Orquesta la apertura del modal de confirmación con los datos dinámicos de la cita
-   */
-  openConfirmationModal(): void {
-    const nombre = this.step2Group.get('nombre')?.value || '';
-    const apellido = this.step2Group.get('apellidos')?.value || '';
-
-    const modalData: ConfirmationModalData<boolean> = {
-      title: 'Confirmación de cita',
-      text: `Sr(a) ${nombre} ${apellido}, su solicitud de cita ha sido procesada exitosamente.`,
-      actions: [
-        { label: 'Aceptar', color: 'primary', value: true },
-        { label: 'Cerrar', color: 'default', value: false },
-      ],
-    };
-
-    const dialogRef = this.dialog.open<
-      ConfirmationModalComponent,
-      ConfirmationModalData<boolean>,
-      boolean
-    >(ConfirmationModalComponent, {
-      data: modalData,
-      width: '450px',
-      disableClose: true,
-    });
-
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        console.log('Modal cerrado tras confirmación');
-      }
-    });
-  }
-
-  /**
-   * Manejador del submit emitido desde el paso 3 del Stepper
-   */
-  onAppointmentSubmitted(): void {
-    this.submitAppointment();
-  }
-
-  /**
-   * Manejador de la acción de unirse a la lista de espera
-   */
   onWaitlistRequested(): void {
     const nombre = this.step2Group.get('nombre')?.value || '';
     const apellido = this.step2Group.get('apellidos')?.value || '';
@@ -274,4 +290,31 @@ export class AgendarCitaComponent {
       }
     });
   }
+
+  onViewCalendar(doctor: IProfessionalSummary): void {
+    const step1 = this.step1Group.getRawValue();
+    const step2 = this.step2Group.getRawValue();
+    const step3 = this.step3Group.getRawValue();
+    const procId = step3.procedimientoId;
+
+    const procedure = this.procedures().find(
+      (p) => p.idProcedimiento === procId || (p as unknown as { id?: string }).id === procId
+    );
+    if (!procedure) return;
+
+    const patient: IBookingPatient = {
+      cedula: step1.cedula?.trim() || '',
+      nombre: step2.nombre?.trim() || '',
+      apellidos: step2.apellidos?.trim() || '',
+      correo: step2.correo?.trim() || '',
+      celular: `${step2.indicativo?.trim() || ''}${step2.numeroCelular?.trim() || ''}`.trim(),
+    };
+
+    this.appointmentLogic.startBookingFlow({
+      patient,
+      procedure,
+      doctor,
+    });
+  }
 }
+

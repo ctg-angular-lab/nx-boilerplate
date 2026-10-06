@@ -2,6 +2,7 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import {
   IActiveProfessional,
+  IAreaCode,
   IProcedure,
   IProfessionalSummary,
 } from '@nx-boilerplate/api-interfaces';
@@ -46,6 +47,11 @@ export class ProceduresMessageController {
   @MessagePattern('doctors.get-all')
   async getAllDoctors(): Promise<IActiveProfessional[]> {
     return this.proceduresDomainService.getAllDoctors();
+  }
+
+  @MessagePattern('area-codes.get-all')
+  async getAllAreaCodes(): Promise<IAreaCode[]> {
+    return this.proceduresDomainService.getAllAreaCodes();
   }
 }
 

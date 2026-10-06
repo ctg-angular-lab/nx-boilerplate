@@ -68,13 +68,35 @@
         }
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="form-field">
-        <mat-label>Teléfono Celular</mat-label>
-        <input matInput type="tel" formControlName="celular" placeholder="Ej. 3001234567" />
-        @if (hasError('celular', 'required')) {
-          <mat-error>El número celular es obligatorio</mat-error>
-        }
-      </mat-form-field>
+      <div class="phone-row">
+        <mat-form-field appearance="outline" class="phone-row__code">
+          <mat-label>Indicativo</mat-label>
+          <mat-select formControlName="indicativo">
+            @for (area of areaCodes(); track area.code + area.country) {
+              <mat-option [value]="area.code">
+                <span class="phone-row__option">
+                  <span class="phone-row__flag">{{ area.flag }}</span>
+                  <span class="phone-row__code-text">{{ area.code }}</span>
+                </span>
+              </mat-option>
+            }
+          </mat-select>
+          @if (hasError('indicativo', 'required')) {
+            <mat-error>Requerido</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="phone-row__number">
+          <mat-label>Teléfono Celular</mat-label>
+          <input matInput type="tel" formControlName="numeroCelular" placeholder="Ej. 3001234567" />
+          @if (hasError('numeroCelular', 'required')) {
+            <mat-error>El número celular es obligatorio</mat-error>
+          }
+          @if (hasError('numeroCelular', 'pattern')) {
+            <mat-error>{{ getPhoneErrorMessage() }}</mat-error>
+          }
+        </mat-form-field>
+      </div>
     </div>
 
     <div class="whatsapp-option">

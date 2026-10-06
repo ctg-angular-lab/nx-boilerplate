@@ -1,0 +1,131 @@
+<div class="agendar-modal-container">
+  <div class="modal-header">
+    <div class="header-icon-badge">
+      <mat-icon class="material-symbols-outlined">event_available</mat-icon>
+    </div>
+    <div class="header-text">
+      <h2 mat-dialog-title class="modal-title">{{ title() }}</h2>
+      <p class="modal-subtitle">Confirma los detalles de tu cita médica</p>
+    </div>
+  </div>
+
+  <mat-dialog-content class="modal-content">
+    <!-- Tarjeta de Detalles del Slot -->
+    <div class="details-card">
+      <div class="detail-row">
+        <mat-icon class="material-symbols-outlined detail-icon">calendar_today</mat-icon>
+        <div class="detail-info">
+          <span class="detail-label">Fecha y Horario</span>
+          <span class="detail-value highlight">{{ dateRange() || 'Horario no especificado' }}</span>
+        </div>
+      </div>
+
+      <div class="detail-row">
+        <mat-icon class="material-symbols-outlined detail-icon">medical_services</mat-icon>
+        <div class="detail-info">
+          <span class="detail-label">Profesional asignado</span>
+          <span class="detail-value">{{ professional() }}</span>
+        </div>
+      </div>
+
+      <div class="detail-row">
+        <mat-icon class="material-symbols-outlined detail-icon">location_on</mat-icon>
+        <div class="detail-info">
+          <span class="detail-label">Ubicación de la consulta</span>
+          <span class="detail-value">{{ location }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección del Paciente -->
+    <div class="patient-section">
+      <div class="section-header">
+        <mat-icon class="material-symbols-outlined section-icon">person</mat-icon>
+        <span class="section-title">Información del Paciente</span>
+      </div>
+
+      @if (patient(); as p) {
+        <div class="patient-card">
+          <div class="patient-avatar">
+            <mat-icon class="material-symbols-outlined">account_circle</mat-icon>
+          </div>
+          <div class="patient-data">
+            <span class="patient-name">{{ patientFullName() }}</span>
+            @if (patientDocument()) {
+              <span class="patient-id">C.C. {{ patientDocument() }}</span>
+            }
+          </div>
+        </div>
+      } @else {
+        <div class="patient-empty-banner">
+          <mat-icon class="material-symbols-outlined alert-icon">warning</mat-icon>
+          <div class="empty-text">
+            <strong>Sin paciente asignado</strong>
+            <p>Se requiere un paciente válido para autorizar el agendamiento.</p>
+            <button
+              type="button"
+              class="stepper-link-btn"
+              (click)="onGoToStepper()"
+            >
+              Volver a Agendar cita
+              <mat-icon class="material-symbols-outlined link-icon">arrow_forward</mat-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Sección de Notas Adicionales -->
+    <div class="notes-section">
+      <button
+        type="button"
+        mat-button
+        class="toggle-notes-btn"
+        (click)="toggleNotes()"
+      >
+        <mat-icon class="material-symbols-outlined">
+          {{ showNotesField() ? 'remove_circle_outline' : 'add_circle_outline' }}
+        </mat-icon>
+        <span>{{ showNotesField() ? 'Ocultar observaciones' : 'Agregar observaciones o notas adicionales' }}</span>
+      </button>
+
+      @if (showNotesField()) {
+        <div class="notes-field-wrapper">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Notas adicionales para el profesional</mat-label>
+            <textarea
+              matInput
+              rows="3"
+              [formControl]="notesControl"
+              placeholder="Ej: Síntomas previos, necesidad de asistencia especial..."
+              maxlength="200"
+            ></textarea>
+            <mat-hint align="end">{{ notesControl.value.length }} / 200</mat-hint>
+          </mat-form-field>
+        </div>
+      }
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end" class="modal-actions">
+    <button
+      type="button"
+      mat-stroked-button
+      class="action-btn cancel-btn"
+      (click)="onCancel()"
+    >
+      Cancelar
+    </button>
+    <button
+      type="button"
+      mat-flat-button
+      color="primary"
+      class="action-btn confirm-btn"
+      [disabled]="!patient()"
+      (click)="onConfirm()"
+    >
+      <mat-icon class="material-symbols-outlined">check_circle</mat-icon>
+      Confirmar Cita
+    </button>
+  </mat-dialog-actions>
+</div>

@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { IPatientHistory } from '@nx-boilerplate/api-interfaces';
+import { ICreatePatientRequest, IPatientHistory } from '@nx-boilerplate/api-interfaces';
 import { Patient, PatientDocument } from '../schemas/patient.schema';
 
 @Injectable()
@@ -98,4 +98,26 @@ export class PatientsRepository implements OnModuleInit {
       .lean<IPatientHistory>()
       .exec();
   }
+
+  /**
+   * Registra un nuevo paciente en la colección 'patients' de MongoDB Atlas.
+   */
+  async create(patientData: ICreatePatientRequest): Promise<IPatientHistory> {
+    const createdPatient = new this.patientModel({
+      ...patientData,
+      ultimosProcedimientos: patientData.ultimosProcedimientos ?? [],
+      recomendaciones: patientData.recomendaciones ?? '',
+    });
+    const saved = await createdPatient.save();
+    return {
+      cedula: saved.cedula,
+      nombre: saved.nombre,
+      apellidos: saved.apellidos,
+      correo: saved.correo,
+      celular: saved.celular,
+      ultimosProcedimientos: saved.ultimosProcedimientos ?? [],
+      recomendaciones: saved.recomendaciones ?? '',
+    };
+  }
 }
+

@@ -8,6 +8,40 @@
   gap: 24px;
 }
 
+.calendar-booking-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background-color: var(--sys-color-primary-container, #eaddff);
+  color: var(--sys-color-on-primary-container, #21005d);
+  border-radius: var(--sys-shape-corner-medium, 12px);
+  gap: 16px;
+
+  &__info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__icon {
+    color: var(--sys-color-primary, #6750a4);
+  }
+
+  &__text {
+    font-size: var(--mat-sys-body-medium-size, 0.95rem);
+    line-height: 1.4;
+
+    strong {
+      color: var(--sys-color-on-primary-container, #21005d);
+    }
+  }
+
+  &__btn-cancel {
+    font-weight: 600;
+  }
+}
+
 .calendar-filters {
   display: flex;
   align-items: center;
@@ -177,7 +211,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-height: 480px;
+    max-height: 650px;
     overflow-y: auto;
     padding-right: 4px;
 
@@ -281,7 +315,12 @@
   transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.2s ease, border-color 0.2s ease;
 
   &__time {
-    font-size: 0.85rem;
+    font-size: 0.60rem;
+    font-weight: 600;
+  }
+
+  &__title {
+    font-size: 0.90rem;
     font-weight: 600;
   }
 
@@ -441,4 +480,56 @@
     border: 1px solid var(--sys-color-primary, #005ac1);
   }
 }
+
+.calendar-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  background-color: var(--sys-color-surface-container-low, #f7f9fc);
+  border-radius: var(--sys-shape-corner-large, 16px);
+  border: 1px dashed var(--sys-color-outline-variant, #cac4d0);
+  gap: 16px;
+  margin: 16px 0;
+
+  &__icon-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background-color: var(--sys-color-error-container, #ffdad6);
+    color: var(--sys-color-on-error-container, #410002);
+  }
+
+  &__icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: var(--mat-sys-title-medium-size, 1.15rem);
+    font-weight: 600;
+    color: var(--sys-color-on-surface, #1d1b20);
+  }
+
+  &__message {
+    margin: 0;
+    max-width: 480px;
+    font-size: var(--mat-sys-body-medium-size, 0.95rem);
+    line-height: 1.5;
+    color: var(--sys-color-on-surface-variant, #49454f);
+  }
+
+  &__btn {
+    margin-top: 8px;
+    font-weight: 600;
+  }
+}
+
 

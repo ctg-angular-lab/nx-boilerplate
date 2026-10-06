@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+import { ICreateAppointmentBody } from '@nx-boilerplate/api-interfaces';
 
 export class GetAvailableDatesQueryDto {
   @IsString({ message: 'El ID del procedimiento debe ser una cadena' })
@@ -29,7 +30,7 @@ export class GetAvailableDatesQueryDto {
   endDate?: string;
 }
 
-export class CreateAppointmentBodyDto {
+export class CreateAppointmentBodyDto implements ICreateAppointmentBody {
   @IsEmail({}, { message: 'El correo del médico no es válido' })
   @IsNotEmpty({ message: 'El correo del médico es obligatorio' })
   doctorEmail!: string;

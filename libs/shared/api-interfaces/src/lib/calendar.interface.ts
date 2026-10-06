@@ -4,6 +4,9 @@ export interface TimeSlot {
   id: string;
   time: string;
   status: SlotStatus;
+  startTime?: string;
+  endTime?: string;
+  title?: string;
   reservedBy?: string;
   /** Cantidad de slots de 45 min que agrupa este bloque (solo en slots 'reservado' fusionados > 1) */
   mergedCount?: number;

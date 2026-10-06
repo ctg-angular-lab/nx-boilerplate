@@ -1,6 +1,7 @@
 import {
   Component,
   ChangeDetectionStrategy,
+  inject,
   signal,
   viewChild,
   TemplateRef,
@@ -14,6 +15,8 @@ import {
 import { AgendarCitaComponent } from '../components/agendar-cita/agendar-cita.component';
 import { CalendarioCitasComponent } from '../components/calendario-citas/calendario-citas.component';
 import { ListaProfesionalesComponent } from '../components/lista-profesionales/lista-profesionales.component';
+import { AGENDADOR_TABS, AgendadorTabId } from '../models/booking.models';
+import { AppointmentLogicService } from '../services/appointment-logic.service';
 
 @Component({
   selector: 'app-agendador-citas-entry',
@@ -30,6 +33,8 @@ import { ListaProfesionalesComponent } from '../components/lista-profesionales/l
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RemoteEntryComponent {
+  protected readonly appointmentLogic = inject(AppointmentLogicService);
+
   // Query Signals de los ng-template proyectados en la vista
   private readonly appointmentTpl =
     viewChild<TemplateRef<void>>('appointmentTab');
@@ -38,23 +43,32 @@ export class RemoteEntryComponent {
     viewChild<TemplateRef<void>>('professionalsTab');
 
   /**
+   * Sincroniza la pestaña activa con el servicio de orquestación
+   */
+  onActiveTabChange(id: string | number | undefined): void {
+    if (typeof id === 'number') {
+      this.appointmentLogic.setActiveTab(id as AgendadorTabId);
+    }
+  }
+
+  /**
    * Estado base reactivo de configuración de pestañas
    */
   private readonly rawTabs = signal<Omit<TabItemConfig, 'contentTemplate'>[]>([
     {
-      id: 1,
+      id: AGENDADOR_TABS.FORM,
       label: 'Agendar Cita',
       icon: 'calendar_add_on',
       disabled: false,
     },
     {
-      id: 2,
+      id: AGENDADOR_TABS.CALENDAR,
       label: 'Calendario',
       icon: 'dataset',
       disabled: false,
     },
     {
-      id: 3,
+      id: AGENDADOR_TABS.PROFESSIONALS,
       label: 'Profesionales Disponibles',
       icon: 'article_person',
       disabled: false,

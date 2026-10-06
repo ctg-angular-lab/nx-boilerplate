@@ -38,19 +38,26 @@
         <app-step-personal-info
           [form]="form.controls.step2"
           [history]="patientHistory()"
+          [isNewPatient]="appointmentLogic.isNewPatient()"
+          [areaCodes]="appointmentLogic.areaCodes()"
+          (saveAndContinue)="onStep2Submit()"
         />
 
         <div class="stepper-actions">
-          <button mat-stroked-button matStepperPrevious type="button">
+          <button mat-stroked-button matStepperPrevious type="button" [disabled]="isSubmittingPatient()">
             Anterior
           </button>
           <button
             mat-flat-button
-            matStepperNext
             type="button"
-            [disabled]="form.controls.step2.invalid"
+            [disabled]="form.controls.step2.invalid || isSubmittingPatient()"
+            (click)="onStep2Submit()"
           >
-            Siguiente
+            @if (appointmentLogic.isNewPatient()) {
+              Guardar y Continuar
+            } @else {
+              Siguiente
+            }
           </button>
         </div>
       </div>
@@ -66,8 +73,8 @@
           [doctorsLoaded]="doctorsLoaded()"
           [patientInfo]="patientInfo()"
           [dates]="availableDates()"
-          (submitAppointment)="onAppointmentSubmitted()"
           (joinWaitlist)="onWaitlistRequested()"
+          (viewCalendar)="onViewCalendar($event)"
         />
       </div>
     </mat-step>

@@ -25,6 +25,9 @@ export class TabsCollectionComponent {
   /** Variante visual */
   readonly variant = input<'standard' | 'pills' | 'enclosed'>('standard');
 
+  /** Preserva el contenido en el DOM al cambiar de pestaña */
+  readonly preserveContent = input<boolean>(false);
+
   /** Id de la pestaña activa (Two-Way Binding) */
   readonly activeTabId = model<string | number | undefined>(undefined);
 
