@@ -13,6 +13,7 @@ import {
   of,
   switchMap,
   tap,
+  throwError,
 } from 'rxjs';
 import { ApiClientService } from '@nx-boilerplate/data-access';
 import {
@@ -347,29 +348,6 @@ export class AppointmentLogicService {
   }
 
   /**
-   * Genera la grilla completa de slots de un día laboral (07:00-19:00, 45 min, excluyendo almuerzo 12:00-13:00)
-   * Retorna el array de display strings en formato "HH:MM - HH:MM" (hora Colombia).
-   */
-  #generateDailySlotGrid(): string[] {
-    const displays: string[] = [];
-    const startMin = 7 * 60;          // 07:00 COL
-    const endMin = 19 * 60;           // 19:00 COL
-    const lunchStart = 12 * 60;       // 12:00 COL
-    const lunchEnd = 13 * 60;         // 13:00 COL
-    const interval = 45;
-
-    for (let current = startMin; current + interval <= endMin; current += interval) {
-      const slotEnd = current + interval;
-      // Excluir si solapa con almuerzo
-      if (current < lunchEnd && slotEnd > lunchStart) continue;
-      const fmt = (m: number) =>
-        `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
-      displays.push(`${fmt(current)} - ${fmt(slotEnd)}`);
-    }
-    return displays;
-  }
-
-  /**
    * Fusiona slots 'reservado' consecutivos en un único bloque con rango de tiempo combinado.
    * Ej: [13:00-13:45, 13:45-14:30, 14:30-15:15] (reservado) → [13:00-15:15] (reservado)
    */
@@ -398,6 +376,9 @@ export class AppointmentLogicService {
         id: slots[i].id,
         time: `${rangeStart} - ${rangeEnd}`,
         status: 'reservado',
+        title: slots[i].title,
+        startTime: slots[i].startTime,
+        endTime: slots[j - 1].endTime,
         mergedCount: j - i,
       });
 
@@ -408,12 +389,12 @@ export class AppointmentLogicService {
   }
 
   /**
-   * Mapea la respuesta del backend a la estructura de CalendarDay[], calculando availability y preservando timestamps ISO
+   * Mapea directamente la respuesta enriquecida de ISlotDisplay[] a la estructura de CalendarDay[],
+   * transfiriendo timestamps, títulos y calculando el estado reactivo.
    */
   #mapToCalendarDays(
     days: Date[],
     backendDays: IDayAvailability[],
-    fullDailyGrid: string[],
     doctorEmail: string
   ): CalendarDay[] {
     const today = getColombiaToday();
@@ -453,20 +434,16 @@ export class AppointmentLogicService {
         };
       }
 
-      // Mapa de displays a slots backend para lookup O(1) y conservación de timestamps ISO
-      const availableByDisplay = new Map<string, ISlotDisplay>(
-        (backendDay?.slots ?? []).map((s) => [s.display, s])
-      );
-
-      // Grilla completa con estado por slot y timestamps ISO preservados
-      const rawSlots: TimeSlot[] = fullDailyGrid.map((display, index) => {
-        const backendSlot = availableByDisplay.get(display);
+      // Mapeo 1 a 1 directo de ISlotDisplay a TimeSlot
+      const rawSlots: TimeSlot[] = (backendDay?.slots ?? []).map((slot: ISlotDisplay, index) => {
+        const isAvailable = slot.isBookable === true;
         return {
           id: `${dateStr}-slot-${index}`,
-          time: display,
-          status: backendSlot ? ('disponible' as SlotStatus) : ('reservado' as SlotStatus),
-          startTime: backendSlot?.startTime,
-          endTime: backendSlot?.endTime,
+          time: slot.display,
+          status: isAvailable ? ('disponible' as SlotStatus) : ('reservado' as SlotStatus),
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          title: slot.title,
         };
       });
 
@@ -495,7 +472,6 @@ export class AppointmentLogicService {
     offset: number
   ): Observable<{ calendarDays: CalendarDay[]; offset: number; hasAvailable: boolean }> {
     const { days, window } = getWeekSchedule(offset);
-    const fullDailyGrid = this.#generateDailySlotGrid();
 
     const url = `/api/appointments/available-dates?doctorEmail=${encodeURIComponent(
       doctorEmail
@@ -508,7 +484,7 @@ export class AppointmentLogicService {
         return of<IDayAvailability[]>([]);
       }),
       map((backendDays) => {
-        const calendarDays = this.#mapToCalendarDays(days, backendDays, fullDailyGrid, doctorEmail);
+        const calendarDays = this.#mapToCalendarDays(days, backendDays, doctorEmail);
         const hasAvailable = calendarDays.some((d) => d.slots.some((s) => s.status === 'disponible'));
         console.log(
           `[Calendario] Offset ${offset}: ${backendDays.length} días recibidos del backend. ¿Tiene turnos libres?: ${hasAvailable}`
@@ -643,15 +619,19 @@ export class AppointmentLogicService {
   bookSlot(slot: TimeSlot, notes?: string): Observable<IApiResponse<unknown>> {
     const ctx = this.#bookingContext();
     if (!ctx) {
-      throw new Error('No se puede agendar cita sin un contexto de paciente y procedimiento.');
+      return throwError(
+        () => new Error('No se puede agendar cita sin un contexto de paciente y procedimiento.')
+      );
     }
     const doctor = this.#activeProfessional();
     if (!doctor) {
-      throw new Error('No se puede agendar cita sin un profesional médico seleccionado.');
+      return throwError(
+        () => new Error('No se puede agendar cita sin un profesional médico seleccionado.')
+      );
     }
     if (!slot.startTime || !slot.endTime) {
-      throw new Error(
-        `El turno seleccionado (${slot.time}) carece de timestamps ISO (startTime / endTime).`
+      return throwError(
+        () => new Error(`El turno seleccionado (${slot.time}) carece de timestamps ISO (startTime / endTime).`)
       );
     }
 
@@ -675,7 +655,6 @@ export class AppointmentLogicService {
         this.clearBookingContext();
         this.refreshCalendar();
         this.#bookingSuccess$.next();
-        this.setActiveTab(AGENDADOR_TABS.FORM);
       })
     );
   }

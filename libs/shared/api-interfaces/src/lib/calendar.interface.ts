@@ -4,13 +4,12 @@ export interface TimeSlot {
   id: string;
   time: string;
   status: SlotStatus;
+  startTime?: string;
+  endTime?: string;
+  title?: string;
   reservedBy?: string;
   /** Cantidad de slots de 45 min que agrupa este bloque (solo en slots 'reservado' fusionados > 1) */
   mergedCount?: number;
-  /** Timestamp ISO 8601 de inicio (requerido para crear la cita médica) */
-  startTime?: string;
-  /** Timestamp ISO 8601 de fin (requerido para crear la cita médica) */
-  endTime?: string;
 }
 
 export interface CalendarDay {

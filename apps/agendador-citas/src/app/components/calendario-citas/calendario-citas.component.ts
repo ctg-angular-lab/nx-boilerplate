@@ -230,12 +230,13 @@ export class CalendarioCitasComponent {
 
       if (result?.agendar) {
         this.appointmentLogic.bookSlot(slot, result.notes).subscribe({
-          next: () => {
+          next: (response) => {
+            console.log('Cita agendada exitosamente', response);
             this.openSuccessModal();
             this.selectedSlot.set(null);
           },
-          error: (error) => {
-            console.error('Error al confirmar la cita médica:', error);
+          error: (err) => {
+            console.error('Error agendando la cita', err);
           },
         });
       }

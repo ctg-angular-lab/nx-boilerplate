@@ -139,6 +139,7 @@
                   <button
                     type="button"
                     class="time-slot"
+                    [title]="slot.title || 'Espacio disponible'"
                     [class.time-slot--disponible]="slot.status === 'disponible' && !isSlotSelected(slot)"
                     [class.time-slot--reservado]="slot.status === 'reservado'"
                     [class.time-slot--merged]="slot.status === 'reservado' && (slot.mergedCount ?? 1) > 1"
