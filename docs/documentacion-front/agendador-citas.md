@@ -93,10 +93,12 @@ El `AppointmentLogicService` es el **único responsable** de la lógica de estad
 
 | Interfaz | Archivo Origen | Propósito |
 |---|---|---|
+| `SlotStatusType` | `appointment.interface.ts` | Tipado de estados: `'AVAILABLE' \| 'TENTATIVE' \| 'CONFIRMED' \| 'BLOCKED_PERSONAL'` |
+| `ISlotDisplay` | `appointment.interface.ts` | Slot enriquecido con `startTime`, `endTime`, `display`, `title`, `status`, `colorId`, `isBookable`, `googleEventId?` |
 | `CalendarDay` | `appointment.interface.ts` | Día del calendario con slots calculados |
 | `TimeSlot` | `appointment.interface.ts` | Slot individual con horario, estado y bloqueo fusionado |
 | `SlotStatus` | `appointment.interface.ts` | Estado del slot: `'disponible' \| 'reservado' \| 'seleccionado'` |
-| `IDayAvailability` | `appointment.interface.ts` | Disponibilidad diaria retornada por el backend |
+| `IDayAvailability` | `appointment.interface.ts` | Disponibilidad diaria retornada por el backend con `ISlotDisplay[]` |
 | `IPatientHistory` | `patient.interface.ts` | Historial médico y datos del paciente registrado |
 | `ICreatePatientRequest` | `patient.interface.ts` | Payload para creación de nuevo paciente |
 | `IAreaCode` | `patient.interface.ts` | Catálogo de indicativo, país, bandera y patrón regex telefónico |
@@ -144,7 +146,8 @@ export interface IBookingContext {
 
 ### 5.3 `CalendarioCitasComponent` (Grilla Semanal y Confirmación)
 - **Selector:** `app-calendario-citas`
-- Renderiza la grilla semanal con 14 slots diarios (07:00–19:00, 45 min, exclusión de almuerzo 11:30–13:00).
+- Renderiza la grilla semanal con 14 slots diarios (07:00–19:00, 45 min, receso de almuerzo 12:00–13:00).
+- **Modelo Interactivo Google Calendar:** Consume datos enriquecidos provenientes de `events.list` procesados con la regla de Veto del Médico (si el médico o paciente declinan, o el evento se cancela, el horario se libera automáticamente). Las citas se crean en estado inicial `TENTATIVE` con `colorId: '5'`.
 - Fusión de bloques reservados consecutivos (`mergedCount`).
 - **Control de Acceso y Redirección:** Al hacer clic en un slot disponible abre `AgendarModalComponent`. Si el usuario no tiene paciente asignado en su contexto, el modal despliega la advertencia `"Sin paciente asignado"` y un botón interactivo **"Volver a Agendar cita"**. Al pulsarlo, el modal se cierra con `goToStepper: true` y el componente redirige automáticamente al usuario al Paso 1 del Stepper (`setActiveTab(AGENDADOR_TABS.FORM)`).
 - Altura optimizada del scroll de la grilla de slots (`max-height: 650px`).
