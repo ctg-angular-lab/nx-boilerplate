@@ -1,3 +1,5 @@
+import { IBookingPatient, SlotStatusType } from './appointment.interface';
+
 export type SlotStatus = 'disponible' | 'reservado' | 'seleccionado';
 
 export interface TimeSlot {
@@ -7,9 +9,15 @@ export interface TimeSlot {
   startTime?: string;
   endTime?: string;
   title?: string;
+  colorId?: string | null;
+  googleEventId?: string;
+  isAppEvent?: boolean;
+  patient?: IBookingPatient;
   reservedBy?: string;
   /** Cantidad de slots de 45 min que agrupa este bloque (solo en slots 'reservado' fusionados > 1) */
   mergedCount?: number;
+  /** Estado del backend: 'AVAILABLE' | 'TENTATIVE' | 'CONFIRMED' | 'BLOCKED_PERSONAL' */
+  appEventStatus?: SlotStatusType;
 }
 
 export interface CalendarDay {

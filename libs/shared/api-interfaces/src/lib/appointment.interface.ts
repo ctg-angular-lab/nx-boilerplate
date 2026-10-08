@@ -12,7 +12,8 @@ export interface ISlotDisplay {
   status: SlotStatusType;  
   colorId: string | null;  
   isBookable: boolean;     
-  googleEventId?: string;  
+  googleEventId?: string;
+  patient?: IBookingPatient;
 }
 
 export interface IDayAvailability {
@@ -61,6 +62,7 @@ export interface ICreateAppointmentBody {
   patientNationalId: string;
   patientFullName: string;
   patientEmail: string;
+  patientPhone?: string;
   procedureId: string;
   procedureName: string;
   startTime: string;

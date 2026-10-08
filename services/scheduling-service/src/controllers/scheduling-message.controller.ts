@@ -110,6 +110,7 @@ export class SchedulingMessageController {
     const patientNationalId = (payload.patientNationalId || payload.cedula || '').trim();
     const patientFullName = (payload.patientFullName || `${payload.nombre || ''} ${payload.apellidos || ''}`).trim();
     const patientEmail = (payload.patientEmail || payload.correo || '').trim();
+    const patientPhone = (payload.patientPhone || payload.celular || '').trim();
     const procedureId = (payload.procedureId || payload.procedimientoId || '').trim();
     const procedureName = payload.procedureName || payload.procedimientoNombre || `Procedimiento ${procedureId}`;
 
@@ -119,6 +120,7 @@ export class SchedulingMessageController {
       patientNationalId,
       patientFullName,
       patientEmail,
+      patientPhone,
       procedureId,
       procedureName,
       startTime: start,

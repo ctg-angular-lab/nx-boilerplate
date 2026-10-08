@@ -54,6 +54,10 @@ export class CreateAppointmentPayloadDto {
 
   @IsOptional()
   @IsString()
+  patientPhone?: string;
+
+  @IsOptional()
+  @IsString()
   procedureId?: string;
 
   @IsOptional()

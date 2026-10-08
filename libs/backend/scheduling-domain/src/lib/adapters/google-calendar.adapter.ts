@@ -142,12 +142,21 @@ export class GoogleCalendarAdapter implements ICalendarProvider {
 
   async createEvent(eventData: ICreateAppointmentEvent): Promise<string> {
     try {
+      const descriptionLines = [
+        `Procedimiento: ${eventData.procedureName}`,
+        `Paciente: ${eventData.patientFullName}`,
+        `Correo: ${eventData.patientEmail}`,
+        ...(eventData.patientPhone ? [`Teléfono: ${eventData.patientPhone}`] : []),
+        ...(eventData.patientNationalId ? [`Cédula: ${eventData.patientNationalId}`] : []),
+        `Notas: ${eventData.notes || 'Ninguna'}`,
+      ];
+
       const response = await this.calendarClient.events.insert({
         calendarId: eventData.doctorEmail,
-        sendUpdates: 'all',
+        sendUpdates: 'none',
         requestBody: {
           summary: `Cita Médica: ${eventData.procedureName} - ${eventData.patientFullName}`,
-          description: `Procedimiento: ${eventData.procedureName}\nPaciente: ${eventData.patientFullName}\nCorreo Paciente: ${eventData.patientEmail}\nNotas: ${eventData.notes || 'Ninguna'}`,
+          description: descriptionLines.join('\n'),
           status: 'tentative',
           colorId: '5',
           start: {
@@ -158,16 +167,16 @@ export class GoogleCalendarAdapter implements ICalendarProvider {
             dateTime: eventData.endTime.toISOString(),
             timeZone: 'America/Bogota',
           },
-          attendees: [
-            {
-              email: eventData.doctorEmail,
-              responseStatus: 'accepted',
+          extendedProperties: {
+            private: {
+              procedureName: eventData.procedureName,
+              patientFullName: eventData.patientFullName,
+              patientEmail: eventData.patientEmail,
+              patientPhone: eventData.patientPhone || '',
+              patientNationalId: eventData.patientNationalId || '',
+              notes: eventData.notes || '',
             },
-            {
-              email: eventData.patientEmail,
-              displayName: eventData.patientFullName,
-            },
-          ],
+          },
           reminders: {
             useDefault: false,
             overrides: [

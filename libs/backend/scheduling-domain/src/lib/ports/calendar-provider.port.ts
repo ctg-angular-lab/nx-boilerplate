@@ -31,6 +31,8 @@ export interface ICreateAppointmentEvent {
   doctorEmail: string;
   patientEmail: string;
   patientFullName: string;
+  patientNationalId?: string;
+  patientPhone?: string;
   procedureName: string;
   startTime: Date;
   endTime: Date;

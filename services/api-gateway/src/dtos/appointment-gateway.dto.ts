@@ -51,6 +51,10 @@ export class CreateAppointmentBodyDto implements ICreateAppointmentBody {
   @IsNotEmpty({ message: 'El correo del paciente es obligatorio' })
   patientEmail!: string;
 
+  @IsString({ message: 'El celular del paciente debe ser una cadena' })
+  @IsOptional()
+  patientPhone?: string;
+
   @IsString({ message: 'El ID del procedimiento es obligatorio' })
   @IsNotEmpty({ message: 'El ID del procedimiento no puede estar vacío' })
   procedureId!: string;

@@ -31,6 +31,9 @@ export class Appointment {
   @Prop({ required: true })
   patientEmail!: string;
 
+  @Prop()
+  patientPhone?: string;
+
   @Prop({ required: true })
   procedureId!: string;
 

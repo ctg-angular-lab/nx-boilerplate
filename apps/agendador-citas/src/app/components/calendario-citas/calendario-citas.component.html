@@ -141,24 +141,35 @@
                     class="time-slot"
                     [title]="slot.title || 'Espacio disponible'"
                     [class.time-slot--disponible]="slot.status === 'disponible' && !isSlotSelected(slot)"
-                    [class.time-slot--reservado]="slot.status === 'reservado'"
-                    [class.time-slot--merged]="slot.status === 'reservado' && (slot.mergedCount ?? 1) > 1"
+                    [class.time-slot--reservado]="slot.status === 'reservado' && !slot.isAppEvent"
+                    [class.time-slot--app-event]="slot.isAppEvent"
+                    [class.time-slot--color-5]="slot.isAppEvent && slot.colorId === '5'"
+                    [class.time-slot--merged]="slot.status === 'reservado' && !slot.isAppEvent && (slot.mergedCount ?? 1) > 1"
                     [class.time-slot--seleccionado]="isSlotSelected(slot)"
-                    [disabled]="slot.status === 'reservado'"
+                    [disabled]="slot.status === 'reservado' && !slot.isAppEvent"
                     (click)="onSlotClick(slot, day)"
                   >
-                    @if (slot.status === 'reservado' && (slot.mergedCount ?? 1) > 1) {
-                      <!-- Bloque fusionado: ícono + rango + etiqueta -->
+                    @if (slot.isAppEvent) {
+                      <!-- Cita médica agendada por el bot con colorId y title -->
+                      <div class="time-slot__header">
+                        <mat-icon class="material-symbols-outlined time-slot__event-icon">event_available</mat-icon>
+                        <span class="time-slot__time">{{ slot.time }}</span>
+                      </div>
+                      <span class="time-slot__title" [title]="slot.title || ''">
+                        {{ slot.title }}
+                      </span>
+                    } @else if (slot.status === 'reservado' && (slot.mergedCount ?? 1) > 1) {
+                      <!-- Bloque fusionado genérico: ícono + rango + etiqueta -->
                       <mat-icon class="material-symbols-outlined time-slot__merged-icon">lock</mat-icon>
                       <span class="time-slot__time">
                         <span class="time-slot__merged-range">{{ slot.time }}</span>
-                        <span class="time-slot__merged-label">No disponible</span>
+                        <span class="time-slot__merged-label">Espacio Cerrado</span>
                       </span>
                     } @else {
                       <!-- Slot normal (disponible, seleccionado o reservado simple) -->
                       <span class="time-slot__time">{{ slot.time }}</span>
-                      @if (slot.status === 'reservado' && slot.reservedBy) {
-                        <span class="time-slot__reserved-by">{{ slot.reservedBy }}</span>
+                      @if (slot.status === 'reservado') {
+                        <span class="time-slot__reserved-by">{{ slot.reservedBy || 'Espacio Cerrado' }}</span>
                       }
                     }
                   </button>
@@ -178,7 +189,7 @@
       </div>
       <div class="calendar-legend__item">
         <span class="legend-swatch legend-swatch--reservado"></span>
-        <span class="calendar-legend__label">No disponible</span>
+        <span class="calendar-legend__label">Espacio Cerrado</span>
       </div>
       <div class="calendar-legend__item">
         <span class="legend-swatch legend-swatch--seleccionado"></span>

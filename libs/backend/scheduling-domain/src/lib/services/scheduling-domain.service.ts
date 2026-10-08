@@ -16,6 +16,7 @@ export interface IBookAppointmentCommand {
   patientNationalId: string;
   patientFullName: string;
   patientEmail: string;
+  patientPhone?: string;
   procedureId: string;
   procedureName: string;
   startTime: Date;
@@ -188,16 +189,27 @@ export class SchedulingDomainService {
           const isLunch =
             currentSlotStart.getTime() < lunchEnd.getTime() && currentSlotEnd.getTime() > lunchStart.getTime();
 
+          const matchedPatient = matchingMongo
+            ? {
+                cedula: matchingMongo.patientNationalId,
+                nombre: matchingMongo.patientFullName,
+                apellidos: '',
+                correo: matchingMongo.patientEmail,
+                celular: matchingMongo.patientPhone || '',
+              }
+            : undefined;
+
           if (matchingGoogle) {
             daySlots.push({
               startTime: currentSlotStart.toISOString(),
               endTime: currentSlotEnd.toISOString(),
               display,
-              title: matchingGoogle.summary || 'Ocupado',
+              title: matchingGoogle.isCreatedByApp ? (matchingGoogle.summary || 'Cita Médica') : 'Espacio Cerrado',
               status: matchingGoogle.isCreatedByApp ? matchingGoogle.derivedStatus : 'BLOCKED_PERSONAL',
-              colorId: matchingGoogle.colorId,
+              colorId: matchingGoogle.isCreatedByApp ? matchingGoogle.colorId : null,
               isBookable: false,
               googleEventId: matchingGoogle.id,
+              ...(matchingGoogle.isCreatedByApp && matchedPatient ? { patient: matchedPatient } : {}),
             });
           } else if (matchingMongo) {
             daySlots.push({
@@ -209,6 +221,7 @@ export class SchedulingDomainService {
               colorId: matchingMongo.colorId || '5',
               isBookable: false,
               googleEventId: matchingMongo.googleCalendarEventId,
+              ...(matchedPatient ? { patient: matchedPatient } : {}),
             });
           } else if (isLunch) {
             daySlots.push({
@@ -273,6 +286,8 @@ export class SchedulingDomainService {
       doctorEmail: command.doctorEmail,
       patientEmail: command.patientEmail,
       patientFullName: command.patientFullName,
+      patientNationalId: command.patientNationalId,
+      patientPhone: command.patientPhone,
       procedureName: command.procedureName,
       startTime: start,
       endTime: end,
@@ -289,6 +304,7 @@ export class SchedulingDomainService {
         patientNationalId: command.patientNationalId,
         patientFullName: command.patientFullName,
         patientEmail: command.patientEmail,
+        patientPhone: command.patientPhone,
         procedureId: command.procedureId,
         procedureName: command.procedureName,
         startTime: start,

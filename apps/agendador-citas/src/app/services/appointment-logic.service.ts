@@ -348,23 +348,23 @@ export class AppointmentLogicService {
   }
 
   /**
-   * Fusiona slots 'reservado' consecutivos en un único bloque con rango de tiempo combinado.
-   * Ej: [13:00-13:45, 13:45-14:30, 14:30-15:15] (reservado) → [13:00-15:15] (reservado)
+   * Fusiona slots 'reservado' genéricos consecutivos en un único bloque con rango de tiempo combinado.
+   * Las citas agendadas por el bot (isAppEvent) se conservan como tarjetas individuales.
    */
   #mergeConsecutiveBusySlots(slots: TimeSlot[]): TimeSlot[] {
     const merged: TimeSlot[] = [];
     let i = 0;
 
     while (i < slots.length) {
-      if (slots[i].status !== 'reservado') {
+      if (slots[i].status !== 'reservado' || slots[i].isAppEvent) {
         merged.push(slots[i]);
         i++;
         continue;
       }
 
-      // Encontrar el fin del bloque consecutivo de reservados
+      // Encontrar el fin del bloque consecutivo de reservados genéricos
       let j = i;
-      while (j < slots.length && slots[j].status === 'reservado') {
+      while (j < slots.length && slots[j].status === 'reservado' && !slots[j].isAppEvent) {
         j++;
       }
 
@@ -380,6 +380,7 @@ export class AppointmentLogicService {
         startTime: slots[i].startTime,
         endTime: slots[j - 1].endTime,
         mergedCount: j - i,
+        isAppEvent: false,
       });
 
       i = j;
@@ -437,6 +438,7 @@ export class AppointmentLogicService {
       // Mapeo 1 a 1 directo de ISlotDisplay a TimeSlot
       const rawSlots: TimeSlot[] = (backendDay?.slots ?? []).map((slot: ISlotDisplay, index) => {
         const isAvailable = slot.isBookable === true;
+        const isAppEvent = slot.status === 'TENTATIVE' || slot.status === 'CONFIRMED';
         return {
           id: `${dateStr}-slot-${index}`,
           time: slot.display,
@@ -444,6 +446,11 @@ export class AppointmentLogicService {
           startTime: slot.startTime,
           endTime: slot.endTime,
           title: slot.title,
+          colorId: slot.colorId,
+          googleEventId: slot.googleEventId,
+          isAppEvent,
+          patient: slot.patient,
+          appEventStatus: slot.status,
         };
       });
 
@@ -643,6 +650,7 @@ export class AppointmentLogicService {
       patientNationalId: ctx.patient.cedula,
       patientFullName,
       patientEmail: ctx.patient.correo,
+      patientPhone: ctx.patient.celular,
       procedureId: ctx.procedure.idProcedimiento,
       procedureName: ctx.procedure.nombreProcedimiento,
       startTime: slot.startTime,
