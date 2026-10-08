@@ -65,7 +65,7 @@ graph LR
 | DTO | Ubicación | Campos | Decoradores clave | Propósito |
 |---|---|---|---|---|
 | `GetAvailableDatesQueryDto` | `src/dtos/` | `procedureId?`, `doctorEmail?`, `targetDate?`, `startDate?`, `endDate?` | `@IsEmail`, `@IsDateString`, `@IsOptional` | Query params para disponibilidad semanal |
-| `CreateAppointmentBodyDto` | `src/dtos/` | `doctorEmail`, `doctorCedula`, `patientNationalId`, `patientFullName`, `patientEmail`, `procedureId`, `procedureName`, `startTime`, `endTime`, `notes?` | `@IsEmail`, `@IsISO8601`, `@IsNotEmpty` | Payload de creación de cita |
+| `CreateAppointmentBodyDto` | `src/dtos/` | `doctorEmail`, `doctorCedula`, `patientNationalId`, `patientFullName`, `patientEmail`, `patientPhone?`, `procedureId`, `procedureName`, `startTime`, `endTime`, `notes?` | `@IsEmail`, `@IsISO8601`, `@IsNotEmpty`, `@IsOptional` | Payload de creación de cita con teléfono para confirmación |
 | `CreateWaitlistBodyDto` | `src/dtos/` | `patientNationalId`, `patientFullName`, `patientEmail`, `patientPhone`, `procedureId`, `preferredDoctorEmail?` | `@IsEmail`, `@IsNotEmpty` | Payload de inscripción a lista de espera |
 | `FindPatientByNationalIdDto` | `@nx-boilerplate/shared-dtos` | `nationalId` | `@IsString`, `@IsNotEmpty` | Parámetro de ruta para consultar paciente |
 | `CreatePatientDto` | `@nx-boilerplate/shared-dtos` | `cedula`, `nombre`, `apellidos`, `correo`, `celular`, `ultimosProcedimientos?`, `recomendaciones?` | `@IsString`, `@IsEmail`, `@IsOptional` | Payload de registro de nuevo paciente |
@@ -164,7 +164,7 @@ Consulta la disponibilidad semanal de un médico mediante `events.list` y la reg
 
 #### `POST /api/appointments`
 
-Crea una cita médica validando disponibilidad en Google Calendar (insertando evento interactivo con `sendUpdates: 'all'`, `status: 'tentative'` y `colorId: '5'`) y persistiendo en MongoDB Atlas.
+Crea una cita médica validando disponibilidad en Google Calendar (insertando evento interactivo en ubicación `'Cra 79 # 49A-107, Laureles - Estadio'`, con `sendUpdates: 'all'`, `status: 'tentative'` y `colorId: '5'`) y persistiendo en MongoDB Atlas bajo el estado inicial `TENTATIVE`.
 
 **Body (`CreateAppointmentBodyDto`):**
 ```json
@@ -174,6 +174,7 @@ Crea una cita médica validando disponibilidad en Google Calendar (insertando ev
   "patientNationalId": "987654321",
   "patientFullName": "María García",
   "patientEmail": "paciente@email.com",
+  "patientPhone": "3001234567",
   "procedureId": "proc-001",
   "procedureName": "Consulta General",
   "startTime": "2026-10-03T14:00:00.000Z",
@@ -202,6 +203,7 @@ Crea una cita médica validando disponibilidad en Google Calendar (insertando ev
 }
 ```
 * **Patrón RMQ:** `appointments.create` · **Timeout:** 10 000 ms
+* **Sincronización:** Inserta la cita con `colorId: '5'` (amarillo/tentativa) en Google Calendar y almacena el teléfono opcional del paciente para habilitar la confirmación interactiva de asistencia vía WhatsApp.
 
 ---
 

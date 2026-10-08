@@ -96,8 +96,8 @@ El `AppointmentLogicService` es el **único responsable** de la lógica de estad
 | `SlotStatusType` | `appointment.interface.ts` | Tipado de estados: `'AVAILABLE' \| 'TENTATIVE' \| 'CONFIRMED' \| 'BLOCKED_PERSONAL'` |
 | `ISlotDisplay` | `appointment.interface.ts` | Slot enriquecido con `startTime`, `endTime`, `display`, `title`, `status`, `colorId`, `isBookable`, `googleEventId?` |
 | `CalendarDay` | `appointment.interface.ts` | Día del calendario con slots calculados |
-| `TimeSlot` | `appointment.interface.ts` | Slot individual con horario, estado y bloqueo fusionado |
-| `SlotStatus` | `appointment.interface.ts` | Estado del slot: `'disponible' \| 'reservado' \| 'seleccionado'` |
+| `TimeSlot` | `appointment.interface.ts` | Slot individual con horario, estado (`AVAILABLE` / `TENTATIVE` / `CONFIRMED`), `appEventStatus` y bloqueo fusionado |
+| `SlotStatus` | `appointment.interface.ts` | Estado visual del slot: `'disponible' \| 'reservado' \| 'seleccionado'` |
 | `IDayAvailability` | `appointment.interface.ts` | Disponibilidad diaria retornada por el backend con `ISlotDisplay[]` |
 | `IPatientHistory` | `patient.interface.ts` | Historial médico y datos del paciente registrado |
 | `ICreatePatientRequest` | `patient.interface.ts` | Payload para creación de nuevo paciente |
@@ -147,21 +147,50 @@ export interface IBookingContext {
 ### 5.3 `CalendarioCitasComponent` (Grilla Semanal y Confirmación)
 - **Selector:** `app-calendario-citas`
 - Renderiza la grilla semanal con 14 slots diarios (07:00–19:00, 45 min, receso de almuerzo 12:00–13:00).
+- **Separación de Estados de Slots:**
+  - **Slots Disponibles (`AVAILABLE`):** Renderizan un botón de acción interactivo con ícono `+` que permite iniciar el proceso de agendamiento.
+  - **Slots en Estado Preliminar (`TENTATIVE`):** Renderizan un badge visual distintivo en tonalidad amarilla (`var(--sys-color-tertiary)` / `#ca8a04`), con ícono de reloj (`schedule`), horario, nombre del paciente y nombre del procedimiento médico. Son clickeables para inspección detallada.
+  - **Slots Confirmados / Bloqueados (`CONFIRMED` / `BLOCKED_PERSONAL`):** Visualizan bloques continuos reservados sin interacción de sobre-escritura.
 - **Modelo Interactivo Google Calendar:** Consume datos enriquecidos provenientes de `events.list` procesados con la regla de Veto del Médico (si el médico o paciente declinan, o el evento se cancela, el horario se libera automáticamente). Las citas se crean en estado inicial `TENTATIVE` con `colorId: '5'`.
 - Fusión de bloques reservados consecutivos (`mergedCount`).
-- **Control de Acceso y Redirección:** Al hacer clic en un slot disponible abre `AgendarModalComponent`. Si el usuario no tiene paciente asignado en su contexto, el modal despliega la advertencia `"Sin paciente asignado"` y un botón interactivo **"Volver a Agendar cita"**. Al pulsarlo, el modal se cierra con `goToStepper: true` y el componente redirige automáticamente al usuario al Paso 1 del Stepper (`setActiveTab(AGENDADOR_TABS.FORM)`).
+- **Control de Acceso y Redirección:**
+  - Al hacer clic en un slot disponible abre `AgendarModalComponent`. Si el usuario no tiene paciente asignado en su contexto, el modal despliega la advertencia `"Sin paciente asignado"` y un botón interactivo **"Volver a Agendar cita"**. Al pulsarlo, el modal se cierra con `goToStepper: true` y el componente redirige automáticamente al usuario al Paso 1 del Stepper (`setActiveTab(AGENDADOR_TABS.FORM)`).
+  - Al hacer clic en un slot en estado `TENTATIVE`, abre `AgendarModalComponent` en modo vista previa (`isTentativeView: true`, `slotStatus: 'TENTATIVE'`) extrayendo datos del evento (paciente, procedimiento, observaciones).
 - Altura optimizada del scroll de la grilla de slots (`max-height: 650px`).
 
 ### 5.4 `AgendarModalComponent` (Modal Presentacional Desacoplado)
 - **Ubicación:** `libs/shared/layouts/src/lib/modals/agendar-modal/`
 - Modal Standalone MD3 que recibe `AgendarModalData` y retorna `AgendarModalResult`:
   ```typescript
+  export interface AgendarModalData {
+    title: string;
+    dateRange: string;
+    professional: string;
+    patient?: IBookingPatient | null;
+    isTentativeView?: boolean;
+    slotStatus?: SlotStatusType | null;
+    notes?: string;
+    startTime?: string;
+    endTime?: string;
+  }
+
   export interface AgendarModalResult {
     agendar: boolean;
     notes?: string;
     goToStepper?: boolean;
   }
   ```
+- **Sede Médica Oficial:** `'Cra 79 # 49A-107, Laureles - Estadio'`.
+- **Capa de Privacidad del Paciente:** El número telefónico no se expone directamente en texto plano dentro de la tarjeta del paciente para proteger datos sensibles.
+- **Botón `Confirmar cita` (WhatsApp):**
+  - Condicionado a slots en estado `TENTATIVE` con teléfono disponible (`@if (isTentativeStatus() && patientWhatsAppUrl())`).
+  - Ubicado a la derecha de la tarjeta (`margin-left: auto`), centrado verticalmente con el nombre y documento del paciente.
+  - Diseñado con estilo distintivo de WhatsApp (`#25d366`, micro-interacciones hover).
+  - Genera automáticamente el enlace directo hacia WhatsApp con la plantilla corporativa:
+    ```text
+    Hola [Nombre], te escribimos de Dras. Botero para confirmar tu cita con el/la Dr(a). [Profesional] el [Fecha]. ¿Nos confirmas tu asistencia con un SÍ?
+    ```
+- **Integración con Google Calendar:** Expone `googleCalendarInviteUrl` computado dinámicamente (`render?action=TEMPLATE&text=...&dates=...&details=...&location=...`) para sincronizar el evento en agendas externas.
 
 ---
 
