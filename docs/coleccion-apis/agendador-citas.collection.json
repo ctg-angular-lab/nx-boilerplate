@@ -501,6 +501,260 @@
             },
             "description": "Alternativa de Paso 5: Si el paciente no encuentra un horario que se ajuste a su disponibilidad, se inscribe en la lista de espera reactiva para ser contactado ante cancelaciones."
           }
+        },
+        {
+          "name": "09 - Listar Citas Diarias (Dashboard de Confirmación)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/appointments/daily?date=2026-10-15&doctorEmail=camilotabares.portafolio@gmail.com&status=TENTATIVE",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "appointments",
+                "daily"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2026-10-15",
+                  "description": "Fecha de la jornada en formato YYYY-MM-DD (Obligatorio)"
+                },
+                {
+                  "key": "doctorEmail",
+                  "value": "camilotabares.portafolio@gmail.com",
+                  "description": "Correo del profesional asignado (Opcional)"
+                },
+                {
+                  "key": "status",
+                  "value": "TENTATIVE",
+                  "description": "Estado de la cita: TENTATIVE | CONFIRMED | CANCELLED (Opcional)"
+                }
+              ]
+            },
+            "description": "Obtiene la lista consolidada de citas para una jornada clínica específica, alimentando el panel de confirmación diaria. Retorna información completa del paciente, procedimiento, respuesta de Google Calendar y contador de contactos."
+          },
+          "response": [
+            {
+              "name": "200 OK - Citas Diarias Consultadas",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/appointments/daily?date=2026-10-15&doctorEmail=camilotabares.portafolio@gmail.com&status=TENTATIVE",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "appointments",
+                    "daily"
+                  ],
+                  "query": [
+                    {
+                      "key": "date",
+                      "value": "2026-10-15"
+                    },
+                    {
+                      "key": "doctorEmail",
+                      "value": "camilotabares.portafolio@gmail.com"
+                    },
+                    {
+                      "key": "status",
+                      "value": "TENTATIVE"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"Operación realizada exitosamente\",\n  \"data\": [\n    {\n      \"appointmentId\": \"APT-1791262275508-237\",\n      \"doctorEmail\": \"camilotabares.portafolio@gmail.com\",\n      \"doctorCedula\": \"1020304050\",\n      \"patientNationalId\": \"1020304050\",\n      \"patientFullName\": \"Laura Sofía Gómez Restrepo\",\n      \"patientEmail\": \"laura.gomez@example.com\",\n      \"patientPhone\": \"+573001234567\",\n      \"procedureId\": \"PROC-EST-001\",\n      \"procedureName\": \"Armonización y Perfilado Labial con Ácido Hialurónico\",\n      \"startTime\": \"2026-10-15T09:00:00.000Z\",\n      \"endTime\": \"2026-10-15T09:45:00.000Z\",\n      \"status\": \"TENTATIVE\",\n      \"patientResponseStatus\": \"needsAction\",\n      \"colorId\": \"5\",\n      \"googleCalendarEventId\": \"mock-google-id-1791262275508\",\n      \"notes\": \"Primera consulta estética\",\n      \"contactCount\": 0\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "10 - Actualizar Estado de Cita (Confirmar o Cancelar)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CONFIRMED\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/appointments/:id/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "appointments",
+                ":id",
+                "status"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "APT-1791262275508-237",
+                  "description": "ID o código único de la cita médica"
+                }
+              ]
+            },
+            "description": "Actualiza el estado de una cita médica a CONFIRMED o CANCELLED. Sincroniza bidireccionalmente el evento en Google Calendar cambiando el color tonal (colorId 10 para CONFIRMED, 11 para CANCELLED) y actualiza el documento en MongoDB Atlas."
+          },
+          "response": [
+            {
+              "name": "200 OK - Estado de Cita Actualizado",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"CONFIRMED\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/appointments/:id/status",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "appointments",
+                    ":id",
+                    "status"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "APT-1791262275508-237"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"Operación realizada exitosamente\",\n  \"data\": {\n    \"appointmentId\": \"APT-1791262275508-237\",\n    \"doctorEmail\": \"camilotabares.portafolio@gmail.com\",\n    \"doctorCedula\": \"1020304050\",\n    \"patientNationalId\": \"1020304050\",\n    \"patientFullName\": \"Laura Sofía Gómez Restrepo\",\n    \"patientEmail\": \"laura.gomez@example.com\",\n    \"patientPhone\": \"+573001234567\",\n    \"procedureId\": \"PROC-EST-001\",\n    \"procedureName\": \"Armonización y Perfilado Labial con Ácido Hialurónico\",\n    \"startTime\": \"2026-10-15T09:00:00.000Z\",\n    \"endTime\": \"2026-10-15T09:45:00.000Z\",\n    \"status\": \"CONFIRMED\",\n    \"patientResponseStatus\": \"accepted\",\n    \"colorId\": \"10\",\n    \"googleCalendarEventId\": \"mock-google-id-1791262275508\",\n    \"notes\": \"Primera consulta estética\",\n    \"contactCount\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "11 - Registrar Contacto con Paciente (Track Contact)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/appointments/:id/track-contact",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "appointments",
+                ":id",
+                "track-contact"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "APT-1791262275508-237",
+                  "description": "ID único de la cita médica"
+                }
+              ]
+            },
+            "description": "Registra e incrementa de forma atómica el contador de contactos/intentos de notificación (llamada o mensaje de WhatsApp) realizados al paciente para una cita. Se dispara de forma asíncrona mediante eventos RabbitMQ sin bloquear el flujo."
+          },
+          "response": [
+            {
+              "name": "202 Accepted - Contacto Encolado Exitosamente",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/appointments/:id/track-contact",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "appointments",
+                    ":id",
+                    "track-contact"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "APT-1791262275508-237"
+                    }
+                  ]
+                }
+              },
+              "status": "Accepted",
+              "code": 202,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"statusCode\": 202,\n  \"message\": \"Registro de contacto encolado exitosamente\",\n  \"data\": {\n    \"message\": \"Registro de contacto encolado exitosamente\"\n  }\n}"
+            }
+          ]
         }
       ]
     }

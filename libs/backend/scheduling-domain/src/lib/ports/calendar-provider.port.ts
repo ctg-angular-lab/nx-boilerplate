@@ -56,6 +56,15 @@ export interface ICalendarProvider {
    * Registra una cita en el calendario del médico y retorna el ID del evento creado.
    */
   createEvent(eventData: ICreateAppointmentEvent): Promise<string>;
+
+  /**
+   * Actualiza el estado y color de un evento en Google Calendar.
+   */
+  updateEventStatus(
+    doctorEmail: string,
+    eventId: string,
+    status: 'CONFIRMED' | 'CANCELLED'
+  ): Promise<void>;
 }
 
 export const CALENDAR_PROVIDER = Symbol('CALENDAR_PROVIDER');

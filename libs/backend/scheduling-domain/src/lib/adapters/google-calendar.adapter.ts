@@ -198,4 +198,36 @@ export class GoogleCalendarAdapter implements ICalendarProvider {
       throw new RpcException(`Error al crear cita en Google Calendar: ${(error as Error).message}`);
     }
   }
+
+  async updateEventStatus(
+    doctorEmail: string,
+    eventId: string,
+    status: 'CONFIRMED' | 'CANCELLED'
+  ): Promise<void> {
+    try {
+      const isConfirmed = status === 'CONFIRMED';
+      const colorId = isConfirmed ? '10' : '11';
+      const eventStatus = isConfirmed ? 'confirmed' : 'cancelled';
+
+      await this.calendarClient.events.patch({
+        calendarId: doctorEmail,
+        eventId,
+        sendUpdates: 'none',
+        requestBody: {
+          colorId,
+          status: eventStatus,
+        },
+      });
+
+      this.logger.log(
+        `Evento de Google Calendar ${eventId} actualizado a status=${eventStatus}, colorId=${colorId}`
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error al actualizar evento ${eventId} en Google Calendar: ${(error as Error).message}`
+      );
+      throw new RpcException(`Error al sincronizar con Google Calendar: ${(error as Error).message}`);
+    }
+  }
 }
+

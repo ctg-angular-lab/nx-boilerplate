@@ -1,0 +1,232 @@
+.table-container-card {
+  position: relative;
+  background: var(--sys-color-surface, #ffffff);
+  border-radius: 1rem;
+  border: 1px solid var(--sys-color-outline-variant, #e1e3eb);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.table-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(2px);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+
+  .loading-text {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--sys-color-on-surface-variant, #44474f);
+  }
+}
+
+.table-scroll-wrapper {
+  overflow-x: auto;
+}
+
+.citas-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+
+  th {
+    background: var(--sys-color-surface-container, #f3f4f9);
+    font-weight: 600;
+    color: var(--sys-color-on-surface-variant, #44474f);
+    font-size: 0.8125rem;
+    padding: 0.875rem 1rem;
+  }
+
+  td {
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid var(--sys-color-outline-variant, #e1e3eb);
+  }
+}
+
+.table-row {
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background-color: var(--sys-color-surface-container-highest, #f8f9fe);
+  }
+}
+
+.patient-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  &__name {
+    font-weight: 600;
+    color: var(--sys-color-on-surface, #1b1b1f);
+    font-size: 0.875rem;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+}
+
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--sys-color-on-surface-variant, #74777f);
+}
+
+.meta-icon {
+  font-size: 0.875rem;
+}
+
+.procedure-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  &__title {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--sys-color-on-surface, #1b1b1f);
+  }
+
+  &__doctor {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--sys-color-on-surface-variant, #74777f);
+  }
+}
+
+.time-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 0.5rem;
+  background: var(--sys-color-surface-container, #f3f4f9);
+
+  .time-icon {
+    font-size: 1rem;
+    color: var(--sys-color-primary, #1e4ba8);
+  }
+
+  .time-text {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--sys-color-on-surface, #1b1b1f);
+  }
+}
+
+.whatsapp-btn {
+  background: #25d366;
+  color: #ffffff;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0 0.875rem;
+  height: 32px;
+  line-height: 32px;
+
+  .wa-icon {
+    font-size: 1rem;
+  }
+
+  &:hover {
+    background: #1ebc59;
+  }
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &--tentative {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  &--confirmed {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  &--cancelled {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+}
+
+.actions-header {
+  text-align: center;
+}
+
+.actions-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.action-btn {
+  &--confirm {
+    color: #10b981;
+    &:hover:not([disabled]) {
+      background: rgba(16, 185, 129, 0.1);
+    }
+  }
+
+  &--cancel {
+    color: #ef4444;
+    &:hover:not([disabled]) {
+      background: rgba(239, 68, 68, 0.1);
+    }
+  }
+}
+
+.table-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+
+  .empty-icon {
+    font-size: 3rem;
+    color: var(--sys-color-outline, #74777f);
+    margin-bottom: 0.5rem;
+  }
+
+  .empty-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--sys-color-on-surface, #1b1b1f);
+    margin: 0 0 0.25rem 0;
+  }
+
+  .empty-desc {
+    font-size: 0.875rem;
+    color: var(--sys-color-on-surface-variant, #74777f);
+    margin: 0;
+  }
+}
+
+.table-paginator {
+  border-top: 1px solid var(--sys-color-outline-variant, #e1e3eb);
+}

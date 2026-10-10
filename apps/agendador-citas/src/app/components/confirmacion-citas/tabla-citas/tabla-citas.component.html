@@ -1,0 +1,152 @@
+<div class="table-container-card">
+  <!-- Estado de Carga -->
+  @if (isLoading()) {
+    <div class="table-loading-overlay">
+      <mat-spinner diameter="42" />
+      <p class="loading-text">Cargando citas del día...</p>
+    </div>
+  }
+
+  <div class="table-scroll-wrapper">
+    <table mat-table [dataSource]="dataSource" class="citas-table">
+      <!-- Columna: Paciente -->
+      <ng-container matColumnDef="paciente">
+        <th mat-header-cell *matHeaderCellDef>Paciente</th>
+        <td mat-cell *matCellDef="let cita">
+          <div class="patient-cell">
+            <span class="patient-cell__name">{{ cita.patientFullName }}</span>
+            <div class="patient-cell__meta">
+              <span class="meta-item">
+                <span class="material-symbols-outlined meta-icon">badge</span>
+                CC: {{ cita.patientNationalId }}
+              </span>
+              @if (cita.patientPhone) {
+                <span class="meta-item">
+                  <span class="material-symbols-outlined meta-icon">phone</span>
+                  {{ cita.patientPhone }}
+                </span>
+              }
+            </div>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Columna: Profesional y Procedimiento -->
+      <ng-container matColumnDef="procedimiento">
+        <th mat-header-cell *matHeaderCellDef>Procedimiento</th>
+        <td mat-cell *matCellDef="let cita">
+          <div class="procedure-cell">
+            <span class="procedure-cell__title">{{ cita.procedureName }}</span>
+            <span class="procedure-cell__doctor">
+              <span class="material-symbols-outlined meta-icon">medical_services</span>
+              {{ cita.doctorEmail }}
+            </span>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Columna: Hora -->
+      <ng-container matColumnDef="hora">
+        <th mat-header-cell *matHeaderCellDef>Horario</th>
+        <td mat-cell *matCellDef="let cita">
+          <div class="time-cell">
+            <span class="material-symbols-outlined time-icon">schedule</span>
+            <span class="time-text">{{ formatHour(cita.startTime) }}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Columna: Contacto (WhatsApp) -->
+      <ng-container matColumnDef="contacto">
+        <th mat-header-cell *matHeaderCellDef>WhatsApp</th>
+        <td mat-cell *matCellDef="let cita">
+          <button
+            type="button"
+            mat-flat-button
+            class="whatsapp-btn"
+            [matBadge]="cita.contactCount"
+            [matBadgeHidden]="!cita.contactCount"
+            matBadgeColor="primary"
+            matBadgeSize="small"
+            (click)="onWhatsAppClick(cita)"
+            matTooltip="Enviar mensaje por WhatsApp y registrar contacto"
+          >
+            <span class="material-symbols-outlined wa-icon">chat</span>
+            <span>Contactar</span>
+          </button>
+        </td>
+      </ng-container>
+
+      <!-- Columna: Estado -->
+      <ng-container matColumnDef="estado">
+        <th mat-header-cell *matHeaderCellDef>Estado</th>
+        <td mat-cell *matCellDef="let cita">
+          <span
+            class="status-chip"
+            [class.status-chip--tentative]="cita.status === 'TENTATIVE'"
+            [class.status-chip--confirmed]="cita.status === 'CONFIRMED'"
+            [class.status-chip--cancelled]="cita.status === 'CANCELLED'"
+          >
+            @switch (cita.status) {
+              @case ('CONFIRMED') { Confirmada }
+              @case ('CANCELLED') { Cancelada }
+              @default { Agendada }
+            }
+          </span>
+        </td>
+      </ng-container>
+
+      <!-- Columna: Acciones -->
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef class="actions-header">Acciones</th>
+        <td mat-cell *matCellDef="let cita">
+          <div class="actions-cell">
+            <button
+              type="button"
+              mat-icon-button
+              class="action-btn action-btn--confirm"
+              [disabled]="cita.status === 'CONFIRMED'"
+              (click)="onConfirm(cita)"
+              matTooltip="Confirmar Cita"
+            >
+              <span class="material-symbols-outlined">check_circle</span>
+            </button>
+
+            <button
+              type="button"
+              mat-icon-button
+              class="action-btn action-btn--cancel"
+              [disabled]="cita.status === 'CANCELLED'"
+              (click)="onCancel(cita)"
+              matTooltip="Cancelar Cita"
+            >
+              <span class="material-symbols-outlined">cancel</span>
+            </button>
+          </div>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns" class="table-row"></tr>
+    </table>
+
+    <!-- Estado Vacío -->
+    @if (!isLoading() && appointments().length === 0) {
+      <div class="table-empty-state">
+        <span class="material-symbols-outlined empty-icon">event_busy</span>
+        <h4 class="empty-title">No se encontraron citas</h4>
+        <p class="empty-desc">
+          No hay citas registradas para los filtros y fecha seleccionados.
+        </p>
+      </div>
+    }
+  </div>
+
+  <mat-paginator
+    [pageSize]="10"
+    [pageSizeOptions]="[5, 10, 25, 50]"
+    showFirstLastButtons
+    aria-label="Páginas de citas"
+    class="table-paginator"
+  />
+</div>

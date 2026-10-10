@@ -1,0 +1,133 @@
+<section class="toolbar-confirmacion">
+  <!-- Fila Superior: Selector de Fechas (Pills + Datepicker) y Selector de Estado -->
+  <div class="toolbar-confirmacion__primary-row">
+    <!-- Grupo de Fechas Rápida -->
+    <div class="date-pills-group">
+      <span class="toolbar-label">Fecha:</span>
+      <button
+        type="button"
+        class="date-pill"
+        [class.date-pill--active]="selectedDate() === todayStr"
+        (click)="onPillSelect(todayStr)"
+      >
+        <span class="material-symbols-outlined date-pill__icon">today</span>
+        Hoy
+      </button>
+
+      <button
+        type="button"
+        class="date-pill"
+        [class.date-pill--active]="selectedDate() === tomorrowStr"
+        (click)="onPillSelect(tomorrowStr)"
+      >
+        Mañana
+      </button>
+
+      <button
+        type="button"
+        class="date-pill"
+        [class.date-pill--active]="selectedDate() === dayAfterStr"
+        (click)="onPillSelect(dayAfterStr)"
+      >
+        Pasado Mañana
+      </button>
+
+      <!-- Datepicker con botón activador -->
+      <div class="custom-datepicker-wrapper">
+        <input
+          class="custom-datepicker-input"
+          [matDatepicker]="picker"
+          [value]="selectedDate()"
+          (dateChange)="onCustomDateSelect($event.value)"
+        />
+        <button
+          type="button"
+          mat-icon-button
+          class="custom-datepicker-btn"
+          [class.custom-datepicker-btn--active]="selectedDate() !== todayStr && selectedDate() !== tomorrowStr && selectedDate() !== dayAfterStr"
+          (click)="picker.open()"
+          title="Elegir otra fecha en calendario"
+        >
+          <span class="material-symbols-outlined">calendar_month</span>
+        </button>
+        <mat-datepicker #picker />
+      </div>
+    </div>
+
+    <!-- Toggle de Estados -->
+    <div class="status-toggle-wrapper">
+      <mat-button-toggle-group
+        [value]="selectedStatus()"
+        (change)="onStatusToggle($event.value)"
+        aria-label="Estado de la cita"
+        class="status-toggle-group"
+      >
+        <mat-button-toggle value="TENTATIVE">
+          <span class="toggle-content">
+            <span class="status-dot status-dot--tentative"></span>
+            Agendadas
+            <span class="status-count">({{ summaryStats().tentative }})</span>
+          </span>
+        </mat-button-toggle>
+
+        <mat-button-toggle value="CONFIRMED">
+          <span class="toggle-content">
+            <span class="status-dot status-dot--confirmed"></span>
+            Confirmadas
+            <span class="status-count">({{ summaryStats().confirmed }})</span>
+          </span>
+        </mat-button-toggle>
+
+        <mat-button-toggle value="CANCELLED">
+          <span class="toggle-content">
+            <span class="status-dot status-dot--cancelled"></span>
+            Canceladas
+            <span class="status-count">({{ summaryStats().cancelled }})</span>
+          </span>
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
+  </div>
+
+  <!-- Fila Secundaria: Filtro por Profesional y Búsqueda por Paciente -->
+  <div class="toolbar-confirmacion__secondary-row">
+    <!-- Select de Profesional -->
+    <mat-form-field appearance="outline" class="filter-field doctor-select-field" subscriptSizing="dynamic">
+      <mat-label>Profesional Médico</mat-label>
+      <mat-select
+        [value]="selectedDoctorEmail()"
+        (selectionChange)="onDoctorSelect($event.value)"
+      >
+        <mat-option [value]="null">Todos los profesionales</mat-option>
+        @for (prof of professionals(); track prof.cedula) {
+          <mat-option [value]="prof.email">
+            {{ prof.nombres }} {{ prof.apellidos }} ({{ prof.profesion }})
+          </mat-option>
+        }
+      </mat-select>
+      <span matPrefix class="material-symbols-outlined field-icon">stethoscope</span>
+    </mat-form-field>
+
+    <!-- Búsqueda Reactiva -->
+    <mat-form-field appearance="outline" class="filter-field search-field" subscriptSizing="dynamic">
+      <mat-label>Buscar paciente por nombre, cédula o teléfono...</mat-label>
+      <input
+        matInput
+        [formControl]="searchControl"
+        placeholder="Ej. Laura Gómez / 10203040"
+      />
+      <span matPrefix class="material-symbols-outlined field-icon">search</span>
+      @if (searchControl.value) {
+        <button
+          mat-icon-button
+          matSuffix
+          (click)="clearSearch()"
+          type="button"
+          aria-label="Limpiar búsqueda"
+        >
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      }
+    </mat-form-field>
+  </div>
+</section>

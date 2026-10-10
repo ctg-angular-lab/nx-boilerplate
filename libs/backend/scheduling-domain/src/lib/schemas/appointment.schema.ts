@@ -69,6 +69,9 @@ export class Appointment {
 
   @Prop()
   notes?: string;
+
+  @Prop({ type: Number, default: 0 })
+  contactCount!: number;
 }
 
 export const AppointmentSchema = SchemaFactory.createForClass(Appointment);

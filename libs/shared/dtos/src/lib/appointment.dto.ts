@@ -1,6 +1,8 @@
 import {
   IsBoolean,
+  IsDateString,
   IsEmail,
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -9,6 +11,9 @@ import {
 import {
   ICreateAppointmentRequest,
   ICreateWaitlistRequest,
+  IGetDailyAppointmentsRequest,
+  IUpdateAppointmentStatusRequest,
+  ITrackContactRequest,
 } from '@nx-boilerplate/api-interfaces';
 
 export class CreateAppointmentDto implements ICreateAppointmentRequest {
@@ -94,3 +99,40 @@ export class GetAvailableDatesQueryDto {
   @IsOptional()
   procedureId?: string;
 }
+
+export class GetDailyAppointmentsDto implements IGetDailyAppointmentsRequest {
+  @IsDateString({}, { message: 'La fecha debe tener un formato ISO válido (YYYY-MM-DD)' })
+  @IsNotEmpty({ message: 'La fecha es obligatoria' })
+  date!: string;
+
+  @IsOptional()
+  @IsEmail({}, { message: 'El correo del médico debe ser válido' })
+  doctorEmail?: string;
+
+  @IsOptional()
+  @IsEnum(['TENTATIVE', 'CONFIRMED', 'CANCELLED'], {
+    message: 'El estado debe ser TENTATIVE, CONFIRMED o CANCELLED',
+  })
+  status?: 'TENTATIVE' | 'CONFIRMED' | 'CANCELLED';
+}
+
+export class UpdateAppointmentStatusDto implements IUpdateAppointmentStatusRequest {
+  @IsOptional()
+  @IsString({ message: 'El ID de la cita debe ser una cadena de texto' })
+  appointmentId?: string;
+
+  @IsEnum(['CONFIRMED', 'CANCELLED'], {
+    message: 'El estado solo puede ser CONFIRMED o CANCELLED',
+  })
+  status!: 'CONFIRMED' | 'CANCELLED';
+}
+
+export class TrackContactDto implements ITrackContactRequest {
+  @IsString({ message: 'El ID de la cita debe ser una cadena de texto' })
+  @IsNotEmpty({ message: 'El ID de la cita es obligatorio' })
+  appointmentId!: string;
+}
+
+export { GetDailyAppointmentsDto as GetDailyAppointmentsQueryDto };
+
+

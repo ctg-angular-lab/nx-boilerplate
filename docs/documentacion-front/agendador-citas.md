@@ -20,8 +20,8 @@ El MFE **Agendador de Citas** es el Remote principal que orquesta la experiencia
 2. **Flujo Libre por Calendario (Pestaña "Calendario"):**
    - Visualización de la disponibilidad semanal real de los especialistas (sincronizada con Google Calendar y MongoDB Atlas).
    - Detección de contexto: si el usuario intenta reservar un horario sin haber identificado a un paciente previamente, el sistema despliega una advertencia en el modal de confirmación con un enlace directo (**"Volver a Agendar cita"**) para transferirlo de inmediato al Stepper.
-3. **Consulta de Especialistas (Pestaña "Profesionales Disponibles"):**
-   - Directorio de médicos especialistas activos del sistema.
+3. **Confirmación de Citas (Pestaña "Confirmación de Citas"):**
+   - Directorio de médicos especialistas activos y seguimiento/confirmación del sistema.
 
 La arquitectura reactiva está gobernada por **Signals**, inyección funcional `inject()` y un único **Single Source of Truth (SSOT)** centralizado en `AppointmentLogicService`.
 
@@ -60,7 +60,7 @@ El `AppointmentLogicService` es el **único responsable** de la lógica de estad
 
 | Signal | Tipo | Descripción |
 |---|---|---|
-| `activeTab` | `Signal<AgendadorTabId>` | Pestaña activa (`1`: Agendar Cita, `2`: Calendario, `3`: Profesionales) |
+| `activeTab` | `Signal<AgendadorTabId>` | Pestaña activa (`1`: Agendar Cita, `2`: Calendario, `3`: Confirmación de Citas) |
 | `weekDays` | `Signal<CalendarDay[]>` | Disponibilidad semanal computada (grilla de 14 slots diarios sincronizada con backend) |
 | `activeProfessional` | `Signal<IProfessionalSummary \| null>` | Médico actualmente activo en el calendario |
 | `availableProfessionals` | `Signal<IProfessionalSummary[]>` | Catálogo completo de especialistas activos |
