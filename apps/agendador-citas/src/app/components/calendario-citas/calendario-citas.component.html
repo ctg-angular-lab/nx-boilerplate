@@ -83,6 +83,26 @@
     </div>
   </header>
 
+  <!-- Leyenda de Estados del Calendario -->
+  <div class="calendar-legend">
+    <div class="calendar-legend__item">
+      <span class="legend-swatch legend-swatch--disponible"></span>
+      <span class="calendar-legend__label">Disponible</span>
+    </div>
+    <div class="calendar-legend__item">
+      <span class="legend-swatch legend-swatch--agendado"></span>
+      <span class="calendar-legend__label">Agendado</span>
+    </div>
+    <div class="calendar-legend__item">
+      <span class="legend-swatch legend-swatch--confirmado"></span>
+      <span class="calendar-legend__label">Confirmado</span>
+    </div>
+    <div class="calendar-legend__item">
+      <span class="legend-swatch legend-swatch--reservado"></span>
+      <span class="calendar-legend__label">Espacio Cerrado</span>
+    </div>
+  </div>
+
   <!-- Grid del Calendario / Estado Vacío -->
   @if (calendarError(); as errorMsg) {
     <div class="calendar-empty-state">
@@ -139,14 +159,16 @@
                   <button
                     type="button"
                     class="time-slot"
-                    [title]="slot.title || 'Espacio disponible'"
-                    [class.time-slot--disponible]="slot.status === 'disponible' && !isSlotSelected(slot)"
-                    [class.time-slot--reservado]="slot.status === 'reservado' && !slot.isAppEvent"
-                    [class.time-slot--app-event]="slot.isAppEvent"
-                    [class.time-slot--color-5]="slot.isAppEvent && slot.colorId === '5'"
+                    [title]="isSlotPast(slot, day) ? 'Horario transcurrido (no disponible)' : (slot.title || 'Espacio disponible')"
+                    [class.time-slot--disponible]="slot.status === 'disponible' && !isSlotSelected(slot) && !isSlotPast(slot, day)"
+                    [class.time-slot--reservado]="(slot.status === 'reservado' && !slot.isAppEvent) || isSlotPast(slot, day)"
+                    [class.time-slot--past]="isSlotPast(slot, day)"
+                    [class.time-slot--app-event]="slot.isAppEvent && !isSlotPast(slot, day)"
+                    [class.time-slot--color-5]="slot.isAppEvent && (slot.colorId === '5' || slot.appEventStatus === 'TENTATIVE')"
+                    [class.time-slot--color-10]="slot.isAppEvent && (slot.colorId === '10' || slot.appEventStatus === 'CONFIRMED')"
                     [class.time-slot--merged]="slot.status === 'reservado' && !slot.isAppEvent && (slot.mergedCount ?? 1) > 1"
                     [class.time-slot--seleccionado]="isSlotSelected(slot)"
-                    [disabled]="slot.status === 'reservado' && !slot.isAppEvent"
+                    [disabled]="(slot.status === 'reservado' && !slot.isAppEvent) || isSlotPast(slot, day)"
                     (click)="onSlotClick(slot, day)"
                   >
                     @if (slot.isAppEvent) {
@@ -180,22 +202,6 @@
         }
       </div>
     </div>
-
-    <!-- Leyenda Inferior (Fase 2) -->
-    <footer class="calendar-legend">
-      <div class="calendar-legend__item">
-        <span class="legend-swatch legend-swatch--disponible"></span>
-        <span class="calendar-legend__label">Disponible</span>
-      </div>
-      <div class="calendar-legend__item">
-        <span class="legend-swatch legend-swatch--reservado"></span>
-        <span class="calendar-legend__label">Espacio Cerrado</span>
-      </div>
-      <div class="calendar-legend__item">
-        <span class="legend-swatch legend-swatch--seleccionado"></span>
-        <span class="calendar-legend__label">Seleccionado</span>
-      </div>
-    </footer>
   }
 </section>
 

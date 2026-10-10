@@ -207,18 +207,19 @@
       font-size: 0.8125rem;
       font-weight: 600;
       border-radius: 8px;
-      background-color: #25d366;
-      color: #ffffff;
+      background-color: var(--sys-color-primary, #005ac1);
+      color: var(--sys-color-on-primary, #ffffff);
       padding: 0 14px;
       height: 36px;
-      text-decoration: none;
+      border: none;
+      cursor: pointer;
       flex-shrink: 0;
       transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
 
       &:hover {
-        background-color: #1eb956;
+        background-color: var(--sys-color-primary-container, #004ba0);
         transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(37, 211, 102, 0.35);
+        box-shadow: 0 2px 8px rgba(0, 90, 193, 0.35);
       }
 
       mat-icon {

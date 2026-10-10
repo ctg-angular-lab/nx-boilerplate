@@ -208,3 +208,46 @@ export function generateDaySlots(
 
   return slots;
 }
+
+/**
+ * Determina si un slot de tiempo ya ha transcurrido respecto al momento actual.
+ */
+export function isTimeSlotInPast(slot: TimeSlot, dayDate: Date): boolean {
+  const now = new Date();
+  const dayMidnight = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate(), 0, 0, 0, 0);
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+
+  if (dayMidnight.getTime() < todayMidnight.getTime()) {
+    return true;
+  }
+  if (dayMidnight.getTime() > todayMidnight.getTime()) {
+    return false;
+  }
+
+  // Si el día es hoy: evaluar timestamp ISO del inicio del slot
+  if (slot.startTime) {
+    const slotStart = new Date(slot.startTime);
+    if (!isNaN(slotStart.getTime())) {
+      return slotStart.getTime() <= now.getTime();
+    }
+  }
+
+  // Fallback con el texto de la hora (ej. "08:00 - 08:45" o "08:00 AM")
+  if (slot.time) {
+    const match = slot.time.match(/^(\d{1,2}):(\d{2})/);
+    if (match) {
+      let hours = parseInt(match[1], 10);
+      const minutes = parseInt(match[2], 10);
+      if (/pm/i.test(slot.time) && hours < 12) {
+        hours += 12;
+      } else if (/am/i.test(slot.time) && hours === 12) {
+        hours = 0;
+      }
+
+      const slotDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0, 0);
+      return slotDate.getTime() <= now.getTime();
+    }
+  }
+
+  return false;
+}

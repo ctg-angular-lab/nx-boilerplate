@@ -19,6 +19,7 @@ import {
   ConfirmationModalComponent,
   ConfirmationModalData,
 } from '@nx-boilerplate/layouts';
+import { isTimeSlotInPast } from '@nx-boilerplate/utils';
 import { AppointmentLogicService } from '../../services/appointment-logic.service';
 import { AGENDADOR_TABS } from '../../models/booking.models';
 
@@ -194,7 +195,7 @@ export class CalendarioCitasComponent {
    * Maneja el clic en un slot disponible para abrir el modal de confirmación de agendamiento
    */
   onSlotClick(slot: TimeSlot, day: CalendarDay): void {
-    if (slot.status === 'reservado' && !slot.isAppEvent) {
+    if ((slot.status === 'reservado' && !slot.isAppEvent) || this.isSlotPast(slot, day)) {
       return;
     }
 
@@ -234,7 +235,7 @@ export class CalendarioCitasComponent {
         patientData = this.bookingContext()?.patient ?? null;
       }
 
-      this.dialog.open<
+      const dialogRef = this.dialog.open<
         AgendarModalComponent,
         AgendarModalData,
         AgendarModalResult
@@ -250,6 +251,12 @@ export class CalendarioCitasComponent {
           endTime: slot.endTime,
           slotStatus: slot.appEventStatus ?? (slot.colorId === '5' ? 'TENTATIVE' : null),
         },
+      });
+
+      dialogRef.afterClosed().subscribe((result) => {
+        if (result?.goToConfirmationTab) {
+          this.appointmentLogic.setActiveTab(AGENDADOR_TABS.PROFESSIONALS);
+        }
       });
       return;
     }
@@ -321,5 +328,12 @@ export class CalendarioCitasComponent {
    */
   isSlotSelected(slot: TimeSlot): boolean {
     return this.selectedSlot()?.id === slot.id;
+  }
+
+  /**
+   * Determina si el slot de tiempo corresponde a una hora que ya transcurrió
+   */
+  isSlotPast(slot: TimeSlot, day: CalendarDay): boolean {
+    return isTimeSlotInPast(slot, day.date);
   }
 }

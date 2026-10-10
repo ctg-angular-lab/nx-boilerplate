@@ -233,6 +233,16 @@ export class SchedulingDomainService {
               colorId: null,
               isBookable: false,
             });
+          } else if (currentSlotStart.getTime() < Date.now()) {
+            daySlots.push({
+              startTime: currentSlotStart.toISOString(),
+              endTime: currentSlotEnd.toISOString(),
+              display,
+              title: 'Horario transcurrido',
+              status: 'BLOCKED_PERSONAL',
+              colorId: null,
+              isBookable: false,
+            });
           } else {
             daySlots.push({
               startTime: currentSlotStart.toISOString(),

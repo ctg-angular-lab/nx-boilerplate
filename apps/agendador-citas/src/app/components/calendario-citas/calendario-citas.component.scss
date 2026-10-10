@@ -403,6 +403,30 @@
       border: 1px solid #fcd34d;
       border-left: 4px solid #f59e0b;
     }
+
+    &.time-slot--color-10 {
+      background-color: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      border-left: 4px solid #10b981;
+      color: #065f46;
+
+      &:hover {
+        background-color: #d1fae5;
+        box-shadow: 0 4px 10px rgba(16, 185, 129, 0.25);
+      }
+
+      .time-slot__event-icon {
+        color: #059669;
+      }
+
+      .time-slot__time {
+        color: #065f46;
+      }
+
+      .time-slot__title {
+        color: #064e3b;
+      }
+    }
   }
 
   &--reservado {
@@ -483,6 +507,15 @@
       transform: translateY(-1px);
     }
   }
+
+  &--past,
+  &[disabled] {
+    cursor: not-allowed !important;
+    pointer-events: none;
+    opacity: 0.55;
+    box-shadow: none !important;
+    transform: none !important;
+  }
 }
 
 // ----------------------------------------------------
@@ -493,9 +526,11 @@
   align-items: center;
   justify-content: flex-start;
   flex-wrap: wrap;
-  gap: 24px;
-  padding-top: 16px;
-  border-top: 1px solid var(--sys-color-outline-variant, #e0e0e0);
+  gap: 20px;
+  padding: 10px 16px;
+  //background-color: var(--sys-color-surface-container-low, #f8f9fa);
+  border: 1px solid var(--sys-color-outline-variant, #e0e0e0);
+  border-radius: 8px;
 
   &__item {
     display: flex;
@@ -505,7 +540,7 @@
 
   &__label {
     font-family: var(--mat-sys-body-medium-font, inherit);
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     color: var(--sys-color-on-surface-variant, #49454f);
     font-weight: 500;
   }
@@ -523,6 +558,18 @@
     border-left: 3px solid var(--sys-color-primary, #005ac1);
   }
 
+  &--agendado {
+    background-color: #fffbeb;
+    border: 1px solid #fcd34d;
+    border-left: 3px solid #f59e0b;
+  }
+
+  &--confirmado {
+    background-color: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-left: 3px solid #10b981;
+  }
+
   &--reservado {
     background: repeating-linear-gradient(
       -45deg,
@@ -532,11 +579,6 @@
       var(--sys-color-surface-container-high, #e2e8f0) 8px
     );
     border: 1px solid var(--sys-color-outline-variant, #e0e0e0);
-  }
-
-  &--seleccionado {
-    background-color: var(--sys-color-primary, #005ac1);
-    border: 1px solid var(--sys-color-primary, #005ac1);
   }
 }
 

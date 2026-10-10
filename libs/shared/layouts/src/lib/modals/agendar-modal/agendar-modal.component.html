@@ -57,18 +57,17 @@
               </div>
             }
           </div>
-          @if (isTentativeStatus() && patientWhatsAppUrl()) {
-            <a
+          @if (isTentativeStatus()) {
+            <button
               mat-flat-button
-              [href]="patientWhatsAppUrl()"
-              target="_blank"
-              rel="noopener noreferrer"
+              type="button"
               class="patient-confirm-btn"
-              title="Confirmar cita vía WhatsApp"
+              title="Ir a Confirmación de Citas"
+              (click)="onGoToConfirmationTab()"
             >
-              <mat-icon class="material-symbols-outlined">chat</mat-icon>
+              <mat-icon class="material-symbols-outlined">fact_check</mat-icon>
               <span>Confirmar cita</span>
-            </a>
+            </button>
           }
         </div>
       } @else if (isTentativeView()) {
