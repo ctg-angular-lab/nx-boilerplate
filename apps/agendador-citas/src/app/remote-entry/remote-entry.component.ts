@@ -14,7 +14,7 @@ import {
 } from '@nx-boilerplate/layouts';
 import { AgendarCitaComponent } from '../components/agendar-cita/agendar-cita.component';
 import { CalendarioCitasComponent } from '../components/calendario-citas/calendario-citas.component';
-import { ListaProfesionalesComponent } from '../components/lista-profesionales/lista-profesionales.component';
+import { ConfirmacionCitasComponent } from '../components/confirmacion-citas/confirmacion-citas.component';
 import { AGENDADOR_TABS, AgendadorTabId } from '../models/booking.models';
 import { AppointmentLogicService } from '../services/appointment-logic.service';
 
@@ -26,7 +26,7 @@ import { AppointmentLogicService } from '../services/appointment-logic.service';
     TabsCollectionComponent,
     AgendarCitaComponent,
     CalendarioCitasComponent,
-    ListaProfesionalesComponent,
+    ConfirmacionCitasComponent,
   ],
   templateUrl: './remote-entry.component.html',
   styleUrl: './remote-entry.component.scss',
@@ -39,8 +39,8 @@ export class RemoteEntryComponent {
   private readonly appointmentTpl =
     viewChild<TemplateRef<void>>('appointmentTab');
   private readonly calendarTpl = viewChild<TemplateRef<void>>('calendarTab');
-  private readonly professionalsTpl =
-    viewChild<TemplateRef<void>>('professionalsTab');
+  private readonly confirmationTpl =
+    viewChild<TemplateRef<void>>('confirmationTab');
 
   /**
    * Sincroniza la pestaña activa con el servicio de orquestación
@@ -69,8 +69,8 @@ export class RemoteEntryComponent {
     },
     {
       id: AGENDADOR_TABS.PROFESSIONALS,
-      label: 'Profesionales Disponibles',
-      icon: 'article_person',
+      label: 'Confirmación de Citas',
+      icon: 'fact_check',
       disabled: false,
     },
   ]);
@@ -83,7 +83,7 @@ export class RemoteEntryComponent {
     const templates = [
       this.appointmentTpl(),
       this.calendarTpl(),
-      this.professionalsTpl(),
+      this.confirmationTpl(),
     ];
 
     return raw.map((tab, index) => ({

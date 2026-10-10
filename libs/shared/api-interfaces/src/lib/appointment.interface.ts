@@ -12,7 +12,8 @@ export interface ISlotDisplay {
   status: SlotStatusType;  
   colorId: string | null;  
   isBookable: boolean;     
-  googleEventId?: string;  
+  googleEventId?: string;
+  patient?: IBookingPatient;
 }
 
 export interface IDayAvailability {
@@ -61,6 +62,7 @@ export interface ICreateAppointmentBody {
   patientNationalId: string;
   patientFullName: string;
   patientEmail: string;
+  patientPhone?: string;
   procedureId: string;
   procedureName: string;
   startTime: string;
@@ -102,3 +104,42 @@ export interface IWeekWindow {
   totalDays: number;   // 1 a 6 días
   offsetWeeks: number; // 0 = semana actual, 1 = siguiente, -1 = anterior
 }
+
+export interface IAppointmentDashboard {
+  appointmentId: string;
+  doctorEmail: string;
+  doctorCedula: string;
+  patientNationalId: string;
+  patientFullName: string;
+  patientEmail: string;
+  patientPhone?: string;
+  procedureId: string;
+  procedureName: string;
+  startTime: string | Date;
+  endTime: string | Date;
+  status: 'AVAILABLE' | 'TENTATIVE' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+  patientResponseStatus: 'needsAction' | 'accepted' | 'declined' | 'tentative';
+  colorId?: string;
+  googleCalendarEventId?: string;
+  notes?: string;
+  contactCount: number;
+}
+
+export interface IGetDailyAppointmentsRequest {
+  date: string;
+  doctorEmail?: string;
+  status?: 'TENTATIVE' | 'CONFIRMED' | 'CANCELLED';
+}
+
+export interface IUpdateAppointmentStatusRequest {
+  appointmentId?: string;
+  status: 'CONFIRMED' | 'CANCELLED';
+}
+
+export interface ITrackContactRequest {
+  appointmentId: string;
+}
+
+export type AppointmentConfirmationStatus = 'TENTATIVE' | 'CONFIRMED' | 'CANCELLED';
+
+

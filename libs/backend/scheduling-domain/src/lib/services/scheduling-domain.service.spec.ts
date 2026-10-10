@@ -16,6 +16,9 @@ describe('SchedulingDomainService', () => {
       create: vi.fn().mockImplementation((data) => Promise.resolve({ ...data, _id: 'mongo-id-123' })),
       findById: vi.fn(),
       findByPatientNationalId: vi.fn(),
+      findDaily: vi.fn().mockResolvedValue([]),
+      updateStatus: vi.fn(),
+      incrementContactCount: vi.fn(),
     } as unknown as AppointmentRepository;
 
     service = new SchedulingDomainService(mockCalendarAdapter, mockAppointmentRepository);
@@ -101,5 +104,69 @@ describe('SchedulingDomainService', () => {
       expect(firstSlot.display).toMatch(/^\d{2}:\d{2} - \d{2}:\d{2}$/);
     }
   });
+
+  it('debe consultar citas diarias delegando en el repositorio con rango de día', async () => {
+    const mockAppointments = [
+      {
+        appointmentId: 'APT-1',
+        doctorEmail: 'dr@example.com',
+        patientFullName: 'Ana Gómez',
+        contactCount: 0,
+      },
+    ];
+    vi.spyOn(mockAppointmentRepository, 'findDaily').mockResolvedValue(mockAppointments as any);
+
+    const result = await service.getDailyAppointments({
+      date: '2026-10-15',
+      doctorEmail: 'dr@example.com',
+      status: 'TENTATIVE',
+    });
+
+    expect(result).toEqual(mockAppointments);
+    expect(mockAppointmentRepository.findDaily).toHaveBeenCalledWith(
+      expect.objectContaining({
+        doctorEmail: 'dr@example.com',
+        status: 'TENTATIVE',
+      })
+    );
+  });
+
+  it('debe actualizar el estado de una cita sincronizando con Google Calendar y persistiendo en Mongo', async () => {
+    const existingAppointment = {
+      appointmentId: 'APT-99',
+      doctorEmail: 'dr@example.com',
+      googleCalendarEventId: 'g-event-99',
+      status: 'TENTATIVE',
+    };
+    const updatedAppointment = {
+      ...existingAppointment,
+      status: 'CONFIRMED',
+      colorId: '10',
+    };
+
+    vi.spyOn(mockAppointmentRepository, 'findById').mockResolvedValue(existingAppointment as any);
+    const spyCalendarUpdate = vi.spyOn(mockCalendarAdapter, 'updateEventStatus');
+    vi.spyOn(mockAppointmentRepository, 'updateStatus').mockResolvedValue(updatedAppointment as any);
+
+    const result = await service.updateAppointmentStatus('APT-99', 'CONFIRMED');
+
+    expect(spyCalendarUpdate).toHaveBeenCalledWith('dr@example.com', 'g-event-99', 'CONFIRMED');
+    expect(mockAppointmentRepository.updateStatus).toHaveBeenCalledWith('APT-99', 'CONFIRMED', '10');
+    expect(result.status).toBe('CONFIRMED');
+  });
+
+  it('debe incrementar el contador de contactos para una cita existente', async () => {
+    const mockUpdated = {
+      appointmentId: 'APT-100',
+      contactCount: 2,
+    };
+    vi.spyOn(mockAppointmentRepository, 'incrementContactCount').mockResolvedValue(mockUpdated as any);
+
+    const result = await service.incrementContactCount('APT-100');
+
+    expect(mockAppointmentRepository.incrementContactCount).toHaveBeenCalledWith('APT-100');
+    expect(result?.contactCount).toBe(2);
+  });
 });
+
 

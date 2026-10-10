@@ -59,13 +59,20 @@ graph LR
 | `IActiveProfessional` | `procedure.interface.ts` | Médico activo con datos ampliados |
 | `IApiResponse<T>` | `api-response.interface.ts` | Sobre de respuesta canónico `{ success, statusCode, message, data }` |
 | `IWeekWindow` | `appointment.interface.ts` | Ventana semanal `{ startDate, endDate, totalDays, offsetWeeks }` |
+| `IAppointmentDashboard` | `appointment.interface.ts` | Entidad consolidada de cita para dashboard de seguimiento diario |
+| `IGetDailyAppointmentsRequest` | `appointment.interface.ts` | Payload de consulta para citas por fecha, médico y estado |
+| `IUpdateAppointmentStatusRequest` | `appointment.interface.ts` | Payload de solicitud para actualizar estado (`CONFIRMED` o `CANCELLED`) |
+| `ITrackContactRequest` | `appointment.interface.ts` | Payload de evento para registrar contacto con el paciente |
 
 ### B. DTOs y Validación Runtime
 
 | DTO | Ubicación | Campos | Decoradores clave | Propósito |
 |---|---|---|---|---|
 | `GetAvailableDatesQueryDto` | `src/dtos/` | `procedureId?`, `doctorEmail?`, `targetDate?`, `startDate?`, `endDate?` | `@IsEmail`, `@IsDateString`, `@IsOptional` | Query params para disponibilidad semanal |
-| `CreateAppointmentBodyDto` | `src/dtos/` | `doctorEmail`, `doctorCedula`, `patientNationalId`, `patientFullName`, `patientEmail`, `procedureId`, `procedureName`, `startTime`, `endTime`, `notes?` | `@IsEmail`, `@IsISO8601`, `@IsNotEmpty` | Payload de creación de cita |
+| `GetDailyAppointmentsQueryDto` | `@nx-boilerplate/shared-dtos` | `date`, `doctorEmail?`, `status?` | `@IsDateString`, `@IsNotEmpty`, `@IsEmail`, `@IsEnum`, `@IsOptional` | Query params para consultar citas del día |
+| `CreateAppointmentBodyDto` | `src/dtos/` | `doctorEmail`, `doctorCedula`, `patientNationalId`, `patientFullName`, `patientEmail`, `patientPhone?`, `procedureId`, `procedureName`, `startTime`, `endTime`, `notes?` | `@IsEmail`, `@IsISO8601`, `@IsNotEmpty`, `@IsOptional` | Payload de creación de cita con teléfono para confirmación |
+| `UpdateAppointmentStatusDto` | `@nx-boilerplate/shared-dtos` | `appointmentId?`, `status` | `@IsEnum(['CONFIRMED', 'CANCELLED'])`, `@IsOptional` | Payload de actualización de estado de cita |
+| `TrackContactDto` | `@nx-boilerplate/shared-dtos` | `appointmentId` | `@IsString`, `@IsNotEmpty` | Validación de ID para registrar contacto con paciente |
 | `CreateWaitlistBodyDto` | `src/dtos/` | `patientNationalId`, `patientFullName`, `patientEmail`, `patientPhone`, `procedureId`, `preferredDoctorEmail?` | `@IsEmail`, `@IsNotEmpty` | Payload de inscripción a lista de espera |
 | `FindPatientByNationalIdDto` | `@nx-boilerplate/shared-dtos` | `nationalId` | `@IsString`, `@IsNotEmpty` | Parámetro de ruta para consultar paciente |
 | `CreatePatientDto` | `@nx-boilerplate/shared-dtos` | `cedula`, `nombre`, `apellidos`, `correo`, `celular`, `ultimosProcedimientos?`, `recomendaciones?` | `@IsString`, `@IsEmail`, `@IsOptional` | Payload de registro de nuevo paciente |
@@ -82,6 +89,50 @@ graph LR
 ---
 
 ### 4.1 `AppointmentsController` — `/api/appointments`
+
+#### `GET /api/appointments/daily`
+
+Consulta la lista consolidada de citas programadas para una fecha determinada (`date: YYYY-MM-DD`), diseñada para alimentar el **Dashboard de Gestión y Confirmación Diaria**. Permite filtrar por médico y por estado clínico de la cita (`TENTATIVE`, `CONFIRMED`, `CANCELLED`). Incluye datos de contacto del paciente, estado de respuesta de Google Calendar (`patientResponseStatus`) y el contador acumulado de intentos de contacto (`contactCount`).
+
+| Parámetro Query | Tipo | Requerido | Descripción |
+|---|---|---|---|
+| `date` | `string (YYYY-MM-DD)` | Sí | Fecha de la jornada clínica a consultar |
+| `doctorEmail` | `string (email)` | No | Filtra por el correo del médico asignado |
+| `status` | `string` | No | Filtra por estado (`TENTATIVE`, `CONFIRMED`, `CANCELLED`) |
+
+**Respuesta `200 OK` (`IAppointmentDashboard[]`):**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Operación realizada exitosamente",
+  "data": [
+    {
+      "appointmentId": "APT-1791262275508-237",
+      "doctorEmail": "drmoralesheano@gmail.com",
+      "doctorCedula": "123456789",
+      "patientNationalId": "987654321",
+      "patientFullName": "María García",
+      "patientEmail": "paciente@email.com",
+      "patientPhone": "+573001234567",
+      "procedureId": "proc-001",
+      "procedureName": "Consulta General",
+      "startTime": "2026-10-15T14:00:00.000Z",
+      "endTime": "2026-10-15T14:45:00.000Z",
+      "status": "TENTATIVE",
+      "patientResponseStatus": "needsAction",
+      "colorId": "5",
+      "googleCalendarEventId": "evt_abc123",
+      "notes": "Primera consulta",
+      "contactCount": 0
+    }
+  ]
+}
+```
+
+* **Patrón RMQ:** `appointments.get-daily` · **Cola:** `scheduling_queue` · **Timeout:** 5 000 ms
+
+---
 
 #### `GET /api/appointments/available-dates`
 
@@ -164,7 +215,7 @@ Consulta la disponibilidad semanal de un médico mediante `events.list` y la reg
 
 #### `POST /api/appointments`
 
-Crea una cita médica validando disponibilidad en Google Calendar (insertando evento interactivo con `sendUpdates: 'all'`, `status: 'tentative'` y `colorId: '5'`) y persistiendo en MongoDB Atlas.
+Crea una cita médica validando disponibilidad en Google Calendar (insertando evento interactivo en ubicación `'Cra 79 # 49A-107, Laureles - Estadio'`, con `sendUpdates: 'all'`, `status: 'tentative'` y `colorId: '5'`) y persistiendo en MongoDB Atlas bajo el estado inicial `TENTATIVE`.
 
 **Body (`CreateAppointmentBodyDto`):**
 ```json
@@ -174,6 +225,7 @@ Crea una cita médica validando disponibilidad en Google Calendar (insertando ev
   "patientNationalId": "987654321",
   "patientFullName": "María García",
   "patientEmail": "paciente@email.com",
+  "patientPhone": "3001234567",
   "procedureId": "proc-001",
   "procedureName": "Consulta General",
   "startTime": "2026-10-03T14:00:00.000Z",
@@ -202,6 +254,81 @@ Crea una cita médica validando disponibilidad en Google Calendar (insertando ev
 }
 ```
 * **Patrón RMQ:** `appointments.create` · **Timeout:** 10 000 ms
+* **Sincronización:** Inserta la cita con `colorId: '5'` (amarillo/tentativa) en Google Calendar y almacena el teléfono opcional del paciente para habilitar la confirmación interactiva de asistencia vía WhatsApp.
+
+---
+
+#### `PATCH /api/appointments/:id/status`
+
+Actualiza el estado de una cita médica de forma sincrónica y bidireccional entre Google Calendar y la base de datos.
+1. **Google Calendar:** Actualiza el evento correspondiente cambiando su color tonal (`10` verde esmeralda para `CONFIRMED`, `11` rojo tomate para `CANCELLED`).
+2. **MongoDB Atlas:** Persiste el nuevo estado (`status`) y `colorId` en el documento de la cita.
+
+| Parámetro / Campo | Tipo | Requerido | Descripción |
+|---|---|---|---|
+| `:id` (Param) | `string` | Sí | Identificador único de la cita (`appointmentId` o `_id`) |
+| `status` (Body) | `string` | Sí | Nuevo estado permitido: `CONFIRMED` o `CANCELLED` |
+
+**Body (`UpdateAppointmentStatusDto`):**
+```json
+{
+  "status": "CONFIRMED"
+}
+```
+
+**Respuesta `200 OK` (`IAppointmentDashboard`):**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Operación realizada exitosamente",
+  "data": {
+    "appointmentId": "APT-1791262275508-237",
+    "doctorEmail": "drmoralesheano@gmail.com",
+    "doctorCedula": "123456789",
+    "patientNationalId": "987654321",
+    "patientFullName": "María García",
+    "patientEmail": "paciente@email.com",
+    "patientPhone": "+573001234567",
+    "procedureId": "proc-001",
+    "procedureName": "Consulta General",
+    "startTime": "2026-10-15T14:00:00.000Z",
+    "endTime": "2026-10-15T14:45:00.000Z",
+    "status": "CONFIRMED",
+    "patientResponseStatus": "accepted",
+    "colorId": "10",
+    "googleCalendarEventId": "evt_abc123",
+    "notes": "Primera consulta",
+    "contactCount": 1
+  }
+}
+```
+
+* **Patrón RMQ:** `appointments.update-status` · **Cola:** `scheduling_queue` · **Timeout:** 10 000 ms
+
+---
+
+#### `POST /api/appointments/:id/track-contact`
+
+Registra e incrementa de forma atómica el número de intentos de contacto (`contactCount`) realizados al paciente para una cita (llamadas o recordatorios interactivos de WhatsApp). Se gestiona de forma asíncrona mediante emisión de eventos RabbitMQ sin bloquear el cliente HTTP.
+
+| Parámetro | Tipo | Requerido | Descripción |
+|---|---|---|---|
+| `:id` (Param) | `string` | Sí | Identificador único de la cita (`appointmentId`) |
+
+**Respuesta `202 Accepted`:**
+```json
+{
+  "success": true,
+  "statusCode": 202,
+  "message": "Registro de contacto encolado exitosamente",
+  "data": {
+    "message": "Registro de contacto encolado exitosamente"
+  }
+}
+```
+
+* **Patrón RMQ Emitido:** `appointments.contact-tracked` (Evento asíncrono `@EventPattern` via `emit()`) · **Cola:** `scheduling_queue`
 
 ---
 
@@ -379,6 +506,17 @@ curl "http://localhost:3000/api/appointments/available-dates?doctorEmail=drmoral
 curl -X POST http://localhost:3000/api/appointments \
   -H "Content-Type: application/json" \
   -d '{"doctorEmail":"drmoralesheano@gmail.com","doctorCedula":"123","patientNationalId":"456","patientFullName":"Test Paciente","patientEmail":"test@test.com","procedureId":"proc-001","procedureName":"Consulta","startTime":"2026-10-05T14:00:00Z","endTime":"2026-10-05T14:45:00Z"}'
+
+# Listar citas de una jornada diaria (Dashboard)
+curl "http://localhost:3000/api/appointments/daily?date=2026-10-15&doctorEmail=drmoralesheano@gmail.com&status=TENTATIVE"
+
+# Actualizar estado de cita (Confirmar o Cancelar)
+curl -X PATCH http://localhost:3000/api/appointments/APT-1791262275508-237/status \
+  -H "Content-Type: application/json" \
+  -d '{"status":"CONFIRMED"}'
+
+# Registrar contacto o intento de notificación al paciente
+curl -X POST http://localhost:3000/api/appointments/APT-1791262275508-237/track-contact
 
 # Listar médicos activos
 curl http://localhost:3000/api/doctors

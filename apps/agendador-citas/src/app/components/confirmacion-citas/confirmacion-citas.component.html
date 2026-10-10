@@ -1,0 +1,23 @@
+<div class="confirmacion-citas-container">
+  <!-- Toolbar de Filtros -->
+  <app-filtros-confirmacion
+    [selectedDate]="confirmacionService.selectedDate()"
+    [selectedStatus]="confirmacionService.selectedStatus()"
+    [selectedDoctorEmail]="confirmacionService.selectedDoctorEmail()"
+    [searchQuery]="confirmacionService.searchQuery()"
+    [summaryStats]="confirmacionService.summaryStats()"
+    [professionals]="appointmentLogic.availableProfessionals()"
+    (dateChange)="confirmacionService.setSelectedDate($event)"
+    (statusChange)="confirmacionService.setSelectedStatus($event)"
+    (doctorChange)="confirmacionService.setSelectedDoctorEmail($event)"
+    (searchChange)="confirmacionService.setSearchQuery($event)"
+  />
+
+  <!-- Tabla de Citas -->
+  <app-tabla-citas
+    [appointments]="confirmacionService.filteredAppointments()"
+    [isLoading]="confirmacionService.isLoadingDashboard()"
+    (statusChange)="onStatusChange($event)"
+    (trackContact)="onTrackContact($event)"
+  />
+</div>

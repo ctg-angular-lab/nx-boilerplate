@@ -1,10 +1,15 @@
 import { Controller, Logger } from '@nestjs/common';
-import { MessagePattern, Payload, RpcException } from '@nestjs/microservices';
+import { EventPattern, MessagePattern, Payload, RpcException } from '@nestjs/microservices';
 import {
   SchedulingDomainService,
   IBookAppointmentCommand,
 } from '@nx-boilerplate/backend/scheduling-domain';
 import { IAvailableDate, IDayAvailability } from '@nx-boilerplate/api-interfaces';
+import {
+  GetDailyAppointmentsDto,
+  UpdateAppointmentStatusDto,
+  TrackContactDto,
+} from '@nx-boilerplate/shared-dtos';
 import { GetAvailableDatesPayloadDto } from '../dtos/get-available-dates-payload.dto';
 import { CreateAppointmentPayloadDto } from '../dtos/create-appointment-payload.dto';
 import { CreateWaitlistPayloadDto } from '../dtos/create-waitlist-payload.dto';
@@ -110,6 +115,7 @@ export class SchedulingMessageController {
     const patientNationalId = (payload.patientNationalId || payload.cedula || '').trim();
     const patientFullName = (payload.patientFullName || `${payload.nombre || ''} ${payload.apellidos || ''}`).trim();
     const patientEmail = (payload.patientEmail || payload.correo || '').trim();
+    const patientPhone = (payload.patientPhone || payload.celular || '').trim();
     const procedureId = (payload.procedureId || payload.procedimientoId || '').trim();
     const procedureName = payload.procedureName || payload.procedimientoNombre || `Procedimiento ${procedureId}`;
 
@@ -119,6 +125,7 @@ export class SchedulingMessageController {
       patientNationalId,
       patientFullName,
       patientEmail,
+      patientPhone,
       procedureId,
       procedureName,
       startTime: start,
@@ -156,5 +163,29 @@ export class SchedulingMessageController {
       registeredAt: new Date().toISOString(),
     };
   }
+
+  @MessagePattern('appointments.get-daily')
+  async getDailyAppointments(@Payload() payload: GetDailyAppointmentsDto) {
+    this.logger.log(`Consultando citas diarias para fecha: ${payload.date}`);
+    return this.schedulingDomainService.getDailyAppointments(payload);
+  }
+
+  @MessagePattern('appointments.update-status')
+  async updateAppointmentStatus(@Payload() payload: UpdateAppointmentStatusDto) {
+    this.logger.log(
+      `Actualizando estado de cita ${payload.appointmentId} a ${payload.status}`
+    );
+    return this.schedulingDomainService.updateAppointmentStatus(
+      payload.appointmentId,
+      payload.status
+    );
+  }
+
+  @EventPattern('appointments.contact-tracked')
+  async handleContactTracked(@Payload() payload: TrackContactDto): Promise<void> {
+    this.logger.log(`Evento de contacto registrado para cita: ${payload.appointmentId}`);
+    await this.schedulingDomainService.incrementContactCount(payload.appointmentId);
+  }
 }
+
 

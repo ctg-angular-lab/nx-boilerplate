@@ -1,11 +1,11 @@
-<div class="agendar-modal-container">
+<div class="agendar-modal-container" [class.agendar-modal-container--tentative]="isTentativeView()">
   <div class="modal-header">
     <div class="header-icon-badge">
-      <mat-icon class="material-symbols-outlined">event_available</mat-icon>
+      <mat-icon class="material-symbols-outlined">{{ isTentativeView() ? 'schedule' : 'event_available' }}</mat-icon>
     </div>
     <div class="header-text">
       <h2 mat-dialog-title class="modal-title">{{ title() }}</h2>
-      <p class="modal-subtitle">Confirma los detalles de tu cita médica</p>
+      <p class="modal-subtitle">{{ subtitle() }}</p>
     </div>
   </div>
 
@@ -52,8 +52,31 @@
           <div class="patient-data">
             <span class="patient-name">{{ patientFullName() }}</span>
             @if (patientDocument()) {
-              <span class="patient-id">C.C. {{ patientDocument() }}</span>
+              <div class="patient-meta">
+                <span class="patient-id">C.C. {{ patientDocument() }}</span>
+              </div>
             }
+          </div>
+          @if (isTentativeStatus() && patientWhatsAppUrl()) {
+            <a
+              mat-flat-button
+              [href]="patientWhatsAppUrl()"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="patient-confirm-btn"
+              title="Confirmar cita vía WhatsApp"
+            >
+              <mat-icon class="material-symbols-outlined">chat</mat-icon>
+              <span>Confirmar cita</span>
+            </a>
+          }
+        </div>
+      } @else if (isTentativeView()) {
+        <div class="patient-empty-banner patient-empty-banner--tentative">
+          <mat-icon class="material-symbols-outlined alert-icon">info</mat-icon>
+          <div class="empty-text">
+            <strong>Sin paciente registrado en la vista previa</strong>
+            <p>La cita se encuentra en estado preliminar en la agenda del profesional.</p>
           </div>
         </div>
       } @else {
@@ -76,56 +99,74 @@
     </div>
 
     <!-- Sección de Notas Adicionales -->
-    <div class="notes-section">
-      <button
-        type="button"
-        mat-button
-        class="toggle-notes-btn"
-        (click)="toggleNotes()"
-      >
-        <mat-icon class="material-symbols-outlined">
-          {{ showNotesField() ? 'remove_circle_outline' : 'add_circle_outline' }}
-        </mat-icon>
-        <span>{{ showNotesField() ? 'Ocultar observaciones' : 'Agregar observaciones o notas adicionales' }}</span>
-      </button>
+    @if (!isTentativeView()) {
+      <div class="notes-section">
+        <button
+          type="button"
+          mat-button
+          class="toggle-notes-btn"
+          (click)="toggleNotes()"
+        >
+          <mat-icon class="material-symbols-outlined">
+            {{ showNotesField() ? 'remove_circle_outline' : 'add_circle_outline' }}
+          </mat-icon>
+          <span>{{ showNotesField() ? 'Ocultar observaciones' : 'Agregar observaciones o notas adicionales' }}</span>
+        </button>
 
-      @if (showNotesField()) {
-        <div class="notes-field-wrapper">
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Notas adicionales para el profesional</mat-label>
-            <textarea
-              matInput
-              rows="3"
-              [formControl]="notesControl"
-              placeholder="Ej: Síntomas previos, necesidad de asistencia especial..."
-              maxlength="200"
-            ></textarea>
-            <mat-hint align="end">{{ notesControl.value.length }} / 200</mat-hint>
-          </mat-form-field>
-        </div>
-      }
-    </div>
+        @if (showNotesField()) {
+          <div class="notes-field-wrapper">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Notas adicionales para el profesional</mat-label>
+              <textarea
+                matInput
+                rows="3"
+                [formControl]="notesControl"
+                placeholder="Ej: Síntomas previos, necesidad de asistencia especial..."
+                maxlength="200"
+              ></textarea>
+              <mat-hint align="end">{{ notesControl.value.length }} / 200</mat-hint>
+            </mat-form-field>
+          </div>
+        }
+      </div>
+    } @else if (initialNotes()) {
+      <div class="tentative-notes-card">
+        <span class="tentative-notes-title">Observaciones de la cita</span>
+        <p class="tentative-notes-text">{{ initialNotes() }}</p>
+      </div>
+    }
   </mat-dialog-content>
 
   <mat-dialog-actions align="end" class="modal-actions">
-    <button
-      type="button"
-      mat-stroked-button
-      class="action-btn cancel-btn"
-      (click)="onCancel()"
-    >
-      Cancelar
-    </button>
-    <button
-      type="button"
-      mat-flat-button
-      color="primary"
-      class="action-btn confirm-btn"
-      [disabled]="!patient()"
-      (click)="onConfirm()"
-    >
-      <mat-icon class="material-symbols-outlined">check_circle</mat-icon>
-      Confirmar Cita
-    </button>
+    @if (isTentativeView()) {
+      <button
+        type="button"
+        mat-stroked-button
+        class="action-btn cancel-btn"
+        (click)="onCancel()"
+      >
+        Cerrar
+      </button>
+    } @else {
+      <button
+        type="button"
+        mat-stroked-button
+        class="action-btn cancel-btn"
+        (click)="onCancel()"
+      >
+        Cancelar
+      </button>
+      <button
+        type="button"
+        mat-flat-button
+        color="primary"
+        class="action-btn confirm-btn"
+        [disabled]="!patient()"
+        (click)="onConfirm()"
+      >
+        <mat-icon class="material-symbols-outlined">check_circle</mat-icon>
+        Confirmar Cita
+      </button>
+    }
   </mat-dialog-actions>
 </div>

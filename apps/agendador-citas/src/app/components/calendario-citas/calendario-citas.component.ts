@@ -11,7 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDialog } from '@angular/material/dialog';
-import { CalendarDay, TimeSlot } from '@nx-boilerplate/api-interfaces';
+import { CalendarDay, IBookingPatient, TimeSlot } from '@nx-boilerplate/api-interfaces';
 import {
   AgendarModalComponent,
   AgendarModalData,
@@ -194,11 +194,9 @@ export class CalendarioCitasComponent {
    * Maneja el clic en un slot disponible para abrir el modal de confirmación de agendamiento
    */
   onSlotClick(slot: TimeSlot, day: CalendarDay): void {
-    if (slot.status === 'reservado') {
+    if (slot.status === 'reservado' && !slot.isAppEvent) {
       return;
     }
-
-    this.selectedSlot.set(this.selectedSlot()?.id === slot.id ? null : slot);
 
     const professional = this.activeProfessional();
     const nombreProfesional = professional
@@ -206,6 +204,59 @@ export class CalendarioCitasComponent {
       : 'Profesional seleccionado';
 
     const fechaFormateada = `${day.label} ${day.subLabel} | ${slot.time}`;
+
+    // Si es una cita agendada de la aplicación (TENTATIVE o CONFIRMED)
+    if (slot.isAppEvent) {
+      let modalTitle = 'Cita Médica';
+      let patientData: IBookingPatient | null = slot.patient ?? null;
+
+      // Extraer datos desde el título: "Cita Médica: <Procedimiento> - <Nombre Paciente>"
+      if (slot.title) {
+        if (slot.title.includes(' - ')) {
+          const parts = slot.title.split(' - ');
+          modalTitle = parts[0].replace(/^Cita Médica:\s*/i, '').trim() || parts[0].trim();
+          const patientName = parts.slice(1).join(' - ').trim();
+          if (!patientData && patientName) {
+            patientData = {
+              nombre: patientName,
+              apellidos: '',
+              cedula: '',
+              correo: '',
+              celular: '',
+            };
+          }
+        } else {
+          modalTitle = slot.title.replace(/^Cita Médica:\s*/i, '').trim();
+        }
+      }
+
+      if (!patientData && this.bookingContext()?.patient) {
+        patientData = this.bookingContext()?.patient ?? null;
+      }
+
+      this.dialog.open<
+        AgendarModalComponent,
+        AgendarModalData,
+        AgendarModalResult
+      >(AgendarModalComponent, {
+        data: {
+          title: modalTitle,
+          professional: nombreProfesional,
+          dateRange: fechaFormateada,
+          patient: patientData,
+          isTentativeView: true,
+          colorId: slot.colorId,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          slotStatus: slot.appEventStatus ?? (slot.colorId === '5' ? 'TENTATIVE' : null),
+        },
+      });
+      return;
+    }
+
+    // Flujo estándar para slot disponible
+    this.selectedSlot.set(this.selectedSlot()?.id === slot.id ? null : slot);
+
     const bookingCtx = this.bookingContext();
 
     const dialogRef = this.dialog.open<
@@ -218,6 +269,9 @@ export class CalendarioCitasComponent {
         professional: nombreProfesional,
         dateRange: fechaFormateada,
         patient: bookingCtx?.patient ?? null,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        slotStatus: 'AVAILABLE',
       },
     });
 

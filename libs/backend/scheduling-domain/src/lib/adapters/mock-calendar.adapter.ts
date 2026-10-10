@@ -46,4 +46,15 @@ export class MockCalendarAdapter implements ICalendarProvider {
     this.logger.log(`[MockCalendar] Cita simulada creada para ${eventData.patientFullName}. Mock ID: ${mockId}`);
     return mockId;
   }
+
+  async updateEventStatus(
+    doctorEmail: string,
+    eventId: string,
+    status: 'CONFIRMED' | 'CANCELLED'
+  ): Promise<void> {
+    this.logger.log(
+      `[MockCalendar] Evento ${eventId} para ${doctorEmail} actualizado a status=${status}`
+    );
+  }
 }
+
