@@ -5,7 +5,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { ErrorStateMatcher } from '@angular/material/core';
 import { IAreaCode } from '@nx-boilerplate/api-interfaces';
@@ -32,7 +31,6 @@ export class PersonalInfoErrorStateMatcher implements ErrorStateMatcher {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatCheckboxModule,
     MatIconModule,
   ],
   templateUrl: './step-personal-info.component.html',
@@ -62,5 +60,13 @@ export class StepPersonalInfoComponent {
       selected?.errorMessage ||
       'Formato de teléfono celular no válido para el país seleccionado'
     );
+  }
+
+  /**
+   * Despacha el avance del formulario al presionar Enter
+   */
+  onKeyDown(event?: Event): void {
+    event?.preventDefault();
+    this.saveAndContinue.emit();
   }
 }

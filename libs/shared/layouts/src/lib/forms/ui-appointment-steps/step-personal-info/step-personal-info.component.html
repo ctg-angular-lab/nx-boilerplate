@@ -37,21 +37,43 @@
   }
 
   <!-- Formulario de Datos Personales y Contacto -->
-  <form [formGroup]="form()" class="personal-form-grid">
+  <form
+    [formGroup]="form()"
+    class="personal-form-grid"
+    (keydown.enter)="onKeyDown($event)"
+  >
     <div class="form-row">
       <mat-form-field appearance="outline" class="form-field">
         <mat-label>Nombres</mat-label>
-        <input matInput formControlName="nombre" placeholder="Ej. Juan" />
+        <input matInput formControlName="nombre" placeholder="Ej. Juan" maxlength="15" />
         @if (hasError('nombre', 'required')) {
           <mat-error>El nombre es obligatorio</mat-error>
+        }
+        @if (hasError('nombre', 'minlength')) {
+          <mat-error>El nombre debe tener al menos 3 caracteres</mat-error>
+        }
+        @if (hasError('nombre', 'maxlength')) {
+          <mat-error>El nombre no puede exceder 15 caracteres</mat-error>
+        }
+        @if (hasError('nombre', 'pattern')) {
+          <mat-error>Solo se permiten letras y espacios</mat-error>
         }
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="form-field">
         <mat-label>Apellidos</mat-label>
-        <input matInput formControlName="apellidos" placeholder="Ej. Pérez" />
+        <input matInput formControlName="apellidos" placeholder="Ej. Pérez" maxlength="15" />
         @if (hasError('apellidos', 'required')) {
           <mat-error>Los apellidos son obligatorios</mat-error>
+        }
+        @if (hasError('apellidos', 'minlength')) {
+          <mat-error>Los apellidos deben tener al menos 3 caracteres</mat-error>
+        }
+        @if (hasError('apellidos', 'maxlength')) {
+          <mat-error>Los apellidos no pueden exceder 15 caracteres</mat-error>
+        }
+        @if (hasError('apellidos', 'pattern')) {
+          <mat-error>Solo se permiten letras y espacios</mat-error>
         }
       </mat-form-field>
     </div>
@@ -63,8 +85,8 @@
         @if (hasError('correo', 'required')) {
           <mat-error>El correo es obligatorio</mat-error>
         }
-        @if (hasError('correo', 'email')) {
-          <mat-error>Ingrese un correo válido</mat-error>
+        @if (hasError('correo', 'email') || hasError('correo', 'pattern')) {
+          <mat-error>Ingrese un correo electrónico válido</mat-error>
         }
       </mat-form-field>
 
@@ -97,12 +119,6 @@
           }
         </mat-form-field>
       </div>
-    </div>
-
-    <div class="whatsapp-option">
-      <mat-checkbox formControlName="recordatorioWhatsapp" color="primary">
-        Recordatorios por WhatsApp
-      </mat-checkbox>
     </div>
   </form>
 </div>
