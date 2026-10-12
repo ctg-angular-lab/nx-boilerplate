@@ -17,6 +17,10 @@ export class GetAvailableDatesQueryDto {
   @IsOptional()
   doctorEmail?: string;
 
+  @IsString({ message: 'La cédula del médico debe ser una cadena' })
+  @IsOptional()
+  doctorCedula?: string;
+
   @IsDateString({}, { message: 'La fecha objetivo debe tener formato YYYY-MM-DD' })
   @IsOptional()
   targetDate?: string;

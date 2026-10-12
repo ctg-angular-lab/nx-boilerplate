@@ -50,7 +50,8 @@ export class SchedulingMessageController {
         doctorEmail,
         start,
         end,
-        durationMinutes
+        durationMinutes,
+        doctorCedula
       );
     }
 

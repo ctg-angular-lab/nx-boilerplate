@@ -66,13 +66,21 @@ export class ConfirmacionCitasService {
    */
   readonly filteredAppointments = computed<IAppointmentDashboard[]>(() => {
     const list = this.#dailyAppointments();
+    const status = this.#selectedStatus();
     const query = this.#searchQuery().trim().toLowerCase();
 
-    if (!query) {
-      return list;
+    // 1. Filtrar por estado de confirmación seleccionado (si no es 'ALL')
+    let result = list;
+    if (status && status !== 'ALL') {
+      result = result.filter((item) => item.status === status);
     }
 
-    return list.filter((item) => {
+    // 2. Filtrar por texto de búsqueda
+    if (!query) {
+      return result;
+    }
+
+    return result.filter((item) => {
       const matchName = item.patientFullName?.toLowerCase().includes(query) ?? false;
       const matchDoc = item.patientNationalId?.toLowerCase().includes(query) ?? false;
       const matchPhone = item.patientPhone?.toLowerCase().includes(query) ?? false;
@@ -119,6 +127,16 @@ export class ConfirmacionCitasService {
     this.#selectedDate.set(dateStr);
   }
 
+  /**
+   * Restablece la fecha seleccionada al día actual en Colombia si no lo está.
+   */
+  resetToToday(): void {
+    const todayStr = formatDateYMD(getColombiaToday());
+    if (this.#selectedDate() !== todayStr) {
+      this.#selectedDate.set(todayStr);
+    }
+  }
+
   setSelectedStatus(status: AppointmentConfirmationStatus | 'ALL'): void {
     this.#selectedStatus.set(status);
   }
@@ -144,11 +162,6 @@ export class ConfirmacionCitasService {
     const params: Record<string, string> = {
       date: this.#selectedDate(),
     };
-
-    const status = this.#selectedStatus();
-    if (status && status !== 'ALL') {
-      params['status'] = status;
-    }
 
     const doctorEmail = this.#selectedDoctorEmail();
     if (doctorEmail) {
@@ -200,14 +213,8 @@ export class ConfirmacionCitasService {
         .pipe(
           tap((response) => {
             if (response.data) {
-              // Sincronizar datos retornados por el servidor (ej. colorId)
-              this.#dailyAppointments.update((appointments) =>
-                appointments.map((apt) =>
-                  apt.appointmentId === id || (apt as any)._id === id
-                    ? { ...apt, ...response.data }
-                    : apt
-                )
-              );
+              // Sincronizar datos retornados por el servidor y recargar estado completo
+              this.fetchDailyAppointments();
             }
             observer.next(true);
             observer.complete();

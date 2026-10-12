@@ -44,6 +44,7 @@ import {
 
 interface CalendarFetchRequest {
   doctorEmail: string;
+  doctorCedula?: string;
   offset: number;
   autoExpand?: boolean;
 }
@@ -162,9 +163,9 @@ export class AppointmentLogicService {
           this.#calendarError.set(null);
 
           if (req.autoExpand) {
-            return this.#searchAvailableWeek(req.doctorEmail, 0);
+            return this.#searchAvailableWeek(req.doctorEmail, 0, req.doctorCedula);
           } else {
-            return this.#fetchWeekData(req.doctorEmail, req.offset);
+            return this.#fetchWeekData(req.doctorEmail, req.offset, req.doctorCedula);
           }
         })
       )
@@ -201,6 +202,7 @@ export class AppointmentLogicService {
     const targetOffset = this.#currentWeekOffset() + 1;
     this.#calendarFetch$.next({
       doctorEmail: doctor.email,
+      doctorCedula: doctor.cedula,
       offset: targetOffset,
       autoExpand: false,
     });
@@ -215,6 +217,7 @@ export class AppointmentLogicService {
     const targetOffset = this.#currentWeekOffset() - 1;
     this.#calendarFetch$.next({
       doctorEmail: doctor.email,
+      doctorCedula: doctor.cedula,
       offset: targetOffset,
       autoExpand: false,
     });
@@ -228,6 +231,7 @@ export class AppointmentLogicService {
     if (!doctor?.email) return;
     this.#calendarFetch$.next({
       doctorEmail: doctor.email,
+      doctorCedula: doctor.cedula,
       offset: 0,
       autoExpand: false,
     });
@@ -241,6 +245,7 @@ export class AppointmentLogicService {
     if (!doctor?.email) return;
     this.#calendarFetch$.next({
       doctorEmail: doctor.email,
+      doctorCedula: doctor.cedula,
       offset: this.#currentWeekOffset(),
       autoExpand: false,
     });
@@ -331,6 +336,7 @@ export class AppointmentLogicService {
     if (professional.email) {
       this.#calendarFetch$.next({
         doctorEmail: professional.email,
+        doctorCedula: professional.cedula,
         offset: 0,
         autoExpand: true,
       });
@@ -456,7 +462,6 @@ export class AppointmentLogicService {
 
       // Fusionar franjas ocupadas consecutivas en un único bloque
       const slots = this.#mergeConsecutiveBusySlots(rawSlots);
-      const hasAnyAvailable = slots.some((s) => s.status === 'disponible');
 
       return {
         date: dayDate,
@@ -465,7 +470,7 @@ export class AppointmentLogicService {
         slots,
         isToday,
         isPast,
-        isAvailable: hasAnyAvailable,
+        isAvailable: slots.length > 0,
         isCalendarSynced: true,
       };
     });
@@ -476,13 +481,15 @@ export class AppointmentLogicService {
    */
   #fetchWeekData(
     doctorEmail: string,
-    offset: number
+    offset: number,
+    doctorCedula?: string
   ): Observable<{ calendarDays: CalendarDay[]; offset: number; hasAvailable: boolean }> {
     const { days, window } = getWeekSchedule(offset);
+    const cedulaParam = doctorCedula ? `&doctorCedula=${encodeURIComponent(doctorCedula)}` : '';
 
     const url = `/api/appointments/available-dates?doctorEmail=${encodeURIComponent(
       doctorEmail
-    )}&startDate=${window.startDate}&endDate=${window.endDate}`;
+    )}${cedulaParam}&startDate=${window.startDate}&endDate=${window.endDate}`;
 
     return this.apiClient.get<IDayAvailability[]>(url).pipe(
       map((response) => response.data ?? []),
@@ -506,9 +513,10 @@ export class AppointmentLogicService {
    */
   #searchAvailableWeek(
     doctorEmail: string,
-    currentOffset = 0
+    currentOffset = 0,
+    doctorCedula?: string
   ): Observable<{ calendarDays: CalendarDay[]; offset: number; hasAvailable: boolean }> {
-    return this.#fetchWeekData(doctorEmail, currentOffset).pipe(
+    return this.#fetchWeekData(doctorEmail, currentOffset, doctorCedula).pipe(
       switchMap((res) => {
         if (res.hasAvailable) {
           console.log(`[Calendario] Turnos disponibles encontrados en offset ${currentOffset}. Deteniendo búsqueda.`);
@@ -519,7 +527,7 @@ export class AppointmentLogicService {
           return of(res);
         }
         console.log(`[Calendario] Sin turnos en offset ${currentOffset}. Avanzando a offset ${currentOffset + 1}...`);
-        return this.#searchAvailableWeek(doctorEmail, currentOffset + 1);
+        return this.#searchAvailableWeek(doctorEmail, currentOffset + 1, doctorCedula);
       })
     );
   }

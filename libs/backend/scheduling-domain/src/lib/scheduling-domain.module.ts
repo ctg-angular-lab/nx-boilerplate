@@ -7,12 +7,18 @@ import { CALENDAR_PROVIDER } from './ports/calendar-provider.port';
 import { GoogleCalendarAdapter } from './adapters/google-calendar.adapter';
 import { MockCalendarAdapter } from './adapters/mock-calendar.adapter';
 
+import {
+  ActiveProfessional,
+  ActiveProfessionalSchema,
+} from '@nx-boilerplate/backend/procedures-domain';
+
 const useGoogleReal = process.env['USE_GOOGLE_CALENDAR'] === 'true';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Appointment.name, schema: AppointmentSchema },
+      { name: ActiveProfessional.name, schema: ActiveProfessionalSchema },
     ]),
   ],
   providers: [

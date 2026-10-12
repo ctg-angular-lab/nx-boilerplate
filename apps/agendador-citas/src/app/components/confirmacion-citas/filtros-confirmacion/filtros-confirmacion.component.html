@@ -4,33 +4,19 @@
     <!-- Grupo de Fechas Rápida -->
     <div class="date-pills-group">
       <span class="toolbar-label">Fecha:</span>
-      <button
-        type="button"
-        class="date-pill"
-        [class.date-pill--active]="selectedDate() === todayStr"
-        (click)="onPillSelect(todayStr)"
-      >
-        <span class="material-symbols-outlined date-pill__icon">today</span>
-        Hoy
-      </button>
-
-      <button
-        type="button"
-        class="date-pill"
-        [class.date-pill--active]="selectedDate() === tomorrowStr"
-        (click)="onPillSelect(tomorrowStr)"
-      >
-        Mañana
-      </button>
-
-      <button
-        type="button"
-        class="date-pill"
-        [class.date-pill--active]="selectedDate() === dayAfterStr"
-        (click)="onPillSelect(dayAfterStr)"
-      >
-        Pasado Mañana
-      </button>
+      @for (option of quickDateOptions; track option.dateStr) {
+        <button
+          type="button"
+          class="date-pill"
+          [class.date-pill--active]="selectedDate() === option.dateStr"
+          (click)="onPillSelect(option.dateStr)"
+        >
+          @if (option.isToday) {
+            <span class="material-symbols-outlined date-pill__icon">today</span>
+          }
+          {{ option.label }}
+        </button>
+      }
 
       <!-- Datepicker con botón activador -->
       <div class="custom-datepicker-wrapper">
@@ -44,7 +30,7 @@
           type="button"
           mat-icon-button
           class="custom-datepicker-btn"
-          [class.custom-datepicker-btn--active]="selectedDate() !== todayStr && selectedDate() !== tomorrowStr && selectedDate() !== dayAfterStr"
+          [class.custom-datepicker-btn--active]="!isQuickDateSelected()"
           (click)="picker.open()"
           title="Elegir otra fecha en calendario"
         >
@@ -93,7 +79,7 @@
   <div class="toolbar-confirmacion__secondary-row">
     <!-- Select de Profesional -->
     <mat-form-field appearance="outline" class="filter-field doctor-select-field" subscriptSizing="dynamic">
-      <mat-label>Profesional Médico</mat-label>
+      <mat-label>Todos los Profesionales</mat-label>
       <mat-select
         [value]="selectedDoctorEmail()"
         (selectionChange)="onDoctorSelect($event.value)"
