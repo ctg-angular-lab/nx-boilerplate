@@ -11,12 +11,18 @@
       <input
         matInput
         type="text"
+        inputmode="numeric"
         formControlName="cedula"
-        placeholder="Ej. 123456"
+        placeholder="Ej. 1234567"
         autocomplete="off"
+        (keydown)="onKeyDown($event)"
+        (input)="onInput($event)"
       />
       @if (hasError('required')) {
         <mat-error>El número de cédula es obligatorio</mat-error>
+      }
+      @if (hasError('minlength')) {
+        <mat-error>El número de cédula debe tener al menos 7 dígitos</mat-error>
       }
       @if (hasError('pattern')) {
         <mat-error>La cédula debe contener solo números</mat-error>

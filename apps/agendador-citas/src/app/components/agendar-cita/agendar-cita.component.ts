@@ -33,6 +33,11 @@ import {
   ICreatePatientRequest,
   IProfessionalSummary,
 } from '@nx-boilerplate/api-interfaces';
+import {
+  REGEX_ONLY_NUMBERS,
+  REGEX_LETTERS_ACCENTS_SPACES,
+  REGEX_EMAIL,
+} from '@nx-boilerplate/utils';
 import { AppointmentLogicService } from '../../services/appointment-logic.service';
 
 @Component({
@@ -62,15 +67,40 @@ export class AgendarCitaComponent {
   readonly isSubmittingPatient = signal<boolean>(false);
   readonly form = this.fb.group({
     step1: this.fb.group({
-      cedula: ['', [Validators.required, Validators.pattern(/^[0-9]+$/)]],
+      cedula: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(REGEX_ONLY_NUMBERS),
+          Validators.minLength(7),
+        ],
+      ],
     }),
     step2: this.fb.group({
-      nombre: ['', [Validators.required]],
-      apellidos: ['', [Validators.required]],
-      correo: ['', [Validators.required, Validators.email]],
+      nombre: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(REGEX_LETTERS_ACCENTS_SPACES),
+          Validators.minLength(3),
+          Validators.maxLength(15),
+        ],
+      ],
+      apellidos: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(REGEX_LETTERS_ACCENTS_SPACES),
+          Validators.minLength(3),
+          Validators.maxLength(15),
+        ],
+      ],
+      correo: [
+        '',
+        [Validators.required, Validators.email, Validators.pattern(REGEX_EMAIL)],
+      ],
       indicativo: ['+57', [Validators.required]],
       numeroCelular: ['', [Validators.required, Validators.pattern(/^3\d{9}$/)]],
-      recordatorioWhatsapp: [false],
     }),
     step3: this.fb.group({
       procedimientoId: ['', [Validators.required]],
@@ -134,7 +164,6 @@ export class AgendarCitaComponent {
           correo: '',
           indicativo: '+57',
           numeroCelular: '',
-          recordatorioWhatsapp: false,
         });
         this.step2Group.markAsPristine();
         this.step2Group.markAsUntouched();
@@ -186,7 +215,6 @@ export class AgendarCitaComponent {
       this.form.reset({
         step2: {
           indicativo: '+57',
-          recordatorioWhatsapp: false,
         },
       });
       this.procedureDoctors.set([]);
@@ -201,6 +229,15 @@ export class AgendarCitaComponent {
     });
   }
 
+  onStep1Submit(): void {
+    if (this.form.controls.step1.invalid) {
+      this.form.controls.step1.markAllAsTouched();
+      return;
+    }
+    this.verifyCedula();
+    this.stepper().next();
+  }
+
   verifyCedula(): void {
     const cedula = this.step1Group.controls['cedula'].value;
     if (cedula) {
@@ -210,7 +247,6 @@ export class AgendarCitaComponent {
         correo: '',
         indicativo: '+57',
         numeroCelular: '',
-        recordatorioWhatsapp: false,
       });
       this.step2Group.markAsPristine();
       this.step2Group.markAsUntouched();

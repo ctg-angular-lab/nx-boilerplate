@@ -201,6 +201,14 @@ export class AgendarModalComponent {
     this.dialogRef.close(result);
   }
 
+  onGoToConfirmationTab(): void {
+    const result: AgendarModalResult = {
+      agendar: false,
+      goToConfirmationTab: true,
+    };
+    this.dialogRef.close(result);
+  }
+
   onConfirm(): void {
     if (!this.patient()) {
       return;

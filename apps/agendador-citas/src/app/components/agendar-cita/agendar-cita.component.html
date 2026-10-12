@@ -4,7 +4,7 @@
     <h3 class="feature-card__title">{{ title() }}</h3>
   </header>
 
-  <mat-stepper orientation="vertical" [linear]="false" #stepper class="appointment-stepper">
+  <mat-stepper orientation="vertical" [linear]="true" #stepper class="appointment-stepper">
     <!-- Iconos personalizados para estados editado y completado del Stepper -->
     <ng-template matStepperIcon="edit">
       <mat-icon class="material-symbols-outlined">edit</mat-icon>
@@ -14,17 +14,23 @@
     </ng-template>
 
     <!-- PASO 1: Identificación del Paciente -->
-    <mat-step [stepControl]="form.controls.step1" label="Identificación">
+    <mat-step
+      [stepControl]="form.controls.step1"
+      [completed]="form.controls.step1.valid"
+      label="Identificación"
+    >
       <div class="stepper-step-content">
-        <app-step-cedula [stepForm]="form.controls.step1" />
+        <app-step-cedula
+          [stepForm]="form.controls.step1"
+          (verifyAndContinue)="onStep1Submit()"
+        />
 
         <div class="stepper-actions">
           <button
             mat-flat-button
-            matStepperNext
             type="button"
             [disabled]="form.controls.step1.invalid"
-            (click)="verifyCedula()"
+            (click)="onStep1Submit()"
           >
             Verificar y Continuar
           </button>
@@ -33,7 +39,11 @@
     </mat-step>
 
     <!-- PASO 2: Datos del Paciente -->
-    <mat-step [stepControl]="form.controls.step2" label="Datos del Paciente">
+    <mat-step
+      [stepControl]="form.controls.step2"
+      [completed]="form.controls.step2.valid"
+      label="Datos del Paciente"
+    >
       <div class="stepper-step-content">
         <app-step-personal-info
           [form]="form.controls.step2"

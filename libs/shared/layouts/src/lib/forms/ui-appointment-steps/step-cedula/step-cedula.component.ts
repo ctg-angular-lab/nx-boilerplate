@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -25,6 +25,11 @@ export class StepCedulaComponent {
    */
   readonly stepForm = input.required<FormGroup>();
 
+  /**
+   * Evento emitido al presionar Enter o solicitar verificación
+   */
+  readonly verifyAndContinue = output<void>();
+
   get cedulaControl(): AbstractControl | null {
     return this.stepForm().get('cedula');
   }
@@ -32,5 +37,31 @@ export class StepCedulaComponent {
   hasError(errorType: string): boolean {
     const ctrl = this.cedulaControl;
     return !!(ctrl && ctrl.hasError(errorType) && (ctrl.dirty || ctrl.touched));
+  }
+
+  /**
+   * Bloquea la pulsación de puntos y comillas sencillas y despacha verificación al presionar Enter
+   */
+  onKeyDown(event: KeyboardEvent): void {
+    if (event.key === '.' || event.key === "'") {
+      event.preventDefault();
+      return;
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      this.verifyAndContinue.emit();
+    }
+  }
+
+  /**
+   * Sanitiza el valor en caso de que sea pegado desde el portapapeles
+   */
+  onInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input?.value && /[.']/.test(input.value)) {
+      const sanitized = input.value.replace(/[.']/g, '');
+      input.value = sanitized;
+      this.cedulaControl?.setValue(sanitized, { emitModelToViewChange: false });
+    }
   }
 }

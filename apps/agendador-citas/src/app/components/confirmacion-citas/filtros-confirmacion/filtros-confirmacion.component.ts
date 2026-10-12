@@ -27,6 +27,12 @@ import {
 import { formatDateYMD, getColombiaToday } from '@nx-boilerplate/shared/utils';
 import { DashboardSummaryStats } from '../../../services/confirmacion-citas.service';
 
+export interface QuickDateOption {
+  dateStr: string;
+  label: string;
+  isToday: boolean;
+}
+
 @Component({
   selector: 'app-filtros-confirmacion',
   standalone: true,
@@ -72,15 +78,54 @@ export class FiltrosConfirmacionComponent implements OnInit {
   // Control reactivo de búsqueda
   readonly searchControl = new FormControl<string>('', { nonNullable: true });
 
-  // Fechas rápidas calculadas (Hoy, Mañana, Pasado Mañana)
-  readonly today = getColombiaToday();
-  readonly todayStr = formatDateYMD(this.today);
+  // Fechas rápidas laborables calculadas (omitiendo domingos)
+  readonly quickDateOptions: QuickDateOption[] = this.calculateQuickDateOptions();
 
-  readonly tomorrow = new Date(this.today.getTime() + 24 * 60 * 60 * 1000);
-  readonly tomorrowStr = formatDateYMD(this.tomorrow);
+  /**
+   * Calcula los próximos 3 días hábiles laborables omitiendo domingos (día de descanso)
+   */
+  private calculateQuickDateOptions(): QuickDateOption[] {
+    const today = getColombiaToday();
+    const todayTime = today.getTime();
+    const options: QuickDateOption[] = [];
+    const current = new Date(today);
 
-  readonly dayAfter = new Date(this.today.getTime() + 48 * 60 * 60 * 1000);
-  readonly dayAfterStr = formatDateYMD(this.dayAfter);
+    // Si hoy es domingo, el primer día hábil a mostrar será el lunes
+    if (current.getDay() === 0) {
+      current.setDate(current.getDate() + 1);
+    }
+
+    while (options.length < 3) {
+      if (current.getDay() !== 0) {
+        options.push({
+          dateStr: formatDateYMD(current),
+          label: this.formatPillDate(current),
+          isToday: current.getTime() === todayTime,
+        });
+      }
+      current.setDate(current.getDate() + 1);
+    }
+
+    return options;
+  }
+
+  /**
+   * Formatea una fecha al formato "Día, DD mes" (ej: "Sábado, 10 oct")
+   */
+  private formatPillDate(date: Date): string {
+    const weekday = new Intl.DateTimeFormat('es-CO', { weekday: 'long' }).format(date);
+    const day = date.getDate();
+    const month = new Intl.DateTimeFormat('es-CO', { month: 'short' }).format(date).replace('.', '');
+    const capitalizedWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+    return `${capitalizedWeekday}, ${day} ${month}`;
+  }
+
+  /**
+   * Determina si la fecha actualmente seleccionada corresponde a uno de los botones rápidos
+   */
+  isQuickDateSelected(): boolean {
+    return this.quickDateOptions.some((opt) => opt.dateStr === this.selectedDate());
+  }
 
   ngOnInit(): void {
     this.searchControl.setValue(this.searchQuery(), { emitEvent: false });

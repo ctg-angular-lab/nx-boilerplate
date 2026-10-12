@@ -99,7 +99,6 @@ export class AppointmentsController {
     return firstValueFrom(
       this.schedulingClient
         .send<IAppointmentDashboard>('appointments.update-status', {
-          id,
           appointmentId: id,
           status: body.status,
         })

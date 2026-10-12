@@ -1,6 +1,17 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { RpcException } from '@nestjs/microservices';
-import { IDayAvailability, ISlotDisplay, SlotStatusType } from '@nx-boilerplate/api-interfaces';
+import {
+  IDayAvailability,
+  ISlotDisplay,
+  IWorkSchedule,
+  SlotStatusType,
+} from '@nx-boilerplate/api-interfaces';
+import {
+  ActiveProfessional,
+  ActiveProfessionalDocument,
+} from '@nx-boilerplate/backend/procedures-domain';
 import {
   CALENDAR_PROVIDER,
   ICalendarEventItem,
@@ -24,6 +35,28 @@ export interface IBookAppointmentCommand {
   notes?: string;
 }
 
+const DIAS_SEMANA_MAP: Record<number, string> = {
+  0: 'DOMINGO',
+  1: 'LUNES',
+  2: 'MARTES',
+  3: 'MIERCOLES',
+  4: 'JUEVES',
+  5: 'VIERNES',
+  6: 'SABADO',
+};
+
+const DAY_NAMES_ES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+const DEFAULT_SCHEDULE: IWorkSchedule = {
+  diasLaborales: ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'],
+  horaInicio: '07:00',
+  horaFin: '19:00',
+  recesoAlmuerzo: {
+    inicio: '12:00',
+    fin: '13:00',
+  },
+};
+
 @Injectable()
 export class SchedulingDomainService {
   private readonly logger = new Logger(SchedulingDomainService.name);
@@ -31,30 +64,88 @@ export class SchedulingDomainService {
   constructor(
     @Inject(CALENDAR_PROVIDER)
     private readonly calendarProvider: ICalendarProvider,
-    private readonly appointmentRepository: AppointmentRepository
+    private readonly appointmentRepository: AppointmentRepository,
+    @InjectModel(ActiveProfessional.name)
+    private readonly professionalModel: Model<ActiveProfessionalDocument>
   ) {}
+
+  /**
+   * Resuelve el horario configurado del profesional en BD (por cédula o correo) o fallback predeterminado.
+   */
+  async resolveProfessionalSchedule(
+    doctorEmail?: string,
+    doctorCedula?: string
+  ): Promise<IWorkSchedule> {
+    const conditions: Array<Record<string, unknown>> = [];
+    if (doctorCedula) {
+      conditions.push({ cedula: doctorCedula });
+    }
+    if (doctorEmail) {
+      conditions.push({
+        email: { $regex: new RegExp(`^${doctorEmail.trim()}$`, 'i') },
+      });
+    }
+
+    if (conditions.length > 0) {
+      try {
+        const doc = await this.professionalModel
+          .findOne({ $or: conditions })
+          .lean()
+          .exec();
+        if (doc?.horarioTrabajo) {
+          return doc.horarioTrabajo;
+        }
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        this.logger.warn(`No se pudo resolver horario de trabajo para médico: ${errorMsg}`);
+      }
+    }
+
+    return DEFAULT_SCHEDULE;
+  }
 
   /**
    * Calcula los intervalos de tiempo disponibles restando las ocupaciones de Google Calendar y MongoDB.
    */
   async getAvailableSlots(
     doctorEmail: string,
-    _doctorCedula: string,
+    doctorCedula: string,
     targetDate: Date,
     procedureDurationMinutes: number
   ): Promise<ITimeSlot[]> {
-    // 1. Delimitar jornada de trabajo (08:00 a 17:00 en fecha especificada)
+    const schedule = await this.resolveProfessionalSchedule(doctorEmail, doctorCedula);
+    const dayOfWeek = targetDate.getDay();
+    const dayEnumName = DIAS_SEMANA_MAP[dayOfWeek];
+    const normalizedDias = (schedule.diasLaborales || []).map((d) =>
+      d.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    );
+
+    // Si el día no es laborable para el profesional, retornar 0 slots
+    if (!normalizedDias.includes(dayEnumName)) {
+      return [];
+    }
+
+    // 1. Delimitar jornada de trabajo según horario configurado
+    const [startH, startM] = (schedule.horaInicio || '07:00').split(':').map(Number);
+    const [endH, endM] = (schedule.horaFin || '19:00').split(':').map(Number);
+
     const workStart = new Date(targetDate);
-    workStart.setHours(8, 0, 0, 0);
+    workStart.setHours(startH, startM, 0, 0);
 
     const workEnd = new Date(targetDate);
-    workEnd.setHours(17, 0, 0, 0);
+    workEnd.setHours(endH, endM, 0, 0);
 
-    // Delimitar receso de almuerzo fijo (12:00 a 13:00)
-    const lunchStart = new Date(targetDate);
-    lunchStart.setHours(12, 0, 0, 0);
-    const lunchEnd = new Date(targetDate);
-    lunchEnd.setHours(13, 0, 0, 0);
+    // Delimitar receso de almuerzo dinámico si está configurado
+    let lunchStart: Date | null = null;
+    let lunchEnd: Date | null = null;
+    if (schedule.recesoAlmuerzo?.inicio && schedule.recesoAlmuerzo?.fin) {
+      const [lStartH, lStartM] = schedule.recesoAlmuerzo.inicio.split(':').map(Number);
+      const [lEndH, lEndM] = schedule.recesoAlmuerzo.fin.split(':').map(Number);
+      lunchStart = new Date(targetDate);
+      lunchStart.setHours(lStartH, lStartM, 0, 0);
+      lunchEnd = new Date(targetDate);
+      lunchEnd.setHours(lEndH, lEndM, 0, 0);
+    }
 
     // 2. Consultar intervalos ocupados en Google Calendar y MongoDB en paralelo
     const [calendarResult, mongoAppointments] = await Promise.all([
@@ -66,7 +157,7 @@ export class SchedulingDomainService {
 
     // Consolidar todos los intervalos de bloqueo
     const allBusyIntervals: ITimeSlot[] = [
-      { start: lunchStart, end: lunchEnd },
+      ...(lunchStart && lunchEnd ? [{ start: lunchStart, end: lunchEnd }] : []),
       ...googleBusy,
       ...mongoAppointments.map((apt) => ({
         start: new Date(apt.startTime),
@@ -112,8 +203,15 @@ export class SchedulingDomainService {
     doctorEmail: string,
     startDate: Date,
     endDate: Date,
-    procedureDurationMinutes: number
+    procedureDurationMinutes: number,
+    doctorCedula?: string
   ): Promise<IDayAvailability[]> {
+    // 0. Resolver horario configurado del profesional médico
+    const schedule = await this.resolveProfessionalSchedule(doctorEmail, doctorCedula);
+    const normalizedDias = (schedule.diasLaborales || []).map((d) =>
+      d.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    );
+
     // 1. Normalizar inicio y fin del rango completo
     const rangeStart = new Date(startDate);
     rangeStart.setHours(0, 0, 0, 0);
@@ -132,7 +230,6 @@ export class SchedulingDomainService {
       this.appointmentRepository.findByDoctorAndDateRange(doctorEmail, rangeStart, rangeEnd),
     ]);
 
-    const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     const result: IDayAvailability[] = [];
 
     // 3. Iterar día por día entre startDate y endDate
@@ -145,33 +242,44 @@ export class SchedulingDomainService {
       const day = String(currentDay.getDate()).padStart(2, '0');
       const dateStr = `${year}-${month}-${day}`;
       const dayOfWeek = currentDay.getDay();
-      const dayName = dayNames[dayOfWeek];
+      const dayName = DAY_NAMES_ES[dayOfWeek];
+      const dayEnumName = DIAS_SEMANA_MAP[dayOfWeek];
+      const isWorkingDay = normalizedDias.includes(dayEnumName);
 
       const daySlots: ISlotDisplay[] = [];
 
-      // Domingo descanso (sin slots); Lunes a Sábado jornada operativa
-      if (dayOfWeek !== 0) {
-        // Jornada base: 07:00 a 19:00
+      // Solo generar jornada si el día está configurado en los días laborales del profesional
+      if (isWorkingDay) {
+        // Horario dinámico configurado
+        const [startH, startM] = (schedule.horaInicio || '07:00').split(':').map(Number);
+        const [endH, endM] = (schedule.horaFin || '19:00').split(':').map(Number);
+
         const workStart = new Date(currentDay);
-        workStart.setHours(7, 0, 0, 0);
+        workStart.setHours(startH, startM, 0, 0);
 
         const workEnd = new Date(currentDay);
-        workEnd.setHours(19, 0, 0, 0);
+        workEnd.setHours(endH, endM, 0, 0);
 
-        // Receso de almuerzo: 12:00 a 13:00
-        const lunchStart = new Date(currentDay);
-        lunchStart.setHours(12, 0, 0, 0);
-        const lunchEnd = new Date(currentDay);
-        lunchEnd.setHours(13, 0, 0, 0);
+        // Receso de almuerzo dinámico si está configurado
+        let lunchStart: Date | null = null;
+        let lunchEnd: Date | null = null;
+        if (schedule.recesoAlmuerzo?.inicio && schedule.recesoAlmuerzo?.fin) {
+          const [lStartH, lStartM] = schedule.recesoAlmuerzo.inicio.split(':').map(Number);
+          const [lEndH, lEndM] = schedule.recesoAlmuerzo.fin.split(':').map(Number);
+          lunchStart = new Date(currentDay);
+          lunchStart.setHours(lStartH, lStartM, 0, 0);
+          lunchEnd = new Date(currentDay);
+          lunchEnd.setHours(lEndH, lEndM, 0, 0);
+        }
 
         let currentSlotStart = new Date(workStart);
         while (currentSlotStart.getTime() + slotDurationMs <= workEnd.getTime()) {
           const currentSlotEnd = new Date(currentSlotStart.getTime() + slotDurationMs);
-          const startH = String(currentSlotStart.getHours()).padStart(2, '0');
-          const startM = String(currentSlotStart.getMinutes()).padStart(2, '0');
-          const endH = String(currentSlotEnd.getHours()).padStart(2, '0');
-          const endM = String(currentSlotEnd.getMinutes()).padStart(2, '0');
-          const display = `${startH}:${startM} - ${endH}:${endM}`;
+          const sH = String(currentSlotStart.getHours()).padStart(2, '0');
+          const sM = String(currentSlotStart.getMinutes()).padStart(2, '0');
+          const eH = String(currentSlotEnd.getHours()).padStart(2, '0');
+          const eM = String(currentSlotEnd.getMinutes()).padStart(2, '0');
+          const display = `${sH}:${sM} - ${eH}:${eM}`;
 
           // Evaluar colisión contra eventos enriquecidos de Google Calendar
           const matchingGoogle = googleEvents.find((evt) => {
@@ -185,9 +293,10 @@ export class SchedulingDomainService {
             return currentSlotStart.getTime() < aptEnd && currentSlotEnd.getTime() > aptStart;
           });
 
-          // Evaluar si es horario de almuerzo (12:00 a 13:00)
-          const isLunch =
-            currentSlotStart.getTime() < lunchEnd.getTime() && currentSlotEnd.getTime() > lunchStart.getTime();
+          // Evaluar si es horario de almuerzo
+          const isLunch = lunchStart && lunchEnd
+            ? currentSlotStart.getTime() < lunchEnd.getTime() && currentSlotEnd.getTime() > lunchStart.getTime()
+            : false;
 
           const matchedPatient = matchingMongo
             ? {
@@ -233,6 +342,16 @@ export class SchedulingDomainService {
               colorId: null,
               isBookable: false,
             });
+          } else if (currentSlotStart.getTime() < Date.now()) {
+            daySlots.push({
+              startTime: currentSlotStart.toISOString(),
+              endTime: currentSlotEnd.toISOString(),
+              display,
+              title: 'Horario transcurrido',
+              status: 'BLOCKED_PERSONAL',
+              colorId: null,
+              isBookable: false,
+            });
           } else {
             daySlots.push({
               startTime: currentSlotStart.toISOString(),
@@ -270,6 +389,42 @@ export class SchedulingDomainService {
   async bookAppointment(command: IBookAppointmentCommand): Promise<Appointment> {
     const start = new Date(command.startTime);
     const end = new Date(command.endTime);
+
+    // 0. Validar horario de trabajo configurado del profesional
+    const schedule = await this.resolveProfessionalSchedule(command.doctorEmail, command.doctorCedula);
+    const dayOfWeek = start.getDay();
+    const dayEnumName = DIAS_SEMANA_MAP[dayOfWeek];
+    const normalizedDias = (schedule.diasLaborales || []).map((d) =>
+      d.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    );
+
+    if (!normalizedDias.includes(dayEnumName)) {
+      throw new RpcException(`El profesional no labora los días ${DAY_NAMES_ES[dayOfWeek].toLowerCase()}`);
+    }
+
+    const [startH, startM] = (schedule.horaInicio || '07:00').split(':').map(Number);
+    const [endH, endM] = (schedule.horaFin || '19:00').split(':').map(Number);
+    const workStart = new Date(start);
+    workStart.setHours(startH, startM, 0, 0);
+    const workEnd = new Date(start);
+    workEnd.setHours(endH, endM, 0, 0);
+
+    if (start.getTime() < workStart.getTime() || end.getTime() > workEnd.getTime()) {
+      throw new RpcException('El horario seleccionado está fuera de la jornada laboral del profesional');
+    }
+
+    if (schedule.recesoAlmuerzo?.inicio && schedule.recesoAlmuerzo?.fin) {
+      const [lStartH, lStartM] = schedule.recesoAlmuerzo.inicio.split(':').map(Number);
+      const [lEndH, lEndM] = schedule.recesoAlmuerzo.fin.split(':').map(Number);
+      const lunchStart = new Date(start);
+      lunchStart.setHours(lStartH, lStartM, 0, 0);
+      const lunchEnd = new Date(start);
+      lunchEnd.setHours(lEndH, lEndM, 0, 0);
+
+      if (start.getTime() < lunchEnd.getTime() && end.getTime() > lunchStart.getTime()) {
+        throw new RpcException('El horario seleccionado coincide con el receso de almuerzo del profesional');
+      }
+    }
 
     // 1. Validar que el intervalo no choque con eventos existentes
     const { intervals: busyIntervals } = await this.calendarProvider.getBusyIntervals(command.doctorEmail, start, end);

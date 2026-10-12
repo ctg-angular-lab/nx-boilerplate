@@ -121,6 +121,10 @@ export class UpdateAppointmentStatusDto implements IUpdateAppointmentStatusReque
   @IsString({ message: 'El ID de la cita debe ser una cadena de texto' })
   appointmentId?: string;
 
+  @IsOptional()
+  @IsString({ message: 'El identificador de la cita debe ser una cadena de texto' })
+  id?: string;
+
   @IsEnum(['CONFIRMED', 'CANCELLED'], {
     message: 'El estado solo puede ser CONFIRMED o CANCELLED',
   })

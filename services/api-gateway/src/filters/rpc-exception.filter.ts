@@ -35,12 +35,16 @@ export class RpcExceptionFilter implements ExceptionFilter {
       'message' in exception
     ) {
       const err = exception as {
-        status?: number;
+        status?: number | string;
         statusCode?: number;
         message?: string | object;
         code?: number;
       };
-      status = err.statusCode || err.status || err.code || HttpStatus.BAD_REQUEST;
+      status =
+        err.statusCode ||
+        (typeof err.status === 'number' ? err.status : undefined) ||
+        err.code ||
+        HttpStatus.BAD_REQUEST;
       message = err.message || 'Error en comunicación con microservicio';
     } else {
       this.logger.error(`Excepción no controlada: ${JSON.stringify(exception)}`);

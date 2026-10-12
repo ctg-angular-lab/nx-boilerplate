@@ -76,7 +76,7 @@ export interface ICreateAppointmentRequest {
   apellidos: string;
   correo: string;
   celular: string;
-  recordatorioWhatsapp: boolean;
+  recordatorioWhatsapp?: boolean;
   procedimientoId: string;
   procedimientoNombre?: string;
   slotId?: string;
