@@ -3,6 +3,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { HealthController } from './controllers/health.controller';
 import { PatientsController } from './controllers/patients.controller';
 import { AppointmentsController } from './controllers/appointments.controller';
+import { AppointmentConfirmationController } from './controllers/appointment-confirmation.controller';
 import { ProceduresController } from './controllers/procedures.controller';
 import { DoctorsController } from './controllers/doctors.controller';
 import { AreaCodesController } from './controllers/area-codes.controller';
@@ -56,9 +57,10 @@ import { AreaCodesController } from './controllers/area-codes.controller';
     HealthController,
     PatientsController,
     AppointmentsController,
+    AppointmentConfirmationController,
     ProceduresController,
     DoctorsController,
-    AreaCodesController
+    AreaCodesController,
   ],
 })
 export class AppModule {}

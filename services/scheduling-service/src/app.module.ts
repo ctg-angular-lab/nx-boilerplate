@@ -1,16 +1,19 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SchedulingDomainModule } from '@nx-boilerplate/backend/scheduling-domain';
-import { SchedulingMessageController } from './controllers/scheduling-message.controller';
+import { AvailabilityController } from './controllers/availability.controller';
+import { BookingController } from './controllers/booking.controller';
+import { ConfirmationController } from './controllers/confirmation.controller';
 
 @Module({
   imports: [
-    MongooseModule.forRoot(
-      process.env['MONGODB_URI'] ||
-        'mongodb+srv://camilotabares84_db_user:YGer68cNPLDhTrBO@cluster0.fa2lvct.mongodb.net/appointments_db?retryWrites=true&w=majority&appName=Cluster0'
-    ),
+    MongooseModule.forRoot(process.env['MONGODB_URI'] || ''),
     SchedulingDomainModule,
   ],
-  controllers: [SchedulingMessageController],
+  controllers: [
+    AvailabilityController,
+    BookingController,
+    ConfirmationController,
+  ],
 })
 export class AppModule {}

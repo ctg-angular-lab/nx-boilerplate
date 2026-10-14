@@ -24,7 +24,11 @@ import {
   AppointmentConfirmationStatus,
   IProfessionalSummary,
 } from '@nx-boilerplate/api-interfaces';
-import { formatDateYMD, getColombiaToday } from '@nx-boilerplate/shared/utils';
+import {
+  formatDateYMD,
+  getColombiaToday,
+  getNextWorkingDays,
+} from '@nx-boilerplate/utils';
 import { DashboardSummaryStats } from '../../../services/confirmacion-citas.service';
 
 export interface QuickDateOption {
@@ -87,26 +91,13 @@ export class FiltrosConfirmacionComponent implements OnInit {
   private calculateQuickDateOptions(): QuickDateOption[] {
     const today = getColombiaToday();
     const todayTime = today.getTime();
-    const options: QuickDateOption[] = [];
-    const current = new Date(today);
+    const workingDays = getNextWorkingDays(3, today);
 
-    // Si hoy es domingo, el primer día hábil a mostrar será el lunes
-    if (current.getDay() === 0) {
-      current.setDate(current.getDate() + 1);
-    }
-
-    while (options.length < 3) {
-      if (current.getDay() !== 0) {
-        options.push({
-          dateStr: formatDateYMD(current),
-          label: this.formatPillDate(current),
-          isToday: current.getTime() === todayTime,
-        });
-      }
-      current.setDate(current.getDate() + 1);
-    }
-
-    return options;
+    return workingDays.map((day) => ({
+      dateStr: formatDateYMD(day),
+      label: this.formatPillDate(day),
+      isToday: day.getTime() === todayTime,
+    }));
   }
 
   /**

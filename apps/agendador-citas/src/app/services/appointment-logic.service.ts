@@ -35,7 +35,7 @@ import {
   normalizeDate,
   formatDateYMD,
   getWeekSchedule,
-} from '@nx-boilerplate/shared/utils';
+} from '@nx-boilerplate/utils';
 import {
   AGENDADOR_TABS,
   AgendadorTabId,
@@ -470,7 +470,7 @@ export class AppointmentLogicService {
         slots,
         isToday,
         isPast,
-        isAvailable: slots.length > 0,
+        isAvailable: backendDay?.isWorkingDay ?? (slots.length > 0),
         isCalendarSynced: true,
       };
     });

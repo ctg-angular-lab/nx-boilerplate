@@ -7,7 +7,8 @@ import {
   untracked,
   DestroyRef,
 } from '@angular/core';
-import { Observable, catchError, finalize, of, tap } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Observable, Subject, catchError, finalize, of, switchMap, tap } from 'rxjs';
 import { ApiClientService } from '@nx-boilerplate/data-access';
 import {
   IAppointmentDashboard,
@@ -16,7 +17,7 @@ import {
 import {
   formatDateYMD,
   getColombiaToday,
-} from '@nx-boilerplate/shared/utils';
+} from '@nx-boilerplate/utils';
 
 export interface DashboardSummaryStats {
   total: number;
@@ -46,6 +47,9 @@ export class ConfirmacionCitasService {
   readonly #dailyAppointments = signal<IAppointmentDashboard[]>([]);
   readonly #isLoadingDashboard = signal<boolean>(false);
   readonly #error = signal<string | null>(null);
+
+  // Trigger reactivo para peticiones HTTP con cancelación automática (switchMap)
+  readonly #fetchTrigger$ = new Subject<{ date: string; doctorEmail: string | null }>();
 
   // -------------------------------------------------------------------------
   // Exposición Pública (Readonly Signals)
@@ -103,18 +107,47 @@ export class ConfirmacionCitasService {
   });
 
   // -------------------------------------------------------------------------
-  // Constructor con Reacción Automática (Effect)
+  // Constructor con Pipeline Reactivo
   // -------------------------------------------------------------------------
   constructor() {
-    effect(() => {
-      // Registrar dependencias reactivas de filtros
-      this.#selectedDate();
-      this.#selectedStatus();
-      this.#selectedDoctorEmail();
+    this.#fetchTrigger$
+      .pipe(
+        switchMap(({ date, doctorEmail }) => {
+          this.#isLoadingDashboard.set(true);
+          this.#error.set(null);
 
-      // Disparar la consulta en un contexto no rastreado para evitar ciclos o dependencias involuntarias
+          const params: Record<string, string> = { date };
+          if (doctorEmail) {
+            params['doctorEmail'] = doctorEmail;
+          }
+
+          return this.apiClient
+            .get<IAppointmentDashboard[]>('/api/appointments/daily', { params })
+            .pipe(
+              tap((response) => {
+                this.#dailyAppointments.set(response.data ?? []);
+              }),
+              catchError((err: Error) => {
+                this.#error.set(err.message || 'Error al cargar las citas del dashboard');
+                this.#dailyAppointments.set([]);
+                return of(null);
+              }),
+              finalize(() => {
+                this.#isLoadingDashboard.set(false);
+              })
+            );
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
+
+    // Effect que solo reacciona a cambios de fecha y médico (H8a: selectedStatus NO dispara red)
+    effect(() => {
+      const date = this.#selectedDate();
+      const doctorEmail = this.#selectedDoctorEmail();
+
       untracked(() => {
-        this.fetchDailyAppointments();
+        this.#fetchTrigger$.next({ date, doctorEmail });
       });
     });
   }
@@ -153,37 +186,13 @@ export class ConfirmacionCitasService {
   // Acciones HTTP
   // -------------------------------------------------------------------------
   /**
-   * Consulta las citas del día actual según los filtros seleccionados.
+   * Consulta las citas del día actual despachando la acción por el pipeline reactivo.
    */
   fetchDailyAppointments(): void {
-    this.#isLoadingDashboard.set(true);
-    this.#error.set(null);
-
-    const params: Record<string, string> = {
+    this.#fetchTrigger$.next({
       date: this.#selectedDate(),
-    };
-
-    const doctorEmail = this.#selectedDoctorEmail();
-    if (doctorEmail) {
-      params['doctorEmail'] = doctorEmail;
-    }
-
-    this.apiClient
-      .get<IAppointmentDashboard[]>('/api/appointments/daily', { params })
-      .pipe(
-        tap((response) => {
-          this.#dailyAppointments.set(response.data ?? []);
-        }),
-        catchError((err: Error) => {
-          this.#error.set(err.message || 'Error al cargar las citas del dashboard');
-          this.#dailyAppointments.set([]);
-          return of(null);
-        }),
-        finalize(() => {
-          this.#isLoadingDashboard.set(false);
-        }),
-      )
-      .subscribe();
+      doctorEmail: this.#selectedDoctorEmail(),
+    });
   }
 
   /**
@@ -196,10 +205,10 @@ export class ConfirmacionCitasService {
   ): Observable<boolean> {
     const previous = this.#dailyAppointments();
 
-    // Mutación optimista en memoria
+    // Mutación optimista en memoria con tipado estricto
     this.#dailyAppointments.update((appointments) =>
       appointments.map((apt) =>
-        apt.appointmentId === id || (apt as any)._id === id
+        apt.appointmentId === id
           ? { ...apt, status: newStatus }
           : apt
       )
@@ -236,10 +245,10 @@ export class ConfirmacionCitasService {
    * y despachando la acción asíncrona fire-and-forget.
    */
   trackWhatsAppContact(id: string): Observable<boolean> {
-    // Incremento optimista local
+    // Incremento optimista local con tipado estricto
     this.#dailyAppointments.update((appointments) =>
       appointments.map((apt) =>
-        apt.appointmentId === id || (apt as any)._id === id
+        apt.appointmentId === id
           ? { ...apt, contactCount: (apt.contactCount ?? 0) + 1 }
           : apt
       )
@@ -253,7 +262,7 @@ export class ConfirmacionCitasService {
             observer.next(true);
             observer.complete();
           }),
-          catchError((err: Error) => {
+          catchError(() => {
             // Al ser fire-and-forget 202 Accepted, el fallo no interrumpe el flujo UI
             observer.next(false);
             observer.complete();

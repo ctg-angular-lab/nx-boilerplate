@@ -20,6 +20,7 @@ export interface IDayAvailability {
   date: string;
   dayName: string;
   isCalendarSynced: boolean;
+  isWorkingDay: boolean;
   slots: ISlotDisplay[];
 }
 

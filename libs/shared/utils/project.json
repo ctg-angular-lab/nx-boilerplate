@@ -4,5 +4,16 @@
   "sourceRoot": "libs/shared/utils/src",
   "projectType": "library",
   "tags": ["scope:shared", "type:util"],
-  "targets": {}
+  "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": ["{workspaceRoot}/coverage/libs/shared/utils"],
+      "options": {
+        "config": "libs/shared/utils/vite.config.mts"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
 }

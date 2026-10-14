@@ -7,7 +7,7 @@ import {
 export const AGENDADOR_TABS = {
   FORM: 1,
   CALENDAR: 2,
-  PROFESSIONALS: 3,
+  CONFIRMATION: 3,
 } as const;
 
 export type AgendadorTabId = (typeof AGENDADOR_TABS)[keyof typeof AGENDADOR_TABS];

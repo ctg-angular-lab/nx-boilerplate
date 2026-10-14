@@ -251,3 +251,27 @@ export function isTimeSlotInPast(slot: TimeSlot, dayDate: Date): boolean {
 
   return false;
 }
+
+/**
+ * Retorna los próximos `count` días laborables omitiendo domingos (días de descanso).
+ * Si la fecha de referencia es domingo, avanza automáticamente al lunes siguiente.
+ */
+export function getNextWorkingDays(count: number, referenceDate?: Date): Date[] {
+  const base = referenceDate ? normalizeDate(referenceDate) : getColombiaToday();
+  const days: Date[] = [];
+  const current = new Date(base);
+
+  // Si hoy es domingo, el primer día hábil a considerar será el lunes
+  if (current.getDay() === 0) {
+    current.setDate(current.getDate() + 1);
+  }
+
+  while (days.length < count) {
+    if (current.getDay() !== 0) {
+      days.push(new Date(current));
+    }
+    current.setDate(current.getDate() + 1);
+  }
+
+  return days;
+}

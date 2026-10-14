@@ -1,172 +1,124 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SchedulingDomainService } from './scheduling-domain.service';
-import { MockCalendarAdapter } from '../adapters/mock-calendar.adapter';
-import { AppointmentRepository } from '../repositories/appointment.repository';
+import { WorkScheduleService } from './work-schedule.service';
+import { AvailabilityService } from './availability.service';
+import { BookingService } from './booking.service';
+import { AppointmentTrackingService } from './appointment-tracking.service';
 import { AppointmentStatus } from '../schemas/appointment.schema';
 
-describe('SchedulingDomainService', () => {
-  let service: SchedulingDomainService;
-  let mockCalendarAdapter: MockCalendarAdapter;
-  let mockAppointmentRepository: AppointmentRepository;
+describe('SchedulingDomainService (Strangler Facade)', () => {
+  let facade: SchedulingDomainService;
+  let mockWorkScheduleService: WorkScheduleService;
+  let mockAvailabilityService: AvailabilityService;
+  let mockBookingService: BookingService;
+  let mockTrackingService: AppointmentTrackingService;
 
   beforeEach(() => {
-    mockCalendarAdapter = new MockCalendarAdapter();
-    mockAppointmentRepository = {
-      findByDoctorAndDateRange: vi.fn().mockResolvedValue([]),
-      create: vi.fn().mockImplementation((data) => Promise.resolve({ ...data, _id: 'mongo-id-123' })),
-      findById: vi.fn(),
-      findByPatientNationalId: vi.fn(),
-      findDaily: vi.fn().mockResolvedValue([]),
-      updateStatus: vi.fn(),
-      incrementContactCount: vi.fn(),
-    } as unknown as AppointmentRepository;
+    mockWorkScheduleService = {
+      resolveProfessionalSchedule: vi.fn().mockResolvedValue({
+        diasLaborales: ['LUNES', 'MARTES'],
+        horaInicio: '08:00',
+        horaFin: '17:00',
+      }),
+    } as unknown as WorkScheduleService;
 
-    service = new SchedulingDomainService(mockCalendarAdapter, mockAppointmentRepository);
-  });
+    mockAvailabilityService = {
+      getAvailableSlots: vi.fn().mockResolvedValue([]),
+      getAvailableSlotsForRange: vi.fn().mockResolvedValue([]),
+    } as unknown as AvailabilityService;
 
-  it('debe calcular los slots disponibles excluyendo el almuerzo y colisiones', async () => {
-    const testDate = new Date('2026-09-25T00:00:00.000Z');
-    const doctorEmail = 'camilotabares.portafolio@gmail.com';
-    const doctorCedula = '1020304050';
-    const durationMinutes = 60;
+    mockBookingService = {
+      bookAppointment: vi.fn().mockResolvedValue({
+        appointmentId: 'APT-123',
+        status: AppointmentStatus.TENTATIVE,
+      } as any),
+    } as unknown as BookingService;
 
-    const slots = await service.getAvailableSlots(
-      doctorEmail,
-      doctorCedula,
-      testDate,
-      durationMinutes
+    mockTrackingService = {
+      getDailyAppointments: vi.fn().mockResolvedValue([]),
+      updateAppointmentStatus: vi.fn().mockResolvedValue({
+        appointmentId: 'APT-123',
+        status: 'CONFIRMED',
+      } as any),
+      incrementContactCount: vi.fn().mockResolvedValue({
+        appointmentId: 'APT-123',
+        contactCount: 1,
+      } as any),
+    } as unknown as AppointmentTrackingService;
+
+    facade = new SchedulingDomainService(
+      mockWorkScheduleService,
+      mockAvailabilityService,
+      mockBookingService,
+      mockTrackingService
     );
-
-    expect(slots.length).toBeGreaterThan(0);
-
-    // Ningún slot disponible debe solaparse con el almuerzo (12:00 a 13:00)
-    for (const slot of slots) {
-      const startHour = slot.start.getHours();
-      expect(startHour).not.toBe(12);
-    }
   });
 
-  it('debe reservar una cita exitosamente con MockCalendarAdapter y MongoDB', async () => {
-    const start = new Date('2026-09-25T09:00:00.000Z');
-    const end = new Date('2026-09-25T10:00:00.000Z');
-
-    const appointment = await service.bookAppointment({
-      doctorEmail: 'camilotabares.portafolio@gmail.com',
-      doctorCedula: '1020304050',
-      patientNationalId: '12345678',
-      patientFullName: 'Juan Pérez',
-      patientEmail: 'juan.perez@example.com',
-      procedureId: 'proc-101',
-      procedureName: 'Valoración Estética Facial',
-      startTime: start,
-      endTime: end,
-      notes: 'Primera consulta estética',
-    });
-
-    expect(appointment).toBeDefined();
-    expect(appointment.appointmentId).toContain('APT-');
-    expect(appointment.status).toBe(AppointmentStatus.TENTATIVE);
-    expect(appointment.googleCalendarEventId).toContain('mock-google-id-');
-  });
-
-  it('debe calcular los slots disponibles para un rango semanal ejecutando una única consulta a Google Calendar', async () => {
-    const startDate = new Date('2026-09-21T00:00:00.000Z'); // Lunes
-    const endDate = new Date('2026-09-26T00:00:00.000Z');   // Sábado
-    const doctorEmail = 'camilotabares.portafolio@gmail.com';
-    const durationMinutes = 45;
-
-    const spyGetEvents = vi.spyOn(mockCalendarAdapter, 'getEventsInRange');
-    const spyFindMongo = vi.spyOn(mockAppointmentRepository, 'findByDoctorAndDateRange');
-
-    const result = await service.getAvailableSlotsForRange(
-      doctorEmail,
-      startDate,
-      endDate,
-      durationMinutes
+  it('debe delegar resolveProfessionalSchedule en WorkScheduleService', async () => {
+    await facade.resolveProfessionalSchedule('dr@example.com', '123', true);
+    expect(mockWorkScheduleService.resolveProfessionalSchedule).toHaveBeenCalledWith(
+      'dr@example.com',
+      '123',
+      true
     );
-
-    // Debe ejecutar exactamente una llamada al proveedor de calendario y a Mongo para todo el rango
-    expect(spyGetEvents).toHaveBeenCalledTimes(1);
-    expect(spyFindMongo).toHaveBeenCalledTimes(1);
-
-    expect(result.length).toBeGreaterThanOrEqual(6);
-    expect(result[0]).toHaveProperty('date');
-    expect(result[0]).toHaveProperty('dayName');
-    expect(result[0]).toHaveProperty('slots');
-    expect(Array.isArray(result[0].slots)).toBe(true);
-
-    // Validar que cada slot tenga startTime, endTime y display
-    if (result[0].slots.length > 0) {
-      const firstSlot = result[0].slots[0];
-      expect(firstSlot).toHaveProperty('startTime');
-      expect(firstSlot).toHaveProperty('endTime');
-      expect(firstSlot).toHaveProperty('display');
-      expect(firstSlot.display).toMatch(/^\d{2}:\d{2} - \d{2}:\d{2}$/);
-    }
   });
 
-  it('debe consultar citas diarias delegando en el repositorio con rango de día', async () => {
-    const mockAppointments = [
-      {
-        appointmentId: 'APT-1',
-        doctorEmail: 'dr@example.com',
-        patientFullName: 'Ana Gómez',
-        contactCount: 0,
-      },
-    ];
-    vi.spyOn(mockAppointmentRepository, 'findDaily').mockResolvedValue(mockAppointments as any);
+  it('debe delegar getAvailableSlots en AvailabilityService', async () => {
+    const date = new Date('2026-09-25T12:00:00.000Z');
+    await facade.getAvailableSlots('dr@example.com', '123', date, 45);
+    expect(mockAvailabilityService.getAvailableSlots).toHaveBeenCalledWith(
+      'dr@example.com',
+      '123',
+      date,
+      45
+    );
+  });
 
-    const result = await service.getDailyAppointments({
-      date: '2026-10-15',
+  it('debe delegar getAvailableSlotsForRange en AvailabilityService', async () => {
+    const start = new Date('2026-09-21T12:00:00.000Z');
+    const end = new Date('2026-09-27T12:00:00.000Z');
+    await facade.getAvailableSlotsForRange('dr@example.com', start, end, 45, '123');
+    expect(mockAvailabilityService.getAvailableSlotsForRange).toHaveBeenCalledWith(
+      'dr@example.com',
+      start,
+      end,
+      45,
+      '123'
+    );
+  });
+
+  it('debe delegar bookAppointment en BookingService', async () => {
+    const command = {
       doctorEmail: 'dr@example.com',
-      status: 'TENTATIVE',
-    });
+      patientNationalId: '123',
+      patientFullName: 'Paciente',
+      patientEmail: 'paciente@example.com',
+      procedureId: 'proc-1',
+      procedureName: 'Consulta',
+      startTime: new Date(),
+      endTime: new Date(),
+    };
+    const result = await facade.bookAppointment(command);
+    expect(mockBookingService.bookAppointment).toHaveBeenCalledWith(command);
+    expect(result.appointmentId).toBe('APT-123');
+  });
 
-    expect(result).toEqual(mockAppointments);
-    expect(mockAppointmentRepository.findDaily).toHaveBeenCalledWith(
-      expect.objectContaining({
-        doctorEmail: 'dr@example.com',
-        status: 'TENTATIVE',
-      })
+  it('debe delegar getDailyAppointments en AppointmentTrackingService', async () => {
+    const query = { date: '2026-10-15', doctorEmail: 'dr@example.com' };
+    await facade.getDailyAppointments(query);
+    expect(mockTrackingService.getDailyAppointments).toHaveBeenCalledWith(query);
+  });
+
+  it('debe delegar updateAppointmentStatus en AppointmentTrackingService', async () => {
+    await facade.updateAppointmentStatus('APT-123', 'CONFIRMED');
+    expect(mockTrackingService.updateAppointmentStatus).toHaveBeenCalledWith(
+      'APT-123',
+      'CONFIRMED'
     );
   });
 
-  it('debe actualizar el estado de una cita sincronizando con Google Calendar y persistiendo en Mongo', async () => {
-    const existingAppointment = {
-      appointmentId: 'APT-99',
-      doctorEmail: 'dr@example.com',
-      googleCalendarEventId: 'g-event-99',
-      status: 'TENTATIVE',
-    };
-    const updatedAppointment = {
-      ...existingAppointment,
-      status: 'CONFIRMED',
-      colorId: '10',
-    };
-
-    vi.spyOn(mockAppointmentRepository, 'findById').mockResolvedValue(existingAppointment as any);
-    const spyCalendarUpdate = vi.spyOn(mockCalendarAdapter, 'updateEventStatus');
-    vi.spyOn(mockAppointmentRepository, 'updateStatus').mockResolvedValue(updatedAppointment as any);
-
-    const result = await service.updateAppointmentStatus('APT-99', 'CONFIRMED');
-
-    expect(spyCalendarUpdate).toHaveBeenCalledWith('dr@example.com', 'g-event-99', 'CONFIRMED');
-    expect(mockAppointmentRepository.updateStatus).toHaveBeenCalledWith('APT-99', 'CONFIRMED', '10');
-    expect(result.status).toBe('CONFIRMED');
-  });
-
-  it('debe incrementar el contador de contactos para una cita existente', async () => {
-    const mockUpdated = {
-      appointmentId: 'APT-100',
-      contactCount: 2,
-    };
-    vi.spyOn(mockAppointmentRepository, 'incrementContactCount').mockResolvedValue(mockUpdated as any);
-
-    const result = await service.incrementContactCount('APT-100');
-
-    expect(mockAppointmentRepository.incrementContactCount).toHaveBeenCalledWith('APT-100');
-    expect(result?.contactCount).toBe(2);
+  it('debe delegar incrementContactCount en AppointmentTrackingService', async () => {
+    await facade.incrementContactCount('APT-123');
+    expect(mockTrackingService.incrementContactCount).toHaveBeenCalledWith('APT-123');
   });
 });
-
-
