@@ -1,558 +1,235 @@
 # API Gateway
 
-> **Ficha Técnica del Módulo**
-> * **Ubicación en Monorepo:** `services/api-gateway`
-> * **Tipo de Módulo:** Microservicio NestJS — Punto de Entrada HTTP
-> * **Tags Nx (`project.json`):** `["scope:backend", "type:service"]`
-> * **Estado:** Activo
+> **Ficha Técnica del Módulo**  
+> * **Ubicación en Monorepo:** `services/api-gateway`  
+> * **Tipo de Módulo:** Microservicio NestJS 11+ — API Gateway HTTP / Reverse Proxy  
+> * **Tags Nx (`project.json`):** `["scope:backend", "type:service"]`  
+> * **Puerto de Desarrollo:** `3000` (Prefijo global: `/api`)  
+> * **Estado:** Activo  
 
 ---
 
 ## 1. Propósito y Alcance de Negocio
 
-El **API Gateway** es el único punto de entrada HTTP del sistema clínico. Actúa como proxy inteligente que recibe peticiones REST del frontend Angular (MFE `agendador-citas` y `app-shell`) y las enruta hacia los microservicios internos mediante colas **RabbitMQ** (`Transport.RMQ`). Ningún microservicio backend expone HTTP directamente; toda comunicación cliente-servidor pasa obligatoriamente por esta capa.
+El **API Gateway** es la puerta de enlace única y centralizada para todas las aplicaciones cliente (los Microfrontends Angular `agendador-citas` y `app-shell`). Su propósito fundamental es:
 
-Su responsabilidad única es: validar el payload de entrada, convertir el transporte HTTP→RMQ, aplicar una respuesta envuelta canónica (`IApiResponse<T>`) y gestionar los errores RPC homogéneamente.
+1. **Punto Único de Entrada (Single Entry Point):** Proteger la topología interna del backend evitando que los clientes web conozcan o se conecten directamente a las bases de datos o colas de mensajería.
+2. **Traductor de Protocolos (HTTP ↔ AMQP/RabbitMQ):** Recibir peticiones HTTP tipo REST (JSON), validarlas y transformarlas en mensajes serializados hacia colas de RabbitMQ (`Transport.RMQ`).
+3. **Estandarizador de Contratos:** Garantizar que todas las respuestas salientes cumplan el sobre canónico `IApiResponse<T>` y que cualquier fallo en los microservicios se traduzca a códigos de estado HTTP semánticos (`400`, `404`, `504`, `500`).
 
 ---
 
-## 2. Diagrama de Arquitectura y Flujo de Información
+## 2. Refuerzo Académico: Conceptos Clave para un Desarrollador Junior
+
+> [!TIP]
+> Esta sección explica **el por qué** de las decisiones arquitectónicas tomadas en este servicio.
+
+### A. ¿Por qué usar un API Gateway en lugar de exponer los microservicios por HTTP?
+En arquitecturas distribuidas, si cada microservicio (`patients`, `scheduling`, `procedures`) expusiera un puerto HTTP público:
+- El frontend tendría que lidiar con múltiples URLs, autenticaciones cruzadas y problemas complejos de CORS.
+- Si se refactoriza o divide un microservicio interno, el frontend se rompería inmediatamente.
+- Con el **API Gateway**, el frontend solo conoce `http://localhost:3000/api`. El Gateway actúa como fachada desacoplada; los microservicios pueden cambiar de lenguaje, base de datos o cola sin alterar la API que consume el cliente.
+
+### B. ¿Cómo viaja la información? (RPC vs. Event-Driven en RabbitMQ)
+NestJS provee un cliente de mensajería llamado `ClientProxy`. En este Gateway usamos dos métodos de despacho:
+
+1. **`client.send<T>(pattern, data)` (RPC / Request-Response):**
+   - Se utiliza para consultas y operaciones donde el cliente espera una respuesta inmediata (ej. `appointments.get-daily`, `patients.find-by-national-id`, `appointments.create`).
+   - Retorna un `Observable`. Usamos `firstValueFrom(observable.pipe(timeout(ms)))` para convertirlo en una `Promise` asíncrona estándar con un tiempo límite de espera para evitar solicitudes colgadas.
+2. **`client.emit(pattern, data)` (Event-Driven / Fire-and-Forget):**
+   - Se utiliza cuando la acción no requiere esperar una respuesta síncrona o confirmación del procesamiento (ej. `appointments.contact-tracked` al enviar un WhatsApp).
+   - El Gateway responde inmediatamente un código `202 Accepted` al navegador, liberando la conexión HTTP mientras RabbitMQ procesa el evento en segundo plano.
+
+### C. La Tríada de Seguridad y Calidad en NestJS
+El Gateway implementa tres capas globales en `main.ts`:
+
+1. **`ValidationPipe` con `whitelist: true` y `forbidNonWhitelisted: true`:**
+   - Si un usuario malintencionado o un cliente envía propiedades adicionales en el JSON que no están declaradas en el DTO (ej. `{ role: "ADMIN" }`), la petición es rechazada de inmediato con un error `400 Bad Request`.
+2. **`TransformInterceptor`:**
+   - Cualquier objeto o array retornado por un controlador es interceptado automáticamente y envuelto en `{ success: true, statusCode, message, data }`. Los controladores nunca construyen este sobre a mano.
+3. **`RpcExceptionFilter`:**
+   - Cuando un microservicio lanza un `RpcException('El médico no atiende los días lunes')` o si RabbitMQ se demora más del tiempo configurado (`TimeoutError`), este filtro atrapa la excepción y la convierte en una respuesta HTTP adecuada (`400 Bad Request` o `504 Gateway Timeout`), asegurando que el cliente nunca reciba trazas de pila internas del servidor.
+
+---
+
+## 3. Diagrama de Arquitectura y Flujo de Información
 
 ```mermaid
-graph LR
-    FE["Angular MFE\n(agendador-citas / app-shell)"]
-    GW["API Gateway\nHTTP :3000/api"]
-    RMQ[(RabbitMQ)]
-    PS["patients-service\n(patients_queue)"]
-    SC["scheduling-service\n(scheduling_queue)"]
-    PR["procedures-service\n(procedures_queue)"]
+graph TD
+    Client["Cliente Web / MFE\n(agendador-citas :4201)"] -->|HTTP REST /api/*| GW["API Gateway\n(NestJS :3000)"]
+    
+    subgraph Gateway_Pipes_Interceptors ["Infraestructura del Gateway"]
+        VP["ValidationPipe\n(class-validator whitelist)"]
+        TI["TransformInterceptor\n(IApiResponse<T>)"]
+        EF["RpcExceptionFilter\n(HTTP Status Mapper)"]
+    end
 
-    FE -->|REST HTTP| GW
-    GW -->|patients.find-by-national-id / patients.create| RMQ
-    GW -->|appointments.*| RMQ
-    GW -->|procedures.* / doctors.* / area-codes.*| RMQ
-    RMQ --> PS
-    RMQ --> SC
-    RMQ --> PR
+    GW --> VP
+    VP --> Controllers["Controladores HTTP\n(Appointments, Confirmation, Patients, Procedures)"]
+    
+    subgraph Message_Broker ["Transporte RabbitMQ (AMQP :5672)"]
+        Q1["patients_queue"]
+        Q2["scheduling_queue"]
+        Q3["procedures_queue"]
+    end
 
-    GW -->|TransformInterceptor IApiResponse wrapping| FE
-    GW -->|RpcExceptionFilter Error homogéneo| FE
+    Controllers -->|RPC send() / emit()| Message_Broker
+    
+    Q1 --> MS1["patients-service"]
+    Q2 --> MS2["scheduling-service"]
+    Q3 --> MS3["procedures-service"]
+
+    MS2 -.->|RpcException / Resultado| EF
+    Controllers -.-> TI
+    TI -->|200 / 201 / 202 JSON| Client
+    EF -->|400 / 404 / 504 JSON| Client
 ```
 
 ---
 
-## 3. Contratos de Datos e Interfaces
+## 4. Contratos de Datos e Interfaces
 
 ### A. Interfaces de Contrato (`@nx-boilerplate/api-interfaces`)
 
-| Interfaz | Archivo Origen | Propósito |
+| Interfaz | Archivo Origen | Propósito Académico |
 |---|---|---|
-| `SlotStatusType` | `appointment.interface.ts` | Tipado de estados: `'AVAILABLE' \| 'TENTATIVE' \| 'CONFIRMED' \| 'BLOCKED_PERSONAL'` |
-| `ISlotDisplay` | `appointment.interface.ts` | Slot enriquecido con `startTime`, `endTime`, `display`, `title`, `status`, `colorId`, `isBookable`, `googleEventId?` |
-| `IDayAvailability` | `appointment.interface.ts` | Disponibilidad diaria agrupada con `isCalendarSynced` y colección `ISlotDisplay[]` |
-| `IAvailableDate` | `appointment.interface.ts` | Slot puntual de disponibilidad (legado) |
-| `IPatientHistory` | `patient.interface.ts` | Historial completo de paciente con citas y procedimientos |
-| `ICreatePatientRequest` | `patient.interface.ts` | Payload de solicitud para registrar nuevo paciente |
-| `IAreaCode` | `patient.interface.ts` | Catálogo de indicativos internacionales, banderas y regex |
-| `IProcedure` | `procedure.interface.ts` | Procedimiento médico con duración y especialidad |
-| `IProfessionalSummary` | `procedure.interface.ts` | Resumen de médico especialista (nombre, email, cédula) |
-| `IActiveProfessional` | `procedure.interface.ts` | Médico activo con datos ampliados |
-| `IApiResponse<T>` | `api-response.interface.ts` | Sobre de respuesta canónico `{ success, statusCode, message, data }` |
-| `IWeekWindow` | `appointment.interface.ts` | Ventana semanal `{ startDate, endDate, totalDays, offsetWeeks }` |
-| `IAppointmentDashboard` | `appointment.interface.ts` | Entidad consolidada de cita para dashboard de seguimiento diario |
-| `IGetDailyAppointmentsRequest` | `appointment.interface.ts` | Payload de consulta para citas por fecha, médico y estado |
-| `IUpdateAppointmentStatusRequest` | `appointment.interface.ts` | Payload de solicitud para actualizar estado (`CONFIRMED` o `CANCELLED`) |
-| `ITrackContactRequest` | `appointment.interface.ts` | Payload de evento para registrar contacto con el paciente |
+| `IApiResponse<T>` | `api-response.interface.ts` | Sobre genérico estándar para todas las respuestas HTTP (`success`, `statusCode`, `message`, `data`). |
+| `IDayAvailability` | `appointment.interface.ts` | Agrupación diaria de turnos con banderas `isCalendarSynced` y `isWorkingDay`. |
+| `ISlotDisplay` | `appointment.interface.ts` | Detalle del turno: hora inicio, hora fin, estado (`AVAILABLE`, `TENTATIVE`, `CONFIRMED`), color y bloqueo. |
+| `IAppointmentDashboard` | `appointment.interface.ts` | Modelo completo de cita para el dashboard de confirmación (incluye datos del paciente y contador de contactos). |
+| `IPatientHistory` | `patient.interface.ts` | Historial médico, cédula, nombres y citas previas del paciente. |
+| `IProcedure` | `procedure.interface.ts` | Procedimiento médico con duración estimada, especialidad y precio. |
+| `IProfessionalSummary` | `procedure.interface.ts` | Información resumida del médico especialista (cédula, nombres, email). |
+| `IAreaCode` | `patient.interface.ts` | Catálogo internacional de países, banderas, códigos (`+57`) y expresiones regulares. |
 
-### B. DTOs y Validación Runtime
+### B. DTOs y Validación Runtime (`@nx-boilerplate/shared-dtos`)
 
-| DTO | Ubicación | Campos | Decoradores clave | Propósito |
-|---|---|---|---|---|
-| `GetAvailableDatesQueryDto` | `src/dtos/` | `procedureId?`, `doctorEmail?`, `doctorCedula?`, `targetDate?`, `startDate?`, `endDate?` | `@IsEmail`, `@IsString`, `@IsDateString`, `@IsOptional` | Query params para disponibilidad semanal con soporte de resolución por cédula |
-| `GetDailyAppointmentsQueryDto` | `@nx-boilerplate/shared-dtos` | `date`, `doctorEmail?`, `status?` | `@IsDateString`, `@IsNotEmpty`, `@IsEmail`, `@IsEnum`, `@IsOptional` | Query params para consultar citas del día |
-| `CreateAppointmentBodyDto` | `src/dtos/` | `doctorEmail`, `doctorCedula`, `patientNationalId`, `patientFullName`, `patientEmail`, `patientPhone?`, `procedureId`, `procedureName`, `startTime`, `endTime`, `notes?` | `@IsEmail`, `@IsISO8601`, `@IsNotEmpty`, `@IsOptional` | Payload de creación de cita con teléfono para confirmación |
-| `UpdateAppointmentStatusDto` | `@nx-boilerplate/shared-dtos` | `id?`, `appointmentId?`, `status` | `@IsEnum(['CONFIRMED', 'CANCELLED'])`, `@IsOptional` | Payload de actualización de estado; tolera identificadores opcionales para evitar rechazos por whitelist |
-| `TrackContactDto` | `@nx-boilerplate/shared-dtos` | `appointmentId` | `@IsString`, `@IsNotEmpty` | Validación de ID para registrar contacto con paciente |
-| `CreateWaitlistBodyDto` | `src/dtos/` | `patientNationalId`, `patientFullName`, `patientEmail`, `patientPhone`, `procedureId`, `preferredDoctorEmail?` | `@IsEmail`, `@IsNotEmpty` | Payload de inscripción a lista de espera |
-| `FindPatientByNationalIdDto` | `@nx-boilerplate/shared-dtos` | `nationalId` | `@IsString`, `@IsNotEmpty` | Parámetro de ruta para consultar paciente |
-| `CreatePatientDto` | `@nx-boilerplate/shared-dtos` | `cedula`, `nombre`, `apellidos`, `correo`, `celular`, `ultimosProcedimientos?`, `recomendaciones?` | `@IsString`, `@IsEmail`, `@IsOptional` | Payload de registro de nuevo paciente |
+> [!NOTE]
+> Todos los DTOs están centralizados en `@nx-boilerplate/shared-dtos`. Ningún microservicio ni el Gateway define DTOs locales para evitar discrepancias de validación en tiempo de ejecución.
 
----
-
-## 4. Puntos de Entrada y Comunicación
-
-### Prefijo global: `/api`
-
-**Puerto:** `3000` (configurable vía `PORT`)  
-**CORS habilitado:** `http://localhost:4200`, `http://localhost:4201`
-
----
-
-### 4.1 `AppointmentsController` — `/api/appointments`
-
-#### `GET /api/appointments/daily`
-
-Consulta la lista consolidada de citas programadas para una fecha determinada (`date: YYYY-MM-DD`), diseñada para alimentar el **Dashboard de Gestión y Confirmación Diaria**. Permite filtrar por médico y por estado clínico de la cita (`TENTATIVE`, `CONFIRMED`, `CANCELLED`). Incluye datos de contacto del paciente, estado de respuesta de Google Calendar (`patientResponseStatus`) y el contador acumulado de intentos de contacto (`contactCount`).
-
-| Parámetro Query | Tipo | Requerido | Descripción |
+| DTO | Campos Validados | Decoradores Clave | Propósito |
 |---|---|---|---|
-| `date` | `string (YYYY-MM-DD)` | Sí | Fecha de la jornada clínica a consultar |
-| `doctorEmail` | `string (email)` | No | Filtra por el correo del médico asignado |
-| `status` | `string` | No | Filtra por estado (`TENTATIVE`, `CONFIRMED`, `CANCELLED`) |
-
-**Respuesta `200 OK` (`IAppointmentDashboard[]`):**
-```json
-{
-  "success": true,
-  "statusCode": 200,
-  "message": "Operación realizada exitosamente",
-  "data": [
-    {
-      "appointmentId": "APT-1791262275508-237",
-      "doctorEmail": "drmoralesheano@gmail.com",
-      "doctorCedula": "123456789",
-      "patientNationalId": "987654321",
-      "patientFullName": "María García",
-      "patientEmail": "paciente@email.com",
-      "patientPhone": "+573001234567",
-      "procedureId": "proc-001",
-      "procedureName": "Consulta General",
-      "startTime": "2026-10-15T14:00:00.000Z",
-      "endTime": "2026-10-15T14:45:00.000Z",
-      "status": "TENTATIVE",
-      "patientResponseStatus": "needsAction",
-      "colorId": "5",
-      "googleCalendarEventId": "evt_abc123",
-      "notes": "Primera consulta",
-      "contactCount": 0
-    }
-  ]
-}
-```
-
-* **Patrón RMQ:** `appointments.get-daily` · **Cola:** `scheduling_queue` · **Timeout:** 5 000 ms
+| `GetAvailableDatesQueryDto` | `doctorEmail?`, `doctorCedula?`, `procedureId?`, `startDate?`, `endDate?` | `@IsOptional()`, `@IsEmail()`, `@IsDateString()` | Consulta de turnos disponibles en una ventana semanal. |
+| `CreateAppointmentBodyDto` | `doctorEmail`, `doctorCedula`, `patientNationalId`, `patientFullName`, `patientEmail`, `patientPhone`, `procedureId`, `procedureName`, `startTime`, `endTime`, `notes?` | `@IsNotEmpty()`, `@IsEmail()`, `@IsISO8601()`, `@IsOptional()` | Creación estricta de una cita médica en estado inicial `TENTATIVE`. |
+| `CreateWaitlistBodyDto` | `patientNationalId`, `patientFullName`, `patientEmail`, `patientPhone`, `procedureId`, `preferredDoctorEmail?` | `@IsNotEmpty()`, `@IsEmail()`, `@IsString()` | Inscripción voluntaria en lista de espera cuando no hay cupos inmediatos. |
+| `GetDailyAppointmentsDto` | `date`, `doctorEmail?`, `status?` | `@IsDateString()`, `@IsNotEmpty()`, `@IsEnum(['TENTATIVE', 'CONFIRMED', 'CANCELLED'])` | Filtro de citas para el dashboard clínico diario. |
+| `UpdateAppointmentStatusDto` | `status`, `appointmentId?` | `@IsEnum(['CONFIRMED', 'CANCELLED'])` | Cambio de estado de la cita (aprobada o cancelada). |
+| `TrackContactDto` | `appointmentId` | `@IsString()`, `@IsNotEmpty()` | Notificación de contacto al paciente. |
+| `FindPatientByNationalIdDto` | `nationalId` | `@IsString()`, `@Length(5, 20)`, `@Matches(/^[a-zA-Z0-9]+$/)` | Búsqueda segura de paciente por documento. |
+| `CreatePatientDto` | `cedula`, `nombre`, `apellidos`, `correo`, `celular` | `@IsNotEmpty()`, `@IsEmail()`, `@Length()` | Registro de nuevo paciente en el sistema. |
+| `FilterProceduresQueryDto` | `doctorCedula?` | `@IsOptional()`, `@IsString()` | Filtrado de procedimientos asignados a un especialista. |
 
 ---
 
-#### `GET /api/appointments/available-dates`
-
-Consulta la disponibilidad semanal de un médico mediante `events.list` y la regla de **Veto del Médico** (descartando citas canceladas o declinadas por el doctor). Si no se envían `startDate`/`endDate`, el Gateway calcula automáticamente la ventana de la **semana actual en Colombia** usando `getWeekWindow(0)` de `@nx-boilerplate/utils`.
-
-**Resolución Dinámica de Horario Laboral (`horarioTrabajo`):**
-A partir de `doctorCedula` o `doctorEmail`, el microservicio de agendamiento (`scheduling-service`) consulta el documento del especialista en la colección `profesionalesActivos` (MongoDB Atlas) para aplicar sus reglas laborales individuales:
-- **`diasLaborales`:** Si el día de la semana no pertenece a los días laborales del profesional (ej. Dr. Alejandro Morales solo atiende `MARTES, JUEVES, SABADO`), el backend genera `slots: []` y marca el día como no disponible para reservas.
-- **`horaInicio` y `horaFin`:** Delimita dinámicamente la generación de turnos (ej. 07:00 a 15:00 o 08:00 a 17:00).
-- **`recesoAlmuerzo`:** Si está definido con `inicio` y `fin`, bloquea automáticamente los slots coincidentes (`status: BLOCKED_PERSONAL`, `title: 'Almuerzo'`); si es `null` o inexistente, no aplica bloqueo de almuerzo.
-
-| Parámetro Query | Tipo | Requerido | Descripción |
-|---|---|---|---|
-| `doctorEmail` | `string (email)` | No | Correo del médico para filtrar disponibilidad |
-| `doctorCedula` | `string` | No | Cédula del especialista para resolver con exactitud su jornada en MongoDB Atlas |
-| `procedureId` | `string` | No | ID del procedimiento para calcular duración de slot |
-| `startDate` | `string (YYYY-MM-DD)` | No | Inicio del rango (default: lunes de la semana actual) |
-| `endDate` | `string (YYYY-MM-DD)` | No | Fin del rango (default: sábado de la semana actual) |
-| `targetDate` | `string (YYYY-MM-DD)` | No | Fecha puntual (legado) |
-
-**Respuesta `200 OK` — Doctor con calendario sincronizado (Slots enriquecidos):**
-```json
-{
-  "success": true,
-  "statusCode": 200,
-  "message": "Operación realizada exitosamente",
-  "data": [
-    {
-      "date": "2026-10-03",
-      "dayName": "Sábado",
-      "isCalendarSynced": true,
-      "slots": [
-        {
-          "startTime": "2026-10-03T12:00:00.000Z",
-          "endTime": "2026-10-03T12:45:00.000Z",
-          "display": "07:00 - 07:45",
-          "title": "Espacio disponible",
-          "status": "AVAILABLE",
-          "colorId": null,
-          "isBookable": true
-        },
-        {
-          "startTime": "2026-10-03T14:00:00.000Z",
-          "endTime": "2026-10-03T14:45:00.000Z",
-          "display": "09:00 - 09:45",
-          "title": "Cita Médica: Valoración Facial - Juan Pérez",
-          "status": "TENTATIVE",
-          "colorId": "5",
-          "isBookable": false,
-          "googleEventId": "evt_abc123"
-        }
-      ]
-    }
-  ]
-}
-```
-
-**Respuesta `200 OK` — Doctor sin calendario sincronizado:**
-```json
-{
-  "data": [
-    {
-      "date": "2026-10-03",
-      "dayName": "Sábado",
-      "isCalendarSynced": false,
-      "slots": [
-        {
-          "startTime": "2026-10-03T12:00:00.000Z",
-          "endTime": "2026-10-03T12:45:00.000Z",
-          "display": "07:00 - 07:45",
-          "title": "Espacio disponible",
-          "status": "AVAILABLE",
-          "colorId": null,
-          "isBookable": true
-        }
-      ]
-    }
-  ]
-}
-```
-
-> **`isCalendarSynced: false`** → El bot no tiene acceso al Google Calendar del médico. Los slots retornados son solo los de MongoDB (sin bloqueos de Google Calendar). El frontend muestra un placeholder de advertencia con el email del médico en cada columna del día.
-
-**Patrón RMQ enviado:** `appointments.get-available-dates` · **Timeout:** 10 000 ms
-
----
-
-#### `POST /api/appointments`
-
-Crea una cita médica validando disponibilidad en Google Calendar (insertando evento interactivo en ubicación `'Cra 79 # 49A-107, Laureles - Estadio'`, con `sendUpdates: 'all'`, `status: 'tentative'` y `colorId: '5'`) y persistiendo en MongoDB Atlas bajo el estado inicial `TENTATIVE`.
-
-**Body (`CreateAppointmentBodyDto`):**
-```json
-{
-  "doctorEmail": "drmoralesheano@gmail.com",
-  "doctorCedula": "123456789",
-  "patientNationalId": "987654321",
-  "patientFullName": "María García",
-  "patientEmail": "paciente@email.com",
-  "patientPhone": "3001234567",
-  "procedureId": "proc-001",
-  "procedureName": "Consulta General",
-  "startTime": "2026-10-03T14:00:00.000Z",
-  "endTime": "2026-10-03T14:45:00.000Z",
-  "notes": "Primera consulta"
-}
-```
-
-**Respuesta `201 Created`:**
-```json
-{
-  "success": true,
-  "statusCode": 201,
-  "message": "Operación realizada exitosamente",
-  "data": {
-    "success": true,
-    "message": "Cita reservada y sincronizada exitosamente con Google Calendar",
-    "appointmentId": "APT-1791262275508-237",
-    "googleCalendarEventId": "mock-google-id-1791262275508",
-    "status": "TENTATIVE",
-    "colorId": "5",
-    "startTime": "2026-10-03T14:00:00.000Z",
-    "endTime": "2026-10-03T14:45:00.000Z",
-    "doctor": "Dr. Camilo Tabares García"
-  }
-}
-```
-* **Patrón RMQ:** `appointments.create` · **Timeout:** 10 000 ms
-* **Sincronización:** Inserta la cita con `colorId: '5'` (amarillo/tentativa) en Google Calendar y almacena el teléfono opcional del paciente para habilitar la confirmación interactiva de asistencia vía WhatsApp.
-
----
-
-#### `PATCH /api/appointments/:id/status`
-
-Actualiza el estado de una cita médica de forma sincrónica y bidireccional entre Google Calendar y la base de datos.
-1. **Google Calendar:** Actualiza el evento correspondiente cambiando su color tonal (`10` verde esmeralda para `CONFIRMED`, `11` rojo tomate para `CANCELLED`).
-2. **MongoDB Atlas:** Persiste el nuevo estado (`status`) y `colorId` en el documento de la cita.
-
-| Parámetro / Campo | Tipo | Requerido | Descripción |
-|---|---|---|---|
-| `:id` (Param) | `string` | Sí | Identificador único de la cita (`appointmentId` o `_id`) |
-| `status` (Body) | `string` | Sí | Nuevo estado permitido: `CONFIRMED` o `CANCELLED` |
-
-**Body (`UpdateAppointmentStatusDto`):**
-```json
-{
-  "status": "CONFIRMED"
-}
-```
-
-**Respuesta `200 OK` (`IAppointmentDashboard`):**
-```json
-{
-  "success": true,
-  "statusCode": 200,
-  "message": "Operación realizada exitosamente",
-  "data": {
-    "appointmentId": "APT-1791262275508-237",
-    "doctorEmail": "drmoralesheano@gmail.com",
-    "doctorCedula": "123456789",
-    "patientNationalId": "987654321",
-    "patientFullName": "María García",
-    "patientEmail": "paciente@email.com",
-    "patientPhone": "+573001234567",
-    "procedureId": "proc-001",
-    "procedureName": "Consulta General",
-    "startTime": "2026-10-15T14:00:00.000Z",
-    "endTime": "2026-10-15T14:45:00.000Z",
-    "status": "CONFIRMED",
-    "patientResponseStatus": "accepted",
-    "colorId": "10",
-    "googleCalendarEventId": "evt_abc123",
-    "notes": "Primera consulta",
-    "contactCount": 1
-  }
-}
-```
-
-* **Patrón RMQ:** `appointments.update-status` · **Cola:** `scheduling_queue` · **Timeout:** 10 000 ms
-
----
-
-#### `POST /api/appointments/:id/track-contact`
-
-Registra e incrementa de forma atómica el número de intentos de contacto (`contactCount`) realizados al paciente para una cita (llamadas o recordatorios interactivos de WhatsApp). Se gestiona de forma asíncrona mediante emisión de eventos RabbitMQ sin bloquear el cliente HTTP.
-
-| Parámetro | Tipo | Requerido | Descripción |
-|---|---|---|---|
-| `:id` (Param) | `string` | Sí | Identificador único de la cita (`appointmentId`) |
-
-**Respuesta `202 Accepted`:**
-```json
-{
-  "success": true,
-  "statusCode": 202,
-  "message": "Registro de contacto encolado exitosamente",
-  "data": {
-    "message": "Registro de contacto encolado exitosamente"
-  }
-}
-```
-
-* **Patrón RMQ Emitido:** `appointments.contact-tracked` (Evento asíncrono `@EventPattern` via `emit()`) · **Cola:** `scheduling_queue`
-
----
-
-#### `POST /api/appointments/waitlist`
-
-Inscribe a un paciente en la lista de espera para un procedimiento.
-
-**Patrón RMQ:** `waitlist.create` · **Timeout:** 5 000 ms
-
----
-
-### 4.2 `PatientsController` — `/api/patients`
-
-#### `GET /api/patients/:nationalId`
-
-Retorna el historial completo del paciente (citas pasadas, datos personales).
-
-**Patrón RMQ:** `patients.find-by-national-id` · **Cola:** `patients_queue`
-
-#### `POST /api/patients`
-
-Registra un nuevo paciente en la base de datos (MongoDB Atlas a través de `patients-service`). Se invoca automáticamente desde el MFE `agendador-citas` cuando se ingresa una cédula no registrada en el Stepper antes de avanzar a la selección de horario.
-
-| Campo Body | Tipo | Requerido | Descripción |
-|---|---|---|---|
-| `cedula` | `string` | Sí | Documento de identidad único |
-| `nombre` | `string` | Sí | Nombres del paciente |
-| `apellidos` | `string` | Sí | Apellidos del paciente |
-| `correo` | `string (email)` | Sí | Correo electrónico de contacto |
-| `celular` | `string` | Sí | Teléfono celular con indicativo internacional |
-| `ultimosProcedimientos` | `array` | No | Lista de procedimientos clínicos previos (default: `[]`) |
-| `recomendaciones` | `string` | No | Observaciones o recomendaciones médicas (default: `""`) |
-
-**Respuesta `201 Created`** · **Patrón RMQ:** `patients.create` · **Cola:** `patients_queue`
-
----
-
-### 4.3 `ProceduresController` — `/api/procedures`
-
-#### `GET /api/procedures`
-
-Lista todos los procedimientos. Si se pasa `?doctorCedula=`, filtra los procedimientos que atiende ese médico.
-
-**Patrones RMQ:** `procedures.get-all` / `procedures.find-by-doctor` · **Timeout:** 5 000 ms
-
-#### `GET /api/procedures/:idProcedimiento`
-
-Retorna un procedimiento por ID.
-
-**Patrón RMQ:** `procedures.find-by-id` · **Timeout:** 5 000 ms
-
-#### `GET /api/procedures/:idProcedimiento/doctors`
-
-Lista los médicos que atienden el procedimiento dado.
-
-**Patrón RMQ:** `procedures.get-doctors-by-procedure` · **Timeout:** 5 000 ms
-
----
-
-### 4.4 `AreaCodesController` — `/api/area-codes`
-
-#### `GET /api/area-codes`
-
-Retorna el catálogo maestro de códigos de área e indicativos internacionales para validación y formateo de números celulares en formularios de agendamiento.
-
-**Respuesta `200 OK`:**
-```json
-{
-  "success": true,
-  "statusCode": 200,
-  "message": "Operación realizada exitosamente",
-  "data": [
-    {
-      "code": "+57",
-      "country": "Colombia",
-      "flag": "🇨🇴",
-      "patternString": "^3\\d{9}$",
-      "errorMessage": "El número celular debe iniciar por 3 y tener 10 dígitos (Colombia)."
-    },
-    {
-      "code": "+1",
-      "country": "Estados Unidos / Canadá",
-      "flag": "🇺🇸",
-      "patternString": "^\\d{10}$",
-      "errorMessage": "El número celular debe contener exactamente 10 dígitos."
-    }
-  ]
-}
-```
-
-**Patrón RMQ:** `area-codes.get-all` · **Cola:** `procedures_queue` · **Timeout:** 5 000 ms
-
----
-
-### 4.5 `DoctorsController` — `/api/doctors`
-
-#### `GET /api/doctors`
-
-Lista todos los especialistas activos del sistema.
-
-**Patrón RMQ:** `doctors.get-all` · **Cola:** `procedures_queue` · **Timeout:** 5 000 ms
-
----
-
-### 4.6 `HealthController` — `/api/health`
-
-#### `GET /api/health`
-
-Endpoint de verificación de disponibilidad del servicio. Retorna `{ status: 'ok' }`.
-
----
-
-## 5. Infraestructura Transversal
-
-### `TransformInterceptor` (Global)
-
-Envuelve **toda** respuesta exitosa en la estructura canónica `IApiResponse<T>`:
-
-```typescript
-interface IApiResponse<T> {
-  success: boolean;        // siempre true en caso exitoso
-  statusCode: number;      // código HTTP
-  message: string;         // mensaje de operación
-  data: T | null;          // payload de respuesta
-}
-```
-
-Si el payload contiene un campo `message: string`, se usa ese texto como mensaje de la respuesta.
-
-### `RpcExceptionFilter` (Global)
-
-Filtro central de captura de errores para desacoplar el transporte RPC de la capa HTTP:
-- Captura instancias de `RpcException` emitidas por microservicios RabbitMQ (`scheduling-service`, `patients-service`, `procedures-service`).
-- Extrae de forma segura el mensaje de error subyacente (manejando tanto cadenas simples como objetos `{ message, statusCode }` o instancias de error serializadas).
-- Mapea de forma inteligente los mensajes de error a los códigos HTTP correspondientes:
-  - `404 Not Found`: Si el mensaje indica recurso inexistente ("no encontrado", "not found").
-  - `400 Bad Request`: Si el mensaje corresponde a reglas de negocio, validación de horario ("fuera de la jornada", "no labora los días", "ya no se encuentra disponible").
-  - `500 Internal Server Error`: Errores de infraestructura no clasificados.
-- Genera la respuesta en el formato unificado `IApiResponse` con `{ success: false, statusCode, message, data: null }`.
-
-### `ValidationPipe` (Global)
-
-Configurado con `{ whitelist: true, forbidNonWhitelisted: true, transform: true }`. Aplica validación automática estricta en todos los endpoints usando los DTOs decorados con `class-validator`. Rechaza payloads que contengan propiedades no declaradas en el DTO correspondiente.
+## 5. Controladores y Puntos de Entrada (API Endpoints)
+
+El Gateway organiza sus controladores bajo el principio de **Responsabilidad Única (SRP)**:
+
+### 5.1 `AppointmentsController` (`/api/appointments`)
+Responsable exclusivamente del flujo de disponibilidad, agendamiento inicial y lista de espera.
+
+* **`GET /api/appointments/available-dates`**
+  - **Parámetros Query:** `GetAvailableDatesQueryDto`
+  - **Lógica Inteligente:** Si el cliente no envía `startDate` o `endDate`, el Gateway calcula automáticamente los límites de la semana actual en Colombia usando `getWeekWindow(0)` de `@nx-boilerplate/utils`.
+  - **Patrón RMQ:** `appointments.get-available-dates` (`scheduling_queue`, timeout: 10s).
+* **`POST /api/appointments`**
+  - **Estado HTTP:** `201 Created`
+  - **Body:** `CreateAppointmentBodyDto`
+  - **Patrón RMQ:** `appointments.create` (`scheduling_queue`, timeout: 10s).
+  - **Resultado:** Retorna la cita agendada asignando inicialmente `status: 'TENTATIVE'` y color amarillo (`5`) para Google Calendar.
+* **`POST /api/appointments/waitlist`**
+  - **Estado HTTP:** `201 Created`
+  - **Body:** `CreateWaitlistBodyDto`
+  - **Patrón RMQ:** `waitlist.create` (`scheduling_queue`, timeout: 5s).
+
+### 5.2 `AppointmentConfirmationController` (`/api/appointments`)
+Responsable de la operación clínica diaria (CRM de recepción, confirmaciones y llamadas).
+
+* **`GET /api/appointments/daily`**
+  - **Parámetros Query:** `GetDailyAppointmentsDto` (`date=YYYY-MM-DD`, `doctorEmail?`, `status?`).
+  - **Patrón RMQ:** `appointments.get-daily` (`scheduling_queue`, timeout: 5s).
+  - **Resultado:** Array con las citas programadas para esa jornada, indicando si el paciente ya fue contactado y el estado de Google Calendar.
+* **`PATCH /api/appointments/:id/status`**
+  - **Parámetros:** `:id` (ID de la cita) en URL, `{ status: 'CONFIRMED' | 'CANCELLED' }` en el Body.
+  - **Patrón RMQ:** `appointments.update-status` (`scheduling_queue`, timeout: 10s).
+  - **Efecto:** Actualiza sincrónicamente MongoDB Atlas y el evento en Google Calendar (color verde `10` o rojo `11`).
+* **`POST /api/appointments/:id/track-contact`**
+  - **Estado HTTP:** `202 Accepted` (Operación Asíncrona)
+  - **Parámetros:** `:id` (ID de la cita) en URL.
+  - **Patrón RMQ:** `appointments.contact-tracked` vía `client.emit()`.
+  - **Efecto:** Incrementa atómicamente el contador de intentos de contacto en la base de datos sin bloquear al usuario en el frontend.
+
+### 5.3 `PatientsController` (`/api/patients`)
+* **`GET /api/patients/:nationalId`:** Consulta el paciente por cédula. Patrón RMQ: `patients.find-by-national-id`.
+* **`POST /api/patients`:** Registra un nuevo paciente (`201 Created`). Patrón RMQ: `patients.create`.
+
+### 5.4 `ProceduresController` (`/api/procedures`)
+* **`GET /api/procedures`:** Lista procedimientos médicos. Acepta `?doctorCedula=` para filtrar.
+* **`GET /api/procedures/:idProcedimiento`:** Retorna el detalle de un procedimiento.
+* **`GET /api/procedures/:idProcedimiento/doctors`:** Lista los especialistas habilitados para ese procedimiento.
+
+### 5.5 `DoctorsController` (`/api/doctors`)
+* **`GET /api/doctors`:** Lista todos los especialistas médicos activos en el sistema.
+
+### 5.6 `AreaCodesController` (`/api/area-codes`)
+* **`GET /api/area-codes`:** Retorna el catálogo maestro de indicativos telefónicos mundiales para validar el número celular en el frontend.
+
+### 5.7 `HealthController` (`/api/health`)
+* **`GET /api/health`:** Monitoreo y comprobación de liveness (`{ status: 'ok', uptime, timestamp }`).
 
 ---
 
 ## 6. Variables de Entorno Requeridas
 
-| Variable | Default | Descripción |
-|---|---|---|
-| `PORT` | `3000` | Puerto HTTP del Gateway |
-| `RABBITMQ_URI` | `amqp://localhost:5672` | URI de conexión a RabbitMQ |
-| `RABBITMQ_PATIENTS_QUEUE` | `patients_queue` | Cola del microservicio de pacientes |
-| `RABBITMQ_SCHEDULING_QUEUE` | `scheduling_queue` | Cola del microservicio de agendamiento |
-| `RABBITMQ_PROCEDURES_QUEUE` | `procedures_queue` | Cola del microservicio de procedimientos |
+Configuradas en el archivo `.env` en la raíz del workspace:
+
+```bash
+PORT=3000                                 # Puerto HTTP del API Gateway
+RABBITMQ_URI=amqp://localhost:5672       # Conexión al broker RabbitMQ
+RABBITMQ_PATIENTS_QUEUE=patients_queue   # Cola para microservicio de pacientes
+RABBITMQ_SCHEDULING_QUEUE=scheduling_queue # Cola para microservicio de agendamiento
+RABBITMQ_PROCEDURES_QUEUE=procedures_queue # Cola para microservicio de procedimientos
+```
 
 ---
 
 ## 7. Dependencias y Límites Arquitectónicos
 
-**Módulos que consume:**
-- `@nx-boilerplate/api-interfaces` — Interfaces de contrato compartidas
-- `@nx-boilerplate/shared-dtos` — DTOs con validación runtime (`FindPatientByNationalIdDto`, `FilterProceduresQueryDto`, `FindProcedureParamDto`)
-- `@nx-boilerplate/utils` — `getWeekWindow()` para cálculo automático de ventana semanal
+```mermaid
+graph TD
+    GW["services/api-gateway\n[scope:backend, type:service]"]
+    
+    GW --> SharedInterfaces["@nx-boilerplate/api-interfaces\n[scope:shared, type:contracts]"]
+    GW --> SharedDTOs["@nx-boilerplate/shared-dtos\n[scope:backend, type:dtos]"]
+    GW --> SharedUtils["@nx-boilerplate/utils\n[scope:shared, type:util]"]
 
-**Módulos que lo consumen:**
-- `apps/agendador-citas` — MFE principal de agendamiento
-- `app-shell` — Host del MFE, proxy de peticiones en desarrollo
-
----
-
-## 8. Guía de Uso — Ejemplos cURL
-
-```bash
-# Disponibilidad semanal (ventana actual automática)
-curl "http://localhost:3000/api/appointments/available-dates?doctorEmail=drmoralesheano@gmail.com"
-
-# Disponibilidad con rango explícito
-curl "http://localhost:3000/api/appointments/available-dates?doctorEmail=drmoralesheano@gmail.com&startDate=2026-10-05&endDate=2026-10-10"
-
-# Crear cita
-curl -X POST http://localhost:3000/api/appointments \
-  -H "Content-Type: application/json" \
-  -d '{"doctorEmail":"drmoralesheano@gmail.com","doctorCedula":"123","patientNationalId":"456","patientFullName":"Test Paciente","patientEmail":"test@test.com","procedureId":"proc-001","procedureName":"Consulta","startTime":"2026-10-05T14:00:00Z","endTime":"2026-10-05T14:45:00Z"}'
-
-# Listar citas de una jornada diaria (Dashboard)
-curl "http://localhost:3000/api/appointments/daily?date=2026-10-15&doctorEmail=drmoralesheano@gmail.com&status=TENTATIVE"
-
-# Actualizar estado de cita (Confirmar o Cancelar)
-curl -X PATCH http://localhost:3000/api/appointments/APT-1791262275508-237/status \
-  -H "Content-Type: application/json" \
-  -d '{"status":"CONFIRMED"}'
-
-# Registrar contacto o intento de notificación al paciente
-curl -X POST http://localhost:3000/api/appointments/APT-1791262275508-237/track-contact
-
-# Listar médicos activos
-curl http://localhost:3000/api/doctors
-
-# Verificar salud del Gateway
-curl http://localhost:3000/api/health
+    ClientApp["apps/agendador-citas"] -->|HTTP /api/*| GW
 ```
 
+- **Consume estrictamente:** Interfaces puras (`@nx-boilerplate/api-interfaces`), DTOs de validación runtime (`@nx-boilerplate/shared-dtos`) y utilidades puras de fecha (`@nx-boilerplate/utils`).
+- **Prohibido:** El API Gateway **nunca** debe importar librerías de dominio (`*-domain`) ni conectarse a bases de datos directamente (`MongooseModule`, etc.). Su única vía hacia los datos son los microservicios RabbitMQ.
+
 ---
 
-## 9. Comandos de Verificación (Nx)
+## 8. Guía de Verificación y Comandos (Nx)
 
 ```bash
-# Servir en desarrollo
+# 1. Servir el API Gateway en desarrollo (hot-reload en puerto 3000)
 npx nx serve api-gateway
 
-# Compilar proyecto
+# 2. Compilar el bundle de producción con Webpack
 npx nx build api-gateway
 
-# Ejecutar pruebas unitarias
-npx nx test api-gateway
-
-# Validar límites arquitectónicos
+# 3. Validar sintaxis y reglas de ESLint
 npx nx lint api-gateway
+
+# 4. Probar endpoints vía cURL
+# Probar Healthcheck
+curl http://localhost:3000/api/health
+
+# Consultar disponibilidad semanal de un médico
+curl "http://localhost:3000/api/appointments/available-dates?doctorEmail=drmoralesheano@gmail.com"
+
+# Consultar citas diarias del CRM
+curl "http://localhost:3000/api/appointments/daily?date=2026-10-15"
 ```
