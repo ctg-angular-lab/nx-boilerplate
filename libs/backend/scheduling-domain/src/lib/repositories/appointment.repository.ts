@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { REGEX_MONGO_OBJECT_ID } from '@nx-boilerplate/utils';
 import {
   Appointment,
   AppointmentDocument,
@@ -40,7 +41,7 @@ export class AppointmentRepository {
       .findOne({
         $or: [
           { appointmentId },
-          ...(appointmentId.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: appointmentId }] : []),
+          ...(appointmentId.match(REGEX_MONGO_OBJECT_ID) ? [{ _id: appointmentId }] : []),
         ],
       })
       .select('-_id -__v')

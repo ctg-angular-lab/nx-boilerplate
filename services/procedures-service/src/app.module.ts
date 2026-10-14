@@ -5,10 +5,7 @@ import { ProceduresMessageController } from './controllers/procedures-message.co
 
 @Module({
   imports: [
-    MongooseModule.forRoot(
-      process.env.MONGODB_URI ||
-        'mongodb+srv://camilotabares84_db_user:YGer68cNPLDhTrBO@cluster0.fa2lvct.mongodb.net/appointments_db?retryWrites=true&w=majority&appName=Cluster0'
-    ),
+    MongooseModule.forRoot(process.env['MONGODB_URI'] || ''),
     ProceduresDomainModule,
   ],
   controllers: [ProceduresMessageController],

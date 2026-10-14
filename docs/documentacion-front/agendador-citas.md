@@ -18,12 +18,16 @@ El MFE **Agendador de Citas** es el Remote principal que orquesta la experiencia
    - **Paso 2 (Datos del Paciente):** Auto-poblado si el paciente existe o captura de datos personales (con separación de indicativo internacional y número celular con validación dinámica regex por país). Si el paciente es nuevo, se registra de manera transparente en la base de datos antes de continuar.
    - **Paso 3 (Procedimiento y Fecha):** Selección del procedimiento médico y médico especialista, transfiriendo el contexto y navegando automáticamente al Calendario.
 2. **Flujo Libre por Calendario (Pestaña "Calendario"):**
-   - Visualización de la disponibilidad semanal real de los especialistas (sincronizada con Google Calendar y MongoDB Atlas).
+   - Visualización de la disponibilidad semanal real adaptada a la jornada dinámica de cada médico especialista (`diasLaborales`, `horaInicio`, `horaFin`, `recesoAlmuerzo`), sincronizada con Google Calendar y MongoDB Atlas.
    - Detección de contexto: si el usuario intenta reservar un horario sin haber identificado a un paciente previamente, el sistema despliega una advertencia en el modal de confirmación con un enlace directo (**"Volver a Agendar cita"**) para transferirlo de inmediato al Stepper.
-3. **Confirmación de Citas (Pestaña "Confirmación de Citas"):**
-   - Directorio de médicos especialistas activos y seguimiento/confirmación del sistema.
+3. **Gestión y Confirmación de Citas (Pestaña "Confirmación de Citas"):**
+   - Panel de control clínico para seguimiento diario de pacientes agendados.
+   - Píldoras de fecha rápida inteligentes que generan 5 días hábiles continuos excluyendo domingos.
+   - Auto-reinicio a la fecha actual al ingresar a la pestaña.
+   - Filtrado reactivo en tiempo real por estado (`Todas`, `Agendadas`, `Confirmadas`, `Canceladas`) y médico especialista.
+   - Acciones directas: Confirmación inmediata de citas, cancelación y enlace automatizado a WhatsApp con plantillas corporativas.
 
-La arquitectura reactiva está gobernada por **Signals**, inyección funcional `inject()` y un único **Single Source of Truth (SSOT)** centralizado en `AppointmentLogicService`.
+La arquitectura reactiva está gobernada por **Signals**, inyección funcional `inject()` y un único **Single Source of Truth (SSOT)** centralizado en `AppointmentLogicService` para agendamiento, complementado por `ConfirmacionCitasService` para la gestión diaria.
 
 ---
 
@@ -34,8 +38,8 @@ graph TD
     Shell["app-shell\n(Host MFE)"] -->|Module Federation| Entry["RemoteEntryComponent\n(TabsCollectionComponent)"]
 
     Entry --> Tab1["Paso 1: AgendarCitaComponent\n(Stepper 3 Pasos)"]
-    Entry --> Tab2["Paso 2: CalendarioCitasComponent\n(Grilla Semanal)"]
-    Entry --> Tab3["Paso 3: ListaProfesionalesComponent\n(Catálogo)"]
+    Entry --> Tab2["Paso 2: CalendarioCitasComponent\n(Grilla Semanal Dinámica)"]
+    Entry --> Tab3["Paso 3: ConfirmacionCitasComponent\n(Dashboard Clínico Diario)"]
 
     Tab1 --> Step1["StepCedulaComponent\n(Cédula + API Verify)"]
     Tab1 --> Step2["StepPersonalInfoComponent\n(Indicativo + Celular + PersonalInfoErrorStateMatcher)"]
@@ -46,7 +50,12 @@ graph TD
     Modal -->|Sin Paciente: goToStepper| SSOT
     SSOT -->|setActiveTab AGENDADOR_TABS.FORM| Entry
 
+    Tab3 --> Filtros["FiltrosConfirmacionComponent\n(Pills Fechas Hábiles + Chips Estado)"]
+    Tab3 --> Tabla["TablaConfirmacionComponent\n(Acciones: Confirmar / WhatsApp)"]
+    Tab3 --> ConfService["ConfirmacionCitasService\n(Estado Reactivo Citas Diarias)"]
+
     SSOT -->|REST HTTP| Gateway["API Gateway :3000/api"]
+    ConfService -->|REST HTTP| Gateway
     Gateway -->|RMQ| Backends["Microservicios Backend\n(patients, scheduling, procedures)"]
 ```
 
@@ -112,7 +121,7 @@ El `AppointmentLogicService` es el **único responsable** de la lógica de estad
 export const AGENDADOR_TABS = {
   FORM: 1,
   CALENDAR: 2,
-  PROFESSIONALS: 3,
+  CONFIRMATION: 3,
 } as const;
 
 export type AgendadorTabId = (typeof AGENDADOR_TABS)[keyof typeof AGENDADOR_TABS];
@@ -144,9 +153,14 @@ export interface IBookingContext {
      - **Registro Automático:** Si `isNewPatient()` es `true`, al pulsar "Guardar y Continuar" envía `POST /api/patients` antes de avanzar al paso 3.
   3. **Paso 3 (`app-step-procedure-selection`):** Selección de procedimiento y especialista, disparando `startBookingFlow()` hacia la pestaña del Calendario.
 
-### 5.3 `CalendarioCitasComponent` (Grilla Semanal y Confirmación)
+### 5.3 `CalendarioCitasComponent` (Grilla Semanal Dinámica)
 - **Selector:** `app-calendario-citas`
-- Renderiza la grilla semanal con 14 slots diarios (07:00–19:00, 45 min, receso de almuerzo 12:00–13:00).
+- **Adaptación Dinámica por Especialista (`horarioTrabajo`):**
+  - La grilla semanal lee e interpreta en tiempo real los datos laborales de cada especialista activo (`diasLaborales`, `horaInicio`, `horaFin`, `recesoAlmuerzo`) almacenados en MongoDB Atlas (`profesionalesActivos`).
+  - **Días No Laborables:** Si el especialista no labora un día específico (ej. lunes o miércoles para el Dr. Alejandro Morales), el backend genera 0 slots y la columna en el frontend renderiza la tarjeta distintiva **"No disponible"** con el ícono `event_busy`.
+  - **Jornada Dinámica:** Los slots de 45 minutos se generan estrictamente dentro del intervalo configurado (`horaInicio` a `horaFin`, ej: 07:00 a 15:00 o 09:00 a 16:00).
+  - **Receso de Almuerzo Flexible:** Bloquea dinámicamente la franja configurada (ej: 12:00 a 13:00 o 12:30 a 13:30 con título "Almuerzo"). Si el especialista no tiene receso definido (`recesoAlmuerzo: null`, como la Dra. Valentina Duque), genera turnos continuos sin bloqueo intermedio.
+  - **Deshabilitación de Horarios Pasados:** Los slots pertenecientes al día actual cuya hora ya transcurrió se marcan automáticamente como `BLOCKED_PERSONAL` ("Horario transcurrido").
 - **Separación de Estados de Slots:**
   - **Slots Disponibles (`AVAILABLE`):** Renderizan un botón de acción interactivo con ícono `+` que permite iniciar el proceso de agendamiento.
   - **Slots en Estado Preliminar (`TENTATIVE`):** Renderizan un badge visual distintivo en tonalidad amarilla (`var(--sys-color-tertiary)` / `#ca8a04`), con ícono de reloj (`schedule`), horario, nombre del paciente y nombre del procedimiento médico. Son clickeables para inspección detallada.
@@ -191,6 +205,25 @@ export interface IBookingContext {
     Hola [Nombre], te escribimos de Dras. Botero para confirmar tu cita con el/la Dr(a). [Profesional] el [Fecha]. ¿Nos confirmas tu asistencia con un SÍ?
     ```
 - **Integración con Google Calendar:** Expone `googleCalendarInviteUrl` computado dinámicamente (`render?action=TEMPLATE&text=...&dates=...&details=...&location=...`) para sincronizar el evento en agendas externas.
+
+### 5.5 `ConfirmacionCitasComponent` (Dashboard Clínico de Seguimiento Diario)
+- **Selector:** `app-confirmacion-citas`
+- **Ubicación:** `apps/agendador-citas/src/app/components/confirmacion-citas/`
+- **Servicio Gobernador:** `ConfirmacionCitasService`
+- **Subcomponentes Integrados:**
+  1. **`FiltrosConfirmacionComponent`:**
+     - **Pills de Fechas Rápidas Inteligentes:** Genera una botonera interactiva con los próximos 5 días hábiles continuos calculados mediante `calculateQuickDateOptions()`, omitiendo automáticamente los domingos (`getDay() === 0`) por ser días de descanso clínico. Muestra etiquetas claras en español (ej: `Sábado, 10 oct`, `Lunes, 12 oct`).
+     - **Auto-Reinicio de Fecha:** Mediante un efecto reactivo en `ConfirmacionCitasComponent`, cada vez que el usuario ingresa o conmuta al Tab 3, la fecha se restablece automáticamente a la fecha actual (`getColombiaToday()`) y se ejecuta el llamado por defecto a los datos de la fecha específica.
+     - **Selector de Especialista:** Menú desplegable conectado al catálogo de profesionales activos con opción "Todos los profesionales".
+     - **Chips de Estado:** Filtros rápidos por estado clínico: `Todas`, `Agendadas` (`TENTATIVE`), `Confirmadas` (`CONFIRMED`), `Canceladas` (`CANCELLED`).
+     - **Selector Manual (Datepicker):** Campo de entrada con selector de calendario nativo de Angular Material para consultar fechas históricas o futuras.
+  2. **`TablaConfirmacionComponent`:**
+     - Tabla responsiva basada en Angular Material (`MatTable`) que consume el Signal `filteredAppointments()`.
+     - **Filtrado Reactivo Inmediato:** Cuando el usuario confirma una cita desde la tabla (pulsando "Confirmar"), el servicio actualiza el estado en el backend vía `PATCH /api/appointments/:id/status` y sincroniza el Signal `appointments()`, provocando que el computed `filteredAppointments()` remueva la cita confirmada de la vista "Agendadas" en tiempo real sin requerir recargar la página.
+     - **Acciones Directas:**
+       - **Botón Confirmar:** Cambia el estado a `CONFIRMED` en MongoDB y Google Calendar (color verde `10`).
+       - **Botón Cancelar:** Cambia el estado a `CANCELLED` (color rojo `11`).
+       - **Botón WhatsApp:** Abre una conversación con el paciente incluyendo el mensaje corporativo preconfigurado y registra automáticamente el contacto en el backend (`POST /api/appointments/:id/track-contact`).
 
 ---
 

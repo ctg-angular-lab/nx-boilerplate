@@ -5,10 +5,7 @@ import { PatientsMessageController } from './controllers/patients-message.contro
 
 @Module({
   imports: [
-    MongooseModule.forRoot(
-      process.env.MONGODB_URI ||
-        'mongodb+srv://camilotabares84_db_user:YGer68cNPLDhTrBO@cluster0.fa2lvct.mongodb.net/appointments_db?retryWrites=true&w=majority&appName=Cluster0'
-    ),
+    MongooseModule.forRoot(process.env['MONGODB_URI'] || ''),
     PatientsDomainModule,
   ],
   controllers: [PatientsMessageController],

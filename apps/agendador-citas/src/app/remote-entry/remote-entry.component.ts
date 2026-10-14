@@ -68,7 +68,7 @@ export class RemoteEntryComponent {
       disabled: false,
     },
     {
-      id: AGENDADOR_TABS.PROFESSIONALS,
+      id: AGENDADOR_TABS.CONFIRMATION,
       label: 'Confirmación de Citas',
       icon: 'fact_check',
       disabled: false,

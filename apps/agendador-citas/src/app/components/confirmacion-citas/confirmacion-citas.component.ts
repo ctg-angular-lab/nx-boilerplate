@@ -26,7 +26,7 @@ export class ConfirmacionCitasComponent {
     // Sincronizar el retorno a la pestaña para reiniciar la fecha al día de hoy
     effect(() => {
       const activeTab = this.appointmentLogic.activeTab();
-      if (activeTab === AGENDADOR_TABS.PROFESSIONALS) {
+      if (activeTab === AGENDADOR_TABS.CONFIRMATION) {
         untracked(() => {
           this.confirmacionService.resetToToday();
         });

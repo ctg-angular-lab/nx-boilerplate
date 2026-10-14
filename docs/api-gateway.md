@@ -68,10 +68,10 @@ graph LR
 
 | DTO | Ubicación | Campos | Decoradores clave | Propósito |
 |---|---|---|---|---|
-| `GetAvailableDatesQueryDto` | `src/dtos/` | `procedureId?`, `doctorEmail?`, `targetDate?`, `startDate?`, `endDate?` | `@IsEmail`, `@IsDateString`, `@IsOptional` | Query params para disponibilidad semanal |
+| `GetAvailableDatesQueryDto` | `src/dtos/` | `procedureId?`, `doctorEmail?`, `doctorCedula?`, `targetDate?`, `startDate?`, `endDate?` | `@IsEmail`, `@IsString`, `@IsDateString`, `@IsOptional` | Query params para disponibilidad semanal con soporte de resolución por cédula |
 | `GetDailyAppointmentsQueryDto` | `@nx-boilerplate/shared-dtos` | `date`, `doctorEmail?`, `status?` | `@IsDateString`, `@IsNotEmpty`, `@IsEmail`, `@IsEnum`, `@IsOptional` | Query params para consultar citas del día |
 | `CreateAppointmentBodyDto` | `src/dtos/` | `doctorEmail`, `doctorCedula`, `patientNationalId`, `patientFullName`, `patientEmail`, `patientPhone?`, `procedureId`, `procedureName`, `startTime`, `endTime`, `notes?` | `@IsEmail`, `@IsISO8601`, `@IsNotEmpty`, `@IsOptional` | Payload de creación de cita con teléfono para confirmación |
-| `UpdateAppointmentStatusDto` | `@nx-boilerplate/shared-dtos` | `appointmentId?`, `status` | `@IsEnum(['CONFIRMED', 'CANCELLED'])`, `@IsOptional` | Payload de actualización de estado de cita |
+| `UpdateAppointmentStatusDto` | `@nx-boilerplate/shared-dtos` | `id?`, `appointmentId?`, `status` | `@IsEnum(['CONFIRMED', 'CANCELLED'])`, `@IsOptional` | Payload de actualización de estado; tolera identificadores opcionales para evitar rechazos por whitelist |
 | `TrackContactDto` | `@nx-boilerplate/shared-dtos` | `appointmentId` | `@IsString`, `@IsNotEmpty` | Validación de ID para registrar contacto con paciente |
 | `CreateWaitlistBodyDto` | `src/dtos/` | `patientNationalId`, `patientFullName`, `patientEmail`, `patientPhone`, `procedureId`, `preferredDoctorEmail?` | `@IsEmail`, `@IsNotEmpty` | Payload de inscripción a lista de espera |
 | `FindPatientByNationalIdDto` | `@nx-boilerplate/shared-dtos` | `nationalId` | `@IsString`, `@IsNotEmpty` | Parámetro de ruta para consultar paciente |
@@ -138,9 +138,16 @@ Consulta la lista consolidada de citas programadas para una fecha determinada (`
 
 Consulta la disponibilidad semanal de un médico mediante `events.list` y la regla de **Veto del Médico** (descartando citas canceladas o declinadas por el doctor). Si no se envían `startDate`/`endDate`, el Gateway calcula automáticamente la ventana de la **semana actual en Colombia** usando `getWeekWindow(0)` de `@nx-boilerplate/utils`.
 
+**Resolución Dinámica de Horario Laboral (`horarioTrabajo`):**
+A partir de `doctorCedula` o `doctorEmail`, el microservicio de agendamiento (`scheduling-service`) consulta el documento del especialista en la colección `profesionalesActivos` (MongoDB Atlas) para aplicar sus reglas laborales individuales:
+- **`diasLaborales`:** Si el día de la semana no pertenece a los días laborales del profesional (ej. Dr. Alejandro Morales solo atiende `MARTES, JUEVES, SABADO`), el backend genera `slots: []` y marca el día como no disponible para reservas.
+- **`horaInicio` y `horaFin`:** Delimita dinámicamente la generación de turnos (ej. 07:00 a 15:00 o 08:00 a 17:00).
+- **`recesoAlmuerzo`:** Si está definido con `inicio` y `fin`, bloquea automáticamente los slots coincidentes (`status: BLOCKED_PERSONAL`, `title: 'Almuerzo'`); si es `null` o inexistente, no aplica bloqueo de almuerzo.
+
 | Parámetro Query | Tipo | Requerido | Descripción |
 |---|---|---|---|
 | `doctorEmail` | `string (email)` | No | Correo del médico para filtrar disponibilidad |
+| `doctorCedula` | `string` | No | Cédula del especialista para resolver con exactitud su jornada en MongoDB Atlas |
 | `procedureId` | `string` | No | ID del procedimiento para calcular duración de slot |
 | `startDate` | `string (YYYY-MM-DD)` | No | Inicio del rango (default: lunes de la semana actual) |
 | `endDate` | `string (YYYY-MM-DD)` | No | Fin del rango (default: sábado de la semana actual) |
@@ -460,11 +467,18 @@ Si el payload contiene un campo `message: string`, se usa ese texto como mensaje
 
 ### `RpcExceptionFilter` (Global)
 
-Captura `RpcException` lanzadas por los microservicios downstream y las convierte en respuestas HTTP estructuradas con el código de error apropiado.
+Filtro central de captura de errores para desacoplar el transporte RPC de la capa HTTP:
+- Captura instancias de `RpcException` emitidas por microservicios RabbitMQ (`scheduling-service`, `patients-service`, `procedures-service`).
+- Extrae de forma segura el mensaje de error subyacente (manejando tanto cadenas simples como objetos `{ message, statusCode }` o instancias de error serializadas).
+- Mapea de forma inteligente los mensajes de error a los códigos HTTP correspondientes:
+  - `404 Not Found`: Si el mensaje indica recurso inexistente ("no encontrado", "not found").
+  - `400 Bad Request`: Si el mensaje corresponde a reglas de negocio, validación de horario ("fuera de la jornada", "no labora los días", "ya no se encuentra disponible").
+  - `500 Internal Server Error`: Errores de infraestructura no clasificados.
+- Genera la respuesta en el formato unificado `IApiResponse` con `{ success: false, statusCode, message, data: null }`.
 
 ### `ValidationPipe` (Global)
 
-Configurado con `{ whitelist: true, forbidNonWhitelisted: true, transform: true }`. Aplica validación automática en todos los endpoints usando los DTOs decorados con `class-validator`.
+Configurado con `{ whitelist: true, forbidNonWhitelisted: true, transform: true }`. Aplica validación automática estricta en todos los endpoints usando los DTOs decorados con `class-validator`. Rechaza payloads que contengan propiedades no declaradas en el DTO correspondiente.
 
 ---
 

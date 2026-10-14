@@ -89,7 +89,7 @@ export class TablaCitasComponent {
     const cleanPhone = rawPhone.length === 10 ? `57${rawPhone}` : rawPhone;
     const patientName = cita.patientFullName || 'Estimado paciente';
     const message = encodeURIComponent(
-      `Hola ${patientName}, te contactamos de la clínica para coordinar tu cita de ${cita.procedureName}. ¿Confirmas tu asistencia?`
+      `Hola ${patientName}, te contactamos del consultorio Dras. Botero para confirmar tu cita de ${cita.procedureName}. ¿Confirmas tu asistencia?`
     );
     const waUrl = cleanPhone
       ? `https://wa.me/${cleanPhone}?text=${message}`

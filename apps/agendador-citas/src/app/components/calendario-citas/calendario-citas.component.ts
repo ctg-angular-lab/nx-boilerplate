@@ -255,7 +255,7 @@ export class CalendarioCitasComponent {
 
       dialogRef.afterClosed().subscribe((result) => {
         if (result?.goToConfirmationTab) {
-          this.appointmentLogic.setActiveTab(AGENDADOR_TABS.PROFESSIONALS);
+          this.appointmentLogic.setActiveTab(AGENDADOR_TABS.CONFIRMATION);
         }
       });
       return;

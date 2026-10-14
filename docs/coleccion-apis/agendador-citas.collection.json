@@ -332,7 +332,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/appointments/available-dates?procedureId=PROC-EST-001&doctorEmail=camilotabares.portafolio@gmail.com&startDate=2026-09-28&endDate=2026-10-03",
+              "raw": "{{baseUrl}}/api/appointments/available-dates?procedureId=PROC-EST-001&doctorEmail=camilotabares.portafolio@gmail.com&doctorCedula=1020304050&startDate=2026-09-28&endDate=2026-10-03",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -353,6 +353,11 @@
                   "description": "Correo de Google Calendar del médico"
                 },
                 {
+                  "key": "doctorCedula",
+                  "value": "1020304050",
+                  "description": "Cédula del médico especialista para resolución exacta de horarioTrabajo dinámico en MongoDB Atlas"
+                },
+                {
                   "key": "startDate",
                   "value": "2026-09-28",
                   "description": "Inicio de la ventana semanal (YYYY-MM-DD)"
@@ -364,7 +369,7 @@
                 }
               ]
             },
-            "description": "Paso 4 (Recomendado): Consulta optimizada en una sola llamada de red a Google Calendar para toda la semana. Retorna los días organizados con sus slots disponibles."
+            "description": "Paso 4 (Recomendado): Consulta semanal optimizada. Resuelve en tiempo real el horarioTrabajo dinámico del especialista (diasLaborales, horaInicio, horaFin, recesoAlmuerzo) en MongoDB Atlas y cruza con Google Calendar. Retorna los días organizados con sus slots disponibles y marca los días no laborables con lista vacía de slots."
           }
         },
         {
@@ -378,7 +383,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/appointments/available-dates?doctorEmail=camilotabares.portafolio@gmail.com",
+              "raw": "{{baseUrl}}/api/appointments/available-dates?doctorEmail=camilotabares.portafolio@gmail.com&doctorCedula=1020304050",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -392,10 +397,15 @@
                   "key": "doctorEmail",
                   "value": "camilotabares.portafolio@gmail.com",
                   "description": "Correo del médico (calcula automáticamente la ventana laboral de la semana actual)"
+                },
+                {
+                  "key": "doctorCedula",
+                  "value": "1020304050",
+                  "description": "Cédula del médico (opcional, para resolución exacta de jornada laboral)"
                 }
               ]
             },
-            "description": "Consulta de agenda general del médico sin procedimiento. El API Gateway calcula dinámicamente el rango desde hoy hasta el próximo sábado laboral."
+            "description": "Consulta de agenda general del médico sin procedimiento. Resuelve el horario laboral del especialista en MongoDB Atlas y calcula dinámicamente el rango semanal actual."
           }
         },
         {
