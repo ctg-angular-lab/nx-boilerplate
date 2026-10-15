@@ -1,3 +1,12 @@
+export type ExceptionScheduleType = 'EXTRA_SHIFT' | 'DAY_OFF';
+
+export interface IExceptionSchedule {
+  fecha: string; // YYYY-MM-DD
+  horaInicio: string; // HH:mm
+  horaFin: string; // HH:mm
+  tipo: ExceptionScheduleType;
+}
+
 export interface IWorkSchedule {
   diasLaborales: string[];
   horaInicio: string;
@@ -16,6 +25,8 @@ export interface IActiveProfessional {
   profesion: string;
   procedimientosRelacionados?: string[];
   horarioTrabajo: IWorkSchedule;
+  isActive: boolean;
+  horariosExcepcionales?: IExceptionSchedule[];
 }
 
 export type IProfessionalSummary = Pick<
