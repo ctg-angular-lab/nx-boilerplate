@@ -198,3 +198,32 @@ export class PublicProfessionalDto {
   @Type(() => WorkScheduleDto)
   horarioTrabajo!: WorkScheduleDto;
 }
+
+export class DoctorCedulaPayloadDto {
+  @IsString({ message: 'La cédula debe ser una cadena de texto' })
+  @IsNotEmpty({ message: 'La cédula es obligatoria' })
+  cedula!: string;
+}
+
+export class UpdateDoctorMessageDto {
+  @IsString({ message: 'La cédula debe ser una cadena de texto' })
+  @IsNotEmpty({ message: 'La cédula es obligatoria' })
+  cedula!: string;
+
+  @IsObject({ message: 'Los datos de actualización deben ser un objeto' })
+  @ValidateNested()
+  @Type(() => UpdateProfessionalDto)
+  @IsNotEmpty({ message: 'Los datos a actualizar son obligatorios' })
+  data!: UpdateProfessionalDto;
+}
+
+export class UpdateDoctorScheduleMessageDto {
+  @IsString({ message: 'La cédula debe ser una cadena de texto' })
+  @IsNotEmpty({ message: 'La cédula es obligatoria' })
+  cedula!: string;
+
+  @IsArray({ message: 'Las excepciones deben ser una lista' })
+  @ValidateNested({ each: true })
+  @Type(() => ExceptionScheduleDto)
+  exceptions!: ExceptionScheduleDto[];
+}
