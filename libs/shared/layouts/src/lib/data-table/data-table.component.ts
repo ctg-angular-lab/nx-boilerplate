@@ -40,8 +40,8 @@ import { TableActionDef, TableColumnDef } from '../models/data-table.models';
 })
 export class DataTableComponent<T extends Record<string, any>> {
   // Inputs
-  readonly data = input.required<T[]>();
-  readonly columns = input.required<TableColumnDef<T>[]>();
+  readonly dataTable = input<T[]>([]);
+  readonly dataColumn = input<TableColumnDef<T>[]>([]);
   readonly actions = input<TableActionDef<T>[]>([]);
   readonly loading = input<boolean>(false);
   readonly pageSizeOptions = input<number[]>([5, 10, 25, 50]);
@@ -71,7 +71,7 @@ export class DataTableComponent<T extends Record<string, any>> {
   readonly displayedColumns = computed(() => {
     const cols: string[] = [];
     if (this.selectable()) cols.push('__select__');
-    cols.push(...this.columns().map((c) => c.field));
+    cols.push(...this.dataColumn().map((c) => c.field));
     if (this.actions().length > 0) cols.push('__actions__');
     return cols;
   });
@@ -79,7 +79,7 @@ export class DataTableComponent<T extends Record<string, any>> {
   constructor() {
     // Sincronización reactiva en effect() estricto (Side-effect seguro)
     effect(() => {
-      this.dataSource.data = this.data();
+      this.dataSource.data = this.dataTable();
     });
 
     afterNextRender(() => {
