@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
+import { Connection, Model, ClientSession } from 'mongoose';
 import { IActiveProfessional, IProcedure, IAreaCode } from '@nx-boilerplate/api-interfaces';
 import { Procedure, ProcedureDocument } from '../schemas/procedure.schema';
 import { AreaCode, AreaCodeDocument } from '../schemas/area-code.schema';
@@ -17,8 +17,14 @@ export class ProceduresRepository {
     @InjectModel(ActiveProfessional.name)
     private readonly professionalModel: Model<ActiveProfessionalDocument>,
     @InjectModel(AreaCode.name)
-    private readonly areaCodeModel: Model<AreaCodeDocument>
+    private readonly areaCodeModel: Model<AreaCodeDocument>,
+    @InjectConnection()
+    private readonly connection: Connection
   ) {}
+
+  getConnection(): Connection {
+    return this.connection;
+  }
 
   async findAll(): Promise<IProcedure[]> {
     return this.procedureModel
@@ -46,17 +52,80 @@ export class ProceduresRepository {
 
   async findDoctorsByCedulas(cedulas: string[]): Promise<IActiveProfessional[]> {
     return this.professionalModel
-      .find({ cedula: { $in: cedulas } })
+      .find({ cedula: { $in: cedulas }, isActive: { $ne: false } })
       .select('-_id -__v -createdAt -updatedAt')
       .lean<IActiveProfessional[]>()
       .exec();
   }
 
-  async findAllDoctors(): Promise<IActiveProfessional[]> {
+  async findAllDoctors(includeInactive = false): Promise<IActiveProfessional[]> {
+    const filter = includeInactive ? {} : { isActive: { $ne: false } };
     return this.professionalModel
-      .find()
+      .find(filter)
       .select('-_id -__v -createdAt -updatedAt')
       .lean<IActiveProfessional[]>()
+      .exec();
+  }
+
+  async createProfessional(
+    data: Partial<ActiveProfessional>,
+    session?: ClientSession
+  ): Promise<ActiveProfessionalDocument> {
+    const [created] = await this.professionalModel.create([data], { session });
+    return created;
+  }
+
+  async findProfessionalByCedula(
+    cedula: string,
+    session?: ClientSession
+  ): Promise<ActiveProfessionalDocument | null> {
+    return this.professionalModel
+      .findOne({ cedula })
+      .session(session || null)
+      .exec();
+  }
+
+  async updateProfessional(
+    cedula: string,
+    data: Partial<ActiveProfessional>,
+    session?: ClientSession
+  ): Promise<ActiveProfessionalDocument | null> {
+    return this.professionalModel
+      .findOneAndUpdate(
+        { cedula },
+        { $set: data },
+        { new: true, session, runValidators: true }
+      )
+      .exec();
+  }
+
+  async pullDoctorFromProcedures(
+    procedureIds: string[],
+    doctorCedula: string,
+    session?: ClientSession
+  ): Promise<void> {
+    if (!procedureIds || procedureIds.length === 0) return;
+    await this.procedureModel
+      .updateMany(
+        { idProcedimiento: { $in: procedureIds } },
+        { $pull: { medicosRelacionados: doctorCedula } },
+        { session }
+      )
+      .exec();
+  }
+
+  async addDoctorToProcedures(
+    procedureIds: string[],
+    doctorCedula: string,
+    session?: ClientSession
+  ): Promise<void> {
+    if (!procedureIds || procedureIds.length === 0) return;
+    await this.procedureModel
+      .updateMany(
+        { idProcedimiento: { $in: procedureIds } },
+        { $addToSet: { medicosRelacionados: doctorCedula } },
+        { session }
+      )
       .exec();
   }
 
