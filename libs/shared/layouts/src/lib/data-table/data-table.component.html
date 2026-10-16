@@ -3,6 +3,10 @@
     <mat-progress-bar mode="indeterminate" class="table-loader" />
   }
 
+  <header class="table-header-slot">
+    <ng-content select="[table-header], [tableHeader]" />
+  </header>
+
   <div class="table-container">
     <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortChange.emit($event)">
       <!-- Checkbox Column -->
@@ -28,7 +32,7 @@
       }
 
       <!-- Dynamic Data Columns -->
-      @for (col of columns(); track col.field) {
+      @for (col of dataColumn(); track col.field) {
         <ng-container [matColumnDef]="col.field">
           <th
             mat-header-cell
@@ -69,6 +73,7 @@
                     mat-icon-button
                     type="button"
                     [matTooltip]="act.label"
+                    [attr.data-color]="act.color || null"
                     [disabled]="act.disabled?.(row)"
                     (click)="onActionClick($event, act.id, row)"
                   >

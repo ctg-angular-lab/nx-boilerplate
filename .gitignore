@@ -51,3 +51,10 @@ vitest.config.*.timestamp*
 .env
 .env.*
 !.env.example
+
+# Credentials & Service Account Secrets
+clinica-citas-backend-*.json
+*credentials*.json
+*service-account*.json
+*.key.json
+.secrets/

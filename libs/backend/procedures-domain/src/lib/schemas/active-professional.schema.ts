@@ -1,6 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
-import { IActiveProfessional, IWorkSchedule } from '@nx-boilerplate/api-interfaces';
+import {
+  IActiveProfessional,
+  IExceptionSchedule,
+  IWorkSchedule,
+} from '@nx-boilerplate/api-interfaces';
 
 export type ActiveProfessionalDocument = HydratedDocument<ActiveProfessional>;
 
@@ -41,6 +45,23 @@ export class ActiveProfessional implements IActiveProfessional {
     required: true,
   })
   horarioTrabajo!: IWorkSchedule;
+
+  @Prop({ type: Boolean, default: true, index: true })
+  isActive!: boolean;
+
+  @Prop({
+    type: [
+      {
+        fecha: { type: String, required: true },
+        horaInicio: { type: String, required: true },
+        horaFin: { type: String, required: true },
+        tipo: { type: String, required: true, enum: ['EXTRA_SHIFT', 'DAY_OFF'] },
+      },
+    ],
+    default: [],
+    _id: false,
+  })
+  horariosExcepcionales!: IExceptionSchedule[];
 }
 
 export const ActiveProfessionalSchema = SchemaFactory.createForClass(ActiveProfessional);

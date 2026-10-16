@@ -7,7 +7,7 @@ export interface TableColumnDef<T = Record<string, unknown>> {
   align?: 'left' | 'center' | 'right';
   width?: string;
   formatter?: (row: T) => string | number;
-  cellTemplate?: TemplateRef<{ $implicit: T; field: string }>;
+  cellTemplate?: TemplateRef<{ $implicit: T; field?: string }>;
 }
 
 export interface TableActionDef<T = Record<string, unknown>> {

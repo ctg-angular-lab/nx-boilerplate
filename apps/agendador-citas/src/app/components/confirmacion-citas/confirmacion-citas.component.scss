@@ -4,3 +4,118 @@
   gap: 1.5rem;
   width: 100%;
 }
+
+.patient-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  &__name {
+    font-weight: 600;
+    color: var(--sys-color-on-surface);
+    font-size: 0.875rem;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+}
+
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--sys-color-on-surface-variant);
+}
+
+.meta-icon {
+  font-size: 0.875rem;
+}
+
+.procedure-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  &__title {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--sys-color-on-surface);
+  }
+
+  &__doctor {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--sys-color-on-surface-variant);
+  }
+}
+
+.time-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 0.5rem;
+  background: var(--sys-color-surface-container);
+
+  .time-icon {
+    font-size: 1rem;
+    color: var(--sys-color-primary);
+  }
+
+  .time-text {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--sys-color-on-surface);
+  }
+}
+
+.whatsapp-btn {
+  background: #25d366;
+  color: #ffffff;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0 0.875rem;
+  height: 32px;
+  line-height: 32px;
+
+  .wa-icon {
+    font-size: 1rem;
+  }
+
+  &:hover {
+    background: #1ebc59;
+  }
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &--tentative {
+    background: var(--sys-color-tertiary-container, #fef3c7);
+    color: var(--sys-color-on-tertiary-container, #92400e);
+  }
+  &--confirmed {
+    background: var(--sys-color-primary-container, #d1fae5);
+    color: var(--sys-color-on-primary-container, #065f46);
+  }
+  &--cancelled {
+    background: var(--sys-color-error-container, #fee2e2);
+    color: var(--sys-color-on-error-container, #991b1b);
+  }
+}

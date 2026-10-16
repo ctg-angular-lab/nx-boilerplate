@@ -1,23 +1,97 @@
 <div class="confirmacion-citas-container">
-  <!-- Toolbar de Filtros -->
-  <app-filtros-confirmacion
-    [selectedDate]="confirmacionService.selectedDate()"
-    [selectedStatus]="confirmacionService.selectedStatus()"
-    [selectedDoctorEmail]="confirmacionService.selectedDoctorEmail()"
-    [searchQuery]="confirmacionService.searchQuery()"
-    [summaryStats]="confirmacionService.summaryStats()"
-    [professionals]="appointmentLogic.availableProfessionals()"
-    (dateChange)="confirmacionService.setSelectedDate($event)"
-    (statusChange)="confirmacionService.setSelectedStatus($event)"
-    (doctorChange)="confirmacionService.setSelectedDoctorEmail($event)"
-    (searchChange)="confirmacionService.setSearchQuery($event)"
-  />
+  <lib-data-table
+    [dataTable]="confirmacionService.filteredAppointments()"
+    [dataColumn]="columns()"
+    [actions]="tableActions"
+    [loading]="confirmacionService.isLoadingDashboard()"
+    (actionClick)="onTableAction($event)"
+    emptyMessage="No hay citas registradas para los filtros y fecha seleccionados."
+  >
+    <!-- Filtros proyectados en el Header dinámico de la tabla -->
+    <app-filtros-confirmacion
+      table-header
+      [selectedDate]="confirmacionService.selectedDate()"
+      [selectedStatus]="confirmacionService.selectedStatus()"
+      [selectedDoctorEmail]="confirmacionService.selectedDoctorEmail()"
+      [searchQuery]="confirmacionService.searchQuery()"
+      [summaryStats]="confirmacionService.summaryStats()"
+      [professionals]="appointmentLogic.availableProfessionals()"
+      (dateChange)="confirmacionService.setSelectedDate($event)"
+      (statusChange)="confirmacionService.setSelectedStatus($event)"
+      (doctorChange)="confirmacionService.setSelectedDoctorEmail($event)"
+      (searchChange)="confirmacionService.setSearchQuery($event)"
+    />
 
-  <!-- Tabla de Citas -->
-  <app-tabla-citas
-    [appointments]="confirmacionService.filteredAppointments()"
-    [isLoading]="confirmacionService.isLoadingDashboard()"
-    (statusChange)="onStatusChange($event)"
-    (trackContact)="onTrackContact($event)"
-  />
+    <!-- Template: Paciente -->
+    <ng-template #pacienteTpl let-cita>
+      <div class="patient-cell">
+        <span class="patient-cell__name">{{ cita.patientFullName }}</span>
+        <div class="patient-cell__meta">
+          <span class="meta-item">
+            <span class="material-symbols-outlined meta-icon">badge</span>
+            CC: {{ cita.patientNationalId }}
+          </span>
+          @if (cita.patientPhone) {
+            <span class="meta-item">
+              <span class="material-symbols-outlined meta-icon">phone</span>
+              {{ cita.patientPhone }}
+            </span>
+          }
+        </div>
+      </div>
+    </ng-template>
+
+    <!-- Template: Procedimiento -->
+    <ng-template #procedimientoTpl let-cita>
+      <div class="procedure-cell">
+        <span class="procedure-cell__title">{{ cita.procedureName }}</span>
+        <span class="procedure-cell__doctor">
+          <span class="material-symbols-outlined meta-icon">medical_services</span>
+          {{ cita.doctorEmail }}
+        </span>
+      </div>
+    </ng-template>
+
+    <!-- Template: Horario -->
+    <ng-template #horaTpl let-cita>
+      <div class="time-cell">
+        <span class="material-symbols-outlined time-icon">schedule</span>
+        <span class="time-text">{{ formatHour(cita.startTime) }}</span>
+      </div>
+    </ng-template>
+
+    <!-- Template: WhatsApp -->
+    <ng-template #whatsappTpl let-cita>
+      <button
+        type="button"
+        mat-flat-button
+        class="whatsapp-btn"
+        [matBadge]="cita.contactCount"
+        [matBadgeHidden]="!cita.contactCount"
+        matBadgeColor="primary"
+        matBadgeSize="small"
+        (click)="onWhatsAppClick(cita)"
+        matTooltip="Enviar mensaje por WhatsApp y registrar contacto"
+      >
+        <span class="material-symbols-outlined wa-icon">chat</span>
+        <span>Contactar</span>
+      </button>
+    </ng-template>
+
+    <!-- Template: Estado -->
+    <ng-template #estadoTpl let-cita>
+      <span
+        class="status-chip"
+        [class.status-chip--tentative]="cita.status === 'TENTATIVE'"
+        [class.status-chip--confirmed]="cita.status === 'CONFIRMED'"
+        [class.status-chip--cancelled]="cita.status === 'CANCELLED'"
+      >
+        @switch (cita.status) {
+          @case ('CONFIRMED') { Confirmada }
+          @case ('CANCELLED') { Cancelada }
+          @default { Agendada }
+        }
+      </span>
+    </ng-template>
+  </lib-data-table>
 </div>
