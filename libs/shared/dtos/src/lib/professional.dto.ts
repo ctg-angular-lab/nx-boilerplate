@@ -167,10 +167,17 @@ export class UpdateProfessionalDto {
 }
 
 export class UpdateScheduleExceptionsDto {
+  @IsOptional()
   @IsArray({ message: 'Las excepciones deben ser una lista' })
   @ValidateNested({ each: true })
   @Type(() => ExceptionScheduleDto)
-  horariosExcepcionales!: ExceptionScheduleDto[];
+  horariosExcepcionales?: ExceptionScheduleDto[];
+
+  @IsOptional()
+  @IsArray({ message: 'Las excepciones deben ser una lista' })
+  @ValidateNested({ each: true })
+  @Type(() => ExceptionScheduleDto)
+  exceptions?: ExceptionScheduleDto[];
 }
 
 /**
