@@ -6,6 +6,13 @@
   "projectType": "library",
   "tags": ["scope:shared", "type:ui"],
   "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": ["{workspaceRoot}/coverage/libs/shared/layouts"],
+      "options": {
+        "config": "libs/shared/layouts/vite.config.mts"
+      }
+    },
     "lint": {
       "executor": "@nx/eslint:lint"
     }
