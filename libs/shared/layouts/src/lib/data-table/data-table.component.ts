@@ -8,6 +8,7 @@ import {
   effect,
   afterNextRender,
   computed,
+  TemplateRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
@@ -49,16 +50,25 @@ export class DataTableComponent<T extends Record<string, any>> {
   readonly totalElements = input<number | null>(null);
   readonly emptyMessage = input<string>('No se encontraron registros.');
 
+  // Expanded Row (opcional, deshabilitado por defecto)
+  readonly expandable = input<boolean>(false);
+  /** Campo con valor único y estable por fila (ej. 'cedula'). La expansión se compara por clave, no por referencia. */
+  readonly rowKey = input<string>('id');
+  readonly detailTemplate = input<TemplateRef<{ $implicit: T }> | null>(null);
+
   // Models (Two-Way Binding)
   readonly pageSize = model<number>(10);
   readonly pageIndex = model<number>(0);
   readonly selectedRows = model<T[]>([]);
+  /** Clave de la fila expandida (una a la vez). */
+  readonly expandedKey = model<unknown | null>(null);
 
   // Outputs
   readonly rowClick = output<T>();
   readonly actionClick = output<{ action: string; row: T }>();
   readonly sortChange = output<Sort>();
   readonly pageChange = output<PageEvent>();
+  readonly rowExpand = output<T | null>();
 
   // Queries
   private readonly paginator = viewChild<MatPaginator>(MatPaginator);
@@ -76,6 +86,9 @@ export class DataTableComponent<T extends Record<string, any>> {
     return cols;
   });
 
+  // Columna única de la fila de detalle (Expanded Row)
+  readonly detailColumns = ['__detail__'];
+
   constructor() {
     // Sincronización reactiva en effect() estricto (Side-effect seguro)
     effect(() => {
@@ -92,6 +105,16 @@ export class DataTableComponent<T extends Record<string, any>> {
 
   onRowClick(row: T): void {
     this.rowClick.emit(row);
+    if (!this.expandable()) return;
+
+    const key = row[this.rowKey()];
+    const isSame = this.expandedKey() === key;
+    this.expandedKey.set(isSame ? null : key);
+    this.rowExpand.emit(isSame ? null : row);
+  }
+
+  isExpanded(row: T): boolean {
+    return this.expandable() && this.expandedKey() === row[this.rowKey()];
   }
 
   onActionClick(event: Event, action: string, row: T): void {

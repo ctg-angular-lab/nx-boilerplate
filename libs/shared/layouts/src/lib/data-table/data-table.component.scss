@@ -60,6 +60,46 @@ table {
     &.selected-row {
       background-color: var(--sys-color-surface-container-high);
     }
+
+    &.expanded-row {
+      background-color: var(--sys-color-surface-container);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--sys-color-primary);
+      outline-offset: -2px;
+    }
+  }
+
+  tr.detail-row {
+    height: 0;
+
+    td.detail-cell {
+      padding: 0;
+      border-bottom: none;
+    }
+  }
+
+  .detail-wrapper {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.25s ease;
+    background-color: var(--sys-color-surface-container-low);
+
+    &.expanded {
+      grid-template-rows: 1fr;
+      border-bottom: 1px solid var(--sys-color-outline-variant);
+    }
+
+    .detail-inner {
+      overflow: hidden;
+      min-height: 0;
+      padding: 0 16px;
+    }
+
+    &.expanded .detail-inner {
+      padding: 16px;
+    }
   }
 
   .checkbox-cell {

@@ -8,7 +8,13 @@
   </header>
 
   <div class="table-container">
-    <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortChange.emit($event)">
+    <table
+      mat-table
+      multiTemplateDataRows
+      [dataSource]="dataSource"
+      matSort
+      (matSortChange)="sortChange.emit($event)"
+    >
       <!-- Checkbox Column -->
       @if (selectable()) {
         <ng-container matColumnDef="__select__">
@@ -86,6 +92,21 @@
         </ng-container>
       }
 
+      <!-- Expanded Row Detail Column -->
+      @if (expandable()) {
+        <ng-container matColumnDef="__detail__">
+          <td mat-cell *matCellDef="let row" class="detail-cell" [attr.colspan]="displayedColumns().length">
+            <div class="detail-wrapper" [class.expanded]="isExpanded(row)">
+              <div class="detail-inner">
+                @if (isExpanded(row) && detailTemplate(); as tpl) {
+                  <ng-container *ngTemplateOutlet="tpl; context: { $implicit: row }" />
+                }
+              </div>
+            </div>
+          </td>
+        </ng-container>
+      }
+
       <!-- Headers and Rows -->
       <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
       <tr
@@ -93,8 +114,16 @@
         *matRowDef="let row; columns: displayedColumns()"
         class="table-row"
         [class.selected-row]="isRowSelected(row)"
+        [class.expanded-row]="isExpanded(row)"
+        [attr.aria-expanded]="expandable() ? isExpanded(row) : null"
+        [attr.tabindex]="expandable() ? 0 : null"
         (click)="onRowClick(row)"
+        (keydown.enter)="expandable() && onRowClick(row)"
+        (keydown.space)="expandable() && $event.preventDefault(); expandable() && onRowClick(row)"
       ></tr>
+      @if (expandable()) {
+        <tr mat-row *matRowDef="let row; columns: detailColumns" class="detail-row"></tr>
+      }
 
       <!-- Empty State -->
       <tr class="mat-row empty-row" *matNoDataRow>
