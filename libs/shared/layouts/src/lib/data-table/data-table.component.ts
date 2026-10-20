@@ -10,13 +10,12 @@ import {
   computed,
   TemplateRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { TableActionDef, TableColumnDef } from '../models/data-table.models';
@@ -25,13 +24,12 @@ import { TableActionDef, TableColumnDef } from '../models/data-table.models';
   selector: 'lib-data-table',
   standalone: true,
   imports: [
-    CommonModule,
+    NgTemplateOutlet,
     MatTableModule,
     MatPaginatorModule,
     MatSortModule,
     MatProgressBarModule,
     MatButtonModule,
-    MatIconModule,
     MatTooltipModule,
     MatCheckboxModule,
   ],
@@ -49,10 +47,11 @@ export class DataTableComponent<T extends Record<string, any>> {
   readonly selectable = input<boolean>(false);
   readonly totalElements = input<number | null>(null);
   readonly emptyMessage = input<string>('No se encontraron registros.');
+  readonly density = input<'default' | 'compact'>('default');
 
-  // Expanded Row (opcional, deshabilitado por defecto)
+  // Expanded Row
   readonly expandable = input<boolean>(false);
-  /** Campo con valor único y estable por fila (ej. 'cedula'). La expansión se compara por clave, no por referencia. */
+  /** Campo con valor único y estable por fila (ej. 'id', 'cedula'). */
   readonly rowKey = input<string>('id');
   readonly detailTemplate = input<TemplateRef<{ $implicit: T }> | null>(null);
 
@@ -60,12 +59,13 @@ export class DataTableComponent<T extends Record<string, any>> {
   readonly pageSize = model<number>(10);
   readonly pageIndex = model<number>(0);
   readonly selectedRows = model<T[]>([]);
-  /** Clave de la fila expandida (una a la vez). */
+  readonly selectedKeys = model<unknown[]>([]);
   readonly expandedKey = model<unknown | null>(null);
 
   // Outputs
   readonly rowClick = output<T>();
   readonly actionClick = output<{ action: string; row: T }>();
+  readonly selectionChange = output<T[]>();
   readonly sortChange = output<Sort>();
   readonly pageChange = output<PageEvent>();
   readonly rowExpand = output<T | null>();
@@ -74,10 +74,10 @@ export class DataTableComponent<T extends Record<string, any>> {
   private readonly paginator = viewChild<MatPaginator>(MatPaginator);
   private readonly sort = viewChild<MatSort>(MatSort);
 
-  // Instancia de DataSource de Material
+  // DataSource
   readonly dataSource = new MatTableDataSource<T>();
 
-  // Columnas a renderizar (computadas de forma pura)
+  // Columnas computadas
   readonly displayedColumns = computed(() => {
     const cols: string[] = [];
     if (this.selectable()) cols.push('__select__');
@@ -86,13 +86,34 @@ export class DataTableComponent<T extends Record<string, any>> {
     return cols;
   });
 
-  // Columna única de la fila de detalle (Expanded Row)
   readonly detailColumns = ['__detail__'];
 
   constructor() {
-    // Sincronización reactiva en effect() estricto (Side-effect seguro)
     effect(() => {
-      this.dataSource.data = this.dataTable();
+      const data = this.dataTable();
+      this.dataSource.data = data;
+
+      // C5: Reconciliación inmutable de selección ante reemplazo de referencias
+      const keySet = new Set(this.selectedKeys());
+      if (keySet.size > 0) {
+        const matched = data.filter((row) => keySet.has(this.getRowKeyValue(row)));
+        this.selectedRows.set(matched);
+        this.selectionChange.emit(matched);
+      } else if (this.selectedRows().length > 0) {
+        // Retrocompatibilidad con consumidores que inicializan selectedRows
+        const inferredKeys = this.selectedRows().map((row) => this.getRowKeyValue(row));
+        this.selectedKeys.set(inferredKeys);
+      }
+
+      // C6: Reinicio seguro del paginador si queda fuera de rango
+      const p = this.dataSource.paginator;
+      if (p) {
+        const maxPageIndex = Math.max(0, Math.ceil(data.length / p.pageSize) - 1);
+        if (p.pageIndex > maxPageIndex) {
+          p.firstPage();
+          this.pageIndex.set(0);
+        }
+      }
     });
 
     afterNextRender(() => {
@@ -103,18 +124,22 @@ export class DataTableComponent<T extends Record<string, any>> {
     });
   }
 
+  getRowKeyValue(row: T): unknown {
+    return row[this.rowKey()];
+  }
+
   onRowClick(row: T): void {
     this.rowClick.emit(row);
     if (!this.expandable()) return;
 
-    const key = row[this.rowKey()];
+    const key = this.getRowKeyValue(row);
     const isSame = this.expandedKey() === key;
     this.expandedKey.set(isSame ? null : key);
     this.rowExpand.emit(isSame ? null : row);
   }
 
   isExpanded(row: T): boolean {
-    return this.expandable() && this.expandedKey() === row[this.rowKey()];
+    return this.expandable() && this.expandedKey() === this.getRowKeyValue(row);
   }
 
   onActionClick(event: Event, action: string, row: T): void {
@@ -123,30 +148,45 @@ export class DataTableComponent<T extends Record<string, any>> {
   }
 
   isAllSelected(): boolean {
-    const numSelected = this.selectedRows().length;
-    const numRows = this.dataSource.data.length;
-    return numRows > 0 && numSelected === numRows;
+    const data = this.dataSource.data;
+    if (data.length === 0) return false;
+    const keySet = new Set(this.selectedKeys());
+    return data.every((row) => keySet.has(this.getRowKeyValue(row)));
   }
 
   masterToggle(): void {
+    const data = this.dataSource.data;
     if (this.isAllSelected()) {
-      this.selectedRows.set([]);
+      const dataKeys = new Set(data.map((r) => this.getRowKeyValue(r)));
+      const remainingKeys = this.selectedKeys().filter((k) => !dataKeys.has(k));
+      this.selectedKeys.set(remainingKeys);
+      this.syncSelectedRows(remainingKeys);
     } else {
-      this.selectedRows.set([...this.dataSource.data]);
+      const keySet = new Set(this.selectedKeys());
+      data.forEach((r) => keySet.add(this.getRowKeyValue(r)));
+      const newKeys = Array.from(keySet);
+      this.selectedKeys.set(newKeys);
+      this.syncSelectedRows(newKeys);
     }
   }
 
   toggleRow(row: T): void {
-    const current = this.selectedRows();
-    const index = current.indexOf(row);
-    if (index >= 0) {
-      this.selectedRows.set(current.filter((r) => r !== row));
-    } else {
-      this.selectedRows.set([...current, row]);
-    }
+    const key = this.getRowKeyValue(row);
+    const current = this.selectedKeys();
+    const isSelected = current.includes(key);
+    const newKeys = isSelected ? current.filter((k) => k !== key) : [...current, key];
+    this.selectedKeys.set(newKeys);
+    this.syncSelectedRows(newKeys);
   }
 
   isRowSelected(row: T): boolean {
-    return this.selectedRows().includes(row);
+    return this.selectedKeys().includes(this.getRowKeyValue(row));
+  }
+
+  private syncSelectedRows(keys: unknown[]): void {
+    const keySet = new Set(keys);
+    const matched = this.dataSource.data.filter((r) => keySet.has(this.getRowKeyValue(r)));
+    this.selectedRows.set(matched);
+    this.selectionChange.emit(matched);
   }
 }

@@ -1,4 +1,4 @@
-<div class="table-wrapper">
+<div class="table-wrapper" [attr.data-density]="density()">
   @if (loading()) {
     <mat-progress-bar mode="indeterminate" class="table-loader" />
   }
@@ -21,8 +21,8 @@
           <th mat-header-cell *matHeaderCellDef class="checkbox-cell">
             <mat-checkbox
               (change)="$event ? masterToggle() : null"
-              [checked]="selectedRows().length > 0 && isAllSelected()"
-              [indeterminate]="selectedRows().length > 0 && !isAllSelected()"
+              [checked]="selectedKeys().length > 0 && isAllSelected()"
+              [indeterminate]="selectedKeys().length > 0 && !isAllSelected()"
               aria-label="Seleccionar todos"
             />
           </th>
@@ -125,14 +125,16 @@
         <tr mat-row *matRowDef="let row; columns: detailColumns" class="detail-row"></tr>
       }
 
-      <!-- Empty State -->
-      <tr class="mat-row empty-row" *matNoDataRow>
-        <td class="mat-cell empty-cell" [attr.colspan]="displayedColumns().length">
-          <div class="empty-content">
-            <span class="material-symbols-outlined empty-icon">inbox</span>
-            <p>{{ emptyMessage() }}</p>
-          </div>
-        </td>
+      <!-- Empty State (C4: Protegido contra parpadeo durante carga) -->
+      <tr class="empty-row" *matNoDataRow>
+        @if (!loading() && dataTable().length === 0) {
+          <td class="empty-cell" [attr.colspan]="displayedColumns().length">
+            <div class="empty-content">
+              <span class="material-symbols-outlined empty-icon">inbox</span>
+              <p>{{ emptyMessage() }}</p>
+            </div>
+          </td>
+        }
       </tr>
     </table>
   </div>
@@ -143,7 +145,6 @@
     [pageSize]="pageSize()"
     [pageIndex]="pageIndex()"
     [pageSizeOptions]="pageSizeOptions()"
-    (page)="pageIndex.set($event.pageIndex); pageSize.set($event.pageSize); pageChange.emit($event)"
-    showFirstLastButtons
+    (page)="pageChange.emit($event); pageSize.set($event.pageSize); pageIndex.set($event.pageIndex)"
   />
 </div>

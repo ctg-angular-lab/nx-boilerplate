@@ -6,6 +6,19 @@
   border-radius: 12px;
   overflow: hidden;
   position: relative;
+
+  // Variables de densidad (C1)
+  --table-cell-padding-y: 14px;
+  --table-cell-padding-x: 16px;
+  --table-header-padding-y: 14px;
+  --table-row-height: 52px;
+
+  &[data-density='compact'] {
+    --table-cell-padding-y: 6px;
+    --table-cell-padding-x: 12px;
+    --table-header-padding-y: 8px;
+    --table-row-height: 40px;
+  }
 }
 
 .table-loader {
@@ -32,24 +45,26 @@ table {
   border-collapse: collapse;
   background: transparent;
 
-  th.mat-header-cell {
+  // Selectores MDC (C1)
+  .mat-mdc-header-cell {
     background-color: var(--sys-color-surface-container-low);
     color: var(--sys-color-on-surface);
     font-weight: 600;
     font-size: 0.875rem;
-    padding: 14px 16px;
+    padding: var(--table-header-padding-y) var(--table-cell-padding-x);
     border-bottom: 1px solid var(--sys-color-outline-variant);
     white-space: nowrap;
   }
 
-  td.mat-cell {
+  .mat-mdc-cell {
     color: var(--sys-color-on-surface-variant);
     font-size: 0.875rem;
-    padding: 14px 16px;
+    padding: var(--table-cell-padding-y) var(--table-cell-padding-x);
     border-bottom: 1px solid var(--sys-color-outline-variant);
   }
 
   tr.table-row {
+    height: var(--table-row-height);
     transition: background-color 0.2s ease;
     cursor: pointer;
 
@@ -118,9 +133,10 @@ table {
     align-items: center;
     gap: 6px;
 
-    button.mat-icon-button {
+    button.mat-mdc-icon-button {
       width: 36px;
       height: 36px;
+      padding: 6px;
       display: inline-flex;
       align-items: center;
       justify-content: center;

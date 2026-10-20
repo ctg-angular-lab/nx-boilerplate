@@ -1,4 +1,4 @@
-import { Component, viewChild, TemplateRef } from '@angular/core';
+import { Component, viewChild, TemplateRef, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -25,22 +25,30 @@ interface TestUser {
     </ng-template>
 
     <lib-data-table
-      [dataTable]="data"
+      [dataTable]="data()"
       [dataColumn]="columns"
       [actions]="actions"
+      [selectable]="selectable"
+      [(selectedKeys)]="selectedKeys"
+      [(selectedRows)]="selectedRows"
       [expandable]="expandable"
       [rowKey]="rowKey"
+      [loading]="loading()"
+      [density]="density()"
+      [pageSize]="pageSize"
+      [pageIndex]="pageIndex"
       [detailTemplate]="detailRef"
       (actionClick)="onActionClick($event)"
+      (selectionChange)="onSelectionChange($event)"
       (rowExpand)="onRowExpand($event)"
     />
   `,
 })
 class TestHostComponent {
-  data: TestUser[] = [
+  readonly data = signal<TestUser[]>([
     { id: '1', name: 'Ana Perez', role: 'admin', status: 'active' },
     { id: '2', name: 'Carlos Ruiz', role: 'user', status: 'inactive' },
-  ];
+  ]);
 
   columns: TableColumnDef<TestUser>[] = [
     { field: 'id', header: 'ID' },
@@ -72,10 +80,18 @@ class TestHostComponent {
     },
   ];
 
+  selectable = false;
+  selectedKeys: unknown[] = [];
+  selectedRows: TestUser[] = [];
   expandable = true;
   rowKey = 'id';
+  readonly loading = signal<boolean>(false);
+  readonly density = signal<'default' | 'compact'>('default');
+  pageSize = 10;
+  pageIndex = 0;
 
   lastAction: { action: string; row: TestUser } | null = null;
+  lastSelection: TestUser[] | null = null;
   lastExpanded: TestUser | null = null;
 
   customCell = viewChild<TemplateRef<any>>('customCell');
@@ -84,12 +100,16 @@ class TestHostComponent {
     this.lastAction = event;
   }
 
+  onSelectionChange(rows: TestUser[]): void {
+    this.lastSelection = rows;
+  }
+
   onRowExpand(row: TestUser | null): void {
     this.lastExpanded = row;
   }
 }
 
-describe('DataTableComponent (Baseline Suite)', () => {
+describe('DataTableComponent (Tactical Block - Phase 1 Suite)', () => {
   let fixture: ComponentFixture<TestHostComponent>;
   let host: TestHostComponent;
 
@@ -104,8 +124,8 @@ describe('DataTableComponent (Baseline Suite)', () => {
     fixture.detectChanges();
   });
 
-  describe('1. Renderizado de Cabeceras y Celdas', () => {
-    it('debe renderizar los encabezados correspondientes a las columnas definidas', () => {
+  describe('1. Renderizado de Cabeceras y Celdas con Clases MDC', () => {
+    it('debe renderizar los encabezados con clase .mat-mdc-header-cell', () => {
       const headers = fixture.debugElement
         .queryAll(By.css('th.mat-mdc-header-cell'))
         .map((el) => el.nativeElement.textContent.trim());
@@ -116,13 +136,14 @@ describe('DataTableComponent (Baseline Suite)', () => {
       expect(headers).toContain('Estado');
     });
 
-    it('debe renderizar los valores de texto directos de dataTable', () => {
+    it('debe renderizar las celdas con clase .mat-mdc-cell y textos directos', () => {
       const rows = fixture.debugElement.queryAll(By.css('tr.table-row'));
       expect(rows.length).toBe(2);
 
-      const firstRowText = rows[0].nativeElement.textContent;
-      expect(firstRowText).toContain('Ana Perez');
-      expect(firstRowText).toContain('1');
+      const firstRowCells = rows[0].queryAll(By.css('td.mat-mdc-cell'));
+      expect(firstRowCells.length).toBeGreaterThan(0);
+      expect(rows[0].nativeElement.textContent).toContain('Ana Perez');
+      expect(rows[0].nativeElement.textContent).toContain('1');
     });
   });
 
@@ -159,9 +180,7 @@ describe('DataTableComponent (Baseline Suite)', () => {
       const adminActions = rows[0].queryAll(By.css('.actions-group button'));
       const userActions = rows[1].queryAll(By.css('.actions-group button'));
 
-      // Para 'admin', el botón delete está oculto (hidden: true), solo debe verse 'edit'
       expect(adminActions.length).toBe(1);
-      // Para 'user', ambos botones están presentes ('edit' y 'delete')
       expect(userActions.length).toBe(2);
     });
 
@@ -174,17 +193,12 @@ describe('DataTableComponent (Baseline Suite)', () => {
 
       expect(host.lastAction).toEqual({
         action: 'edit',
-        row: host.data[0],
+        row: host.data()[0],
       });
     });
   });
 
   describe('4. Expansión de Filas', () => {
-    beforeEach(() => {
-      host.expandable = true;
-      fixture.detectChanges();
-    });
-
     it('debe alternar la expansión al hacer clic en la fila según rowKey', () => {
       const rows = fixture.debugElement.queryAll(By.css('tr.table-row'));
 
@@ -192,7 +206,7 @@ describe('DataTableComponent (Baseline Suite)', () => {
       rows[0].nativeElement.click();
       fixture.detectChanges();
 
-      expect(host.lastExpanded).toEqual(host.data[0]);
+      expect(host.lastExpanded).toEqual(host.data()[0]);
       expect(rows[0].nativeElement.classList.contains('expanded-row')).toBe(true);
 
       const detailContent = fixture.debugElement.query(By.css('.detail-content'));
@@ -205,6 +219,125 @@ describe('DataTableComponent (Baseline Suite)', () => {
 
       expect(host.lastExpanded).toBeNull();
       expect(rows[0].nativeElement.classList.contains('expanded-row')).toBe(false);
+    });
+  });
+
+  describe('5. Selección por Clave Inmutable (Hallazgo C5)', () => {
+    beforeEach(() => {
+      host.selectable = true;
+      fixture.detectChanges();
+    });
+
+    it('debe seleccionar una fila por su rowKey y emitir selectionChange', () => {
+      const checkboxes = fixture.debugElement.queryAll(By.css('td.checkbox-cell mat-checkbox input'));
+      expect(checkboxes.length).toBe(2);
+
+      // Simular selección de la primera fila
+      checkboxes[0].nativeElement.click();
+      fixture.detectChanges();
+
+      expect(host.selectedKeys).toEqual(['1']);
+      expect(host.lastSelection?.length).toBe(1);
+      expect(host.lastSelection?.[0].id).toBe('1');
+    });
+
+    it('debe preservar la selección cuando el backend actualiza dataTable con nuevas referencias de objeto', () => {
+      // 1. Seleccionar fila con id '1'
+      const checkboxes = fixture.debugElement.queryAll(By.css('td.checkbox-cell mat-checkbox input'));
+      checkboxes[0].nativeElement.click();
+      fixture.detectChanges();
+      expect(host.selectedKeys).toEqual(['1']);
+
+      // 2. Simular recarga desde backend (nuevas referencias de objeto con mismos IDs)
+      host.data.set([
+        { id: '1', name: 'Ana Perez (Actualizada)', role: 'admin', status: 'active' },
+        { id: '2', name: 'Carlos Ruiz', role: 'user', status: 'inactive' },
+      ]);
+      fixture.detectChanges();
+
+      const tableComp = fixture.debugElement
+        .query(By.directive(DataTableComponent))
+        .componentInstance as DataTableComponent<TestUser>;
+
+      // 3. Verificar que la clave se mantuvo y la fila actualizada está seleccionada
+      expect(tableComp.selectedKeys()).toEqual(['1']);
+      expect(tableComp.selectedRows().length).toBe(1);
+      expect(tableComp.selectedRows()[0].name).toBe('Ana Perez (Actualizada)');
+
+      const rows = fixture.debugElement.queryAll(By.css('tr.table-row'));
+      expect(rows[0].nativeElement.classList.contains('selected-row')).toBe(true);
+    });
+
+    it('debe alternar selección total con masterToggle', () => {
+      const headerCheckbox = fixture.debugElement.query(By.css('th.checkbox-cell mat-checkbox input'));
+
+      // Seleccionar todos
+      headerCheckbox.nativeElement.click();
+      fixture.detectChanges();
+
+      expect(host.selectedKeys).toEqual(['1', '2']);
+      expect(host.selectedRows.length).toBe(2);
+
+      // Deseleccionar todos
+      headerCheckbox.nativeElement.click();
+      fixture.detectChanges();
+
+      expect(host.selectedKeys).toEqual([]);
+      expect(host.selectedRows.length).toBe(0);
+    });
+  });
+
+  describe('6. Prevención de Parpadeo en Carga (Hallazgo C4)', () => {
+    it('no debe renderizar el mensaje de vacío cuando loading es true y la data está vacía', () => {
+      host.data.set([]);
+      host.loading.set(true);
+      fixture.detectChanges();
+
+      const emptyContent = fixture.debugElement.query(By.css('.empty-content'));
+      expect(emptyContent).toBeNull();
+    });
+
+    it('debe renderizar el mensaje de vacío cuando loading es false y la data está vacía', () => {
+      host.data.set([]);
+      host.loading.set(false);
+      fixture.detectChanges();
+
+      const emptyContent = fixture.debugElement.query(By.css('.empty-content'));
+      expect(emptyContent).not.toBeNull();
+      expect(emptyContent.nativeElement.textContent).toContain('No se encontraron registros.');
+    });
+  });
+
+  describe('7. Reinicio de Paginador Fuera de Rango (Hallazgo C6)', () => {
+    it('debe reiniciar el paginador a la primera página cuando los datos disminuyen y la página queda fuera de rango', () => {
+      const tableComp = fixture.debugElement
+        .query(By.directive(DataTableComponent))
+        .componentInstance as DataTableComponent<TestUser>;
+
+      // Simular paginación en página 3 con 40 elementos y tamaño 10
+      tableComp.dataSource.paginator!.pageSize = 10;
+      tableComp.dataSource.paginator!.pageIndex = 3;
+
+      // Se recortan los datos a solo 1 elemento (solo existe página 0)
+      host.data.set([{ id: '99', name: 'Solo Uno', role: 'user', status: 'active' }]);
+      fixture.detectChanges();
+
+      expect(tableComp.dataSource.paginator!.pageIndex).toBe(0);
+    });
+  });
+
+  describe('8. Densidad Visual (Hallazgo C1)', () => {
+    it('debe aplicar el atributo data-density="default" por defecto', () => {
+      const wrapper = fixture.debugElement.query(By.css('.table-wrapper'));
+      expect(wrapper.nativeElement.getAttribute('data-density')).toBe('default');
+    });
+
+    it('debe reflejar data-density="compact" cuando se configura el input', () => {
+      host.density.set('compact');
+      fixture.detectChanges();
+
+      const wrapper = fixture.debugElement.query(By.css('.table-wrapper'));
+      expect(wrapper.nativeElement.getAttribute('data-density')).toBe('compact');
     });
   });
 });
