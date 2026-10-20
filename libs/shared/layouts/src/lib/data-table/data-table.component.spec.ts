@@ -2,6 +2,7 @@ import { Component, viewChild, TemplateRef, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { Sort } from '@angular/material/sort';
 import { DataTableComponent } from './data-table.component';
 import { TableActionDef, TableColumnDef } from '../models/data-table.models';
 
@@ -35,11 +36,16 @@ interface TestUser {
       [rowKey]="rowKey"
       [loading]="loading()"
       [density]="density()"
+      [searchable]="searchable()"
+      [searchTerm]="searchTerm()"
+      [sortLocally]="sortLocally()"
       [pageSize]="pageSize"
       [pageIndex]="pageIndex"
       [detailTemplate]="detailRef"
       (actionClick)="onActionClick($event)"
       (selectionChange)="onSelectionChange($event)"
+      (searchChange)="onSearchChange($event)"
+      (sortChange)="onSortChange($event)"
       (rowExpand)="onRowExpand($event)"
     />
   `,
@@ -51,8 +57,8 @@ class TestHostComponent {
   ]);
 
   columns: TableColumnDef<TestUser>[] = [
-    { field: 'id', header: 'ID' },
-    { field: 'name', header: 'Nombre' },
+    { field: 'id', header: 'ID', sortable: true },
+    { field: 'name', header: 'Nombre', sortable: true },
     {
       field: 'role',
       header: 'Rol',
@@ -87,11 +93,16 @@ class TestHostComponent {
   rowKey = 'id';
   readonly loading = signal<boolean>(false);
   readonly density = signal<'default' | 'compact'>('default');
+  readonly searchable = signal<boolean>(false);
+  readonly searchTerm = signal<string>('');
+  readonly sortLocally = signal<boolean>(true);
   pageSize = 10;
   pageIndex = 0;
 
   lastAction: { action: string; row: TestUser } | null = null;
   lastSelection: TestUser[] | null = null;
+  lastSearch: string | null = null;
+  lastSort: Sort | null = null;
   lastExpanded: TestUser | null = null;
 
   customCell = viewChild<TemplateRef<any>>('customCell');
@@ -104,12 +115,20 @@ class TestHostComponent {
     this.lastSelection = rows;
   }
 
+  onSearchChange(term: string): void {
+    this.lastSearch = term;
+  }
+
+  onSortChange(sort: Sort): void {
+    this.lastSort = sort;
+  }
+
   onRowExpand(row: TestUser | null): void {
     this.lastExpanded = row;
   }
 }
 
-describe('DataTableComponent (Tactical Block - Phase 1 Suite)', () => {
+describe('DataTableComponent (Tactical Block - Phase 2 Suite)', () => {
   let fixture: ComponentFixture<TestHostComponent>;
   let host: TestHostComponent;
 
@@ -199,10 +218,38 @@ describe('DataTableComponent (Tactical Block - Phase 1 Suite)', () => {
   });
 
   describe('4. Expansión de Filas', () => {
+    it('debe renderizar el botón indicador con flechas arrow_down y arrow_up al alternar expansión', () => {
+      const rows = fixture.debugElement.queryAll(By.css('tr.table-row'));
+      const toggleButton = rows[0].query(By.css('.expand-toggle-button'));
+      expect(toggleButton).not.toBeNull();
+
+      const iconSpan = toggleButton.query(By.css('.expand-icon')).nativeElement;
+      expect(iconSpan.textContent.trim()).toBe('keyboard_arrow_down');
+
+      // Clic para expandir fila 1 vía botón indicador
+      toggleButton.nativeElement.click();
+      fixture.detectChanges();
+
+      expect(host.lastExpanded).toEqual(host.data()[0]);
+      expect(rows[0].nativeElement.classList.contains('expanded-row')).toBe(true);
+      expect(iconSpan.textContent.trim()).toBe('keyboard_arrow_up');
+
+      const detailContent = fixture.debugElement.query(By.css('.detail-content'));
+      expect(detailContent).not.toBeNull();
+      expect(detailContent.nativeElement.textContent).toContain('Detalle de Ana Perez');
+
+      // Segundo clic en el botón colapsa y regresa a keyboard_arrow_down
+      toggleButton.nativeElement.click();
+      fixture.detectChanges();
+
+      expect(host.lastExpanded).toBeNull();
+      expect(rows[0].nativeElement.classList.contains('expanded-row')).toBe(false);
+      expect(iconSpan.textContent.trim()).toBe('keyboard_arrow_down');
+    });
+
     it('debe alternar la expansión al hacer clic en la fila según rowKey', () => {
       const rows = fixture.debugElement.queryAll(By.css('tr.table-row'));
 
-      // Clic para expandir fila 1
       rows[0].nativeElement.click();
       fixture.detectChanges();
 
@@ -213,7 +260,6 @@ describe('DataTableComponent (Tactical Block - Phase 1 Suite)', () => {
       expect(detailContent).not.toBeNull();
       expect(detailContent.nativeElement.textContent).toContain('Detalle de Ana Perez');
 
-      // Segundo clic en la misma fila colapsa
       rows[0].nativeElement.click();
       fixture.detectChanges();
 
@@ -232,7 +278,6 @@ describe('DataTableComponent (Tactical Block - Phase 1 Suite)', () => {
       const checkboxes = fixture.debugElement.queryAll(By.css('td.checkbox-cell mat-checkbox input'));
       expect(checkboxes.length).toBe(2);
 
-      // Simular selección de la primera fila
       checkboxes[0].nativeElement.click();
       fixture.detectChanges();
 
@@ -242,13 +287,11 @@ describe('DataTableComponent (Tactical Block - Phase 1 Suite)', () => {
     });
 
     it('debe preservar la selección cuando el backend actualiza dataTable con nuevas referencias de objeto', () => {
-      // 1. Seleccionar fila con id '1'
       const checkboxes = fixture.debugElement.queryAll(By.css('td.checkbox-cell mat-checkbox input'));
       checkboxes[0].nativeElement.click();
       fixture.detectChanges();
       expect(host.selectedKeys).toEqual(['1']);
 
-      // 2. Simular recarga desde backend (nuevas referencias de objeto con mismos IDs)
       host.data.set([
         { id: '1', name: 'Ana Perez (Actualizada)', role: 'admin', status: 'active' },
         { id: '2', name: 'Carlos Ruiz', role: 'user', status: 'inactive' },
@@ -259,7 +302,6 @@ describe('DataTableComponent (Tactical Block - Phase 1 Suite)', () => {
         .query(By.directive(DataTableComponent))
         .componentInstance as DataTableComponent<TestUser>;
 
-      // 3. Verificar que la clave se mantuvo y la fila actualizada está seleccionada
       expect(tableComp.selectedKeys()).toEqual(['1']);
       expect(tableComp.selectedRows().length).toBe(1);
       expect(tableComp.selectedRows()[0].name).toBe('Ana Perez (Actualizada)');
@@ -271,14 +313,12 @@ describe('DataTableComponent (Tactical Block - Phase 1 Suite)', () => {
     it('debe alternar selección total con masterToggle', () => {
       const headerCheckbox = fixture.debugElement.query(By.css('th.checkbox-cell mat-checkbox input'));
 
-      // Seleccionar todos
       headerCheckbox.nativeElement.click();
       fixture.detectChanges();
 
       expect(host.selectedKeys).toEqual(['1', '2']);
       expect(host.selectedRows.length).toBe(2);
 
-      // Deseleccionar todos
       headerCheckbox.nativeElement.click();
       fixture.detectChanges();
 
@@ -314,11 +354,9 @@ describe('DataTableComponent (Tactical Block - Phase 1 Suite)', () => {
         .query(By.directive(DataTableComponent))
         .componentInstance as DataTableComponent<TestUser>;
 
-      // Simular paginación en página 3 con 40 elementos y tamaño 10
       tableComp.dataSource.paginator!.pageSize = 10;
       tableComp.dataSource.paginator!.pageIndex = 3;
 
-      // Se recortan los datos a solo 1 elemento (solo existe página 0)
       host.data.set([{ id: '99', name: 'Solo Uno', role: 'user', status: 'active' }]);
       fixture.detectChanges();
 
@@ -338,6 +376,90 @@ describe('DataTableComponent (Tactical Block - Phase 1 Suite)', () => {
 
       const wrapper = fixture.debugElement.query(By.css('.table-wrapper'));
       expect(wrapper.nativeElement.getAttribute('data-density')).toBe('compact');
+    });
+  });
+
+  describe('9. Búsqueda Integrada con Debounce y visibleRows() (Fase 2)', () => {
+    beforeEach(() => {
+      host.searchable.set(true);
+      fixture.detectChanges();
+    });
+
+    it('debe renderizar el campo de búsqueda cuando searchable es true', () => {
+      const searchBox = fixture.debugElement.query(By.css('.search-box'));
+      expect(searchBox).not.toBeNull();
+
+      const searchInput = searchBox.query(By.css('.search-input'));
+      expect(searchInput).not.toBeNull();
+    });
+
+    it('debe filtrar las filas con debounce de 300ms y emitir searchChange', async () => {
+      host.searchTerm.set('Carlos');
+      fixture.detectChanges();
+
+      // Esperar que transcurra el debounce de 300ms
+      await new Promise((resolve) => setTimeout(resolve, 350));
+      fixture.detectChanges();
+
+      const tableComp = fixture.debugElement
+        .query(By.directive(DataTableComponent))
+        .componentInstance as DataTableComponent<TestUser>;
+
+      expect(tableComp.dataSource.filter).toBe('carlos');
+      expect(host.lastSearch).toBe('Carlos');
+
+      // Solo Carlos Ruiz debe coincidir en las filas visibles
+      const visible = tableComp.visibleRows();
+      expect(visible.length).toBe(1);
+      expect(visible[0].name).toBe('Carlos Ruiz');
+    });
+
+    it('debe limpiar la búsqueda al hacer clic en el botón de limpiar', async () => {
+      host.searchTerm.set('Ana');
+      fixture.detectChanges();
+      await new Promise((resolve) => setTimeout(resolve, 350));
+      fixture.detectChanges();
+
+      const tableComp = fixture.debugElement
+        .query(By.directive(DataTableComponent))
+        .componentInstance as DataTableComponent<TestUser>;
+
+      expect(tableComp.visibleRows().length).toBe(1);
+
+      const clearBtn = fixture.debugElement.query(By.css('.clear-button'));
+      expect(clearBtn).not.toBeNull();
+      clearBtn.nativeElement.click();
+      fixture.detectChanges();
+
+      await new Promise((resolve) => setTimeout(resolve, 350));
+      fixture.detectChanges();
+
+      expect(tableComp.dataSource.filter).toBe('');
+      expect(tableComp.visibleRows().length).toBe(2);
+    });
+  });
+
+  describe('10. Ordenamiento Dual sortLocally (Fase 2 - Hallazgo C3)', () => {
+    it('debe enlazar dataSource.sort cuando sortLocally es true', () => {
+      host.sortLocally.set(true);
+      fixture.detectChanges();
+
+      const tableComp = fixture.debugElement
+        .query(By.directive(DataTableComponent))
+        .componentInstance as DataTableComponent<TestUser>;
+
+      expect(tableComp.dataSource.sort).not.toBeNull();
+    });
+
+    it('debe dejar dataSource.sort en null cuando sortLocally es false para delegar al padre', () => {
+      host.sortLocally.set(false);
+      fixture.detectChanges();
+
+      const tableComp = fixture.debugElement
+        .query(By.directive(DataTableComponent))
+        .componentInstance as DataTableComponent<TestUser>;
+
+      expect(tableComp.dataSource.sort).toBeNull();
     });
   });
 });

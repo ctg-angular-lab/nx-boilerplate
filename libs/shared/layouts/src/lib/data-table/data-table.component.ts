@@ -49,9 +49,16 @@ export class DataTableComponent<T extends Record<string, any>> {
   readonly emptyMessage = input<string>('No se encontraron registros.');
   readonly density = input<'default' | 'compact'>('default');
 
+  // Búsqueda (Fase 2)
+  readonly searchable = input<boolean>(false);
+  readonly searchPlaceholder = input<string>('Buscar...');
+  readonly searchTerm = model<string>('');
+
+  // Ordenamiento Dual (Fase 2 - C3)
+  readonly sortLocally = input<boolean>(true);
+
   // Expanded Row
   readonly expandable = input<boolean>(false);
-  /** Campo con valor único y estable por fila (ej. 'id', 'cedula'). */
   readonly rowKey = input<string>('id');
   readonly detailTemplate = input<TemplateRef<{ $implicit: T }> | null>(null);
 
@@ -66,6 +73,7 @@ export class DataTableComponent<T extends Record<string, any>> {
   readonly rowClick = output<T>();
   readonly actionClick = output<{ action: string; row: T }>();
   readonly selectionChange = output<T[]>();
+  readonly searchChange = output<string>();
   readonly sortChange = output<Sort>();
   readonly pageChange = output<PageEvent>();
   readonly rowExpand = output<T | null>();
@@ -81,6 +89,7 @@ export class DataTableComponent<T extends Record<string, any>> {
   readonly displayedColumns = computed(() => {
     const cols: string[] = [];
     if (this.selectable()) cols.push('__select__');
+    if (this.expandable()) cols.push('__expand__');
     cols.push(...this.dataColumn().map((c) => c.field));
     if (this.actions().length > 0) cols.push('__actions__');
     return cols;
@@ -89,23 +98,21 @@ export class DataTableComponent<T extends Record<string, any>> {
   readonly detailColumns = ['__detail__'];
 
   constructor() {
+    // Sincronización reactiva de datos y selección
     effect(() => {
       const data = this.dataTable();
       this.dataSource.data = data;
 
-      // C5: Reconciliación inmutable de selección ante reemplazo de referencias
       const keySet = new Set(this.selectedKeys());
       if (keySet.size > 0) {
         const matched = data.filter((row) => keySet.has(this.getRowKeyValue(row)));
         this.selectedRows.set(matched);
         this.selectionChange.emit(matched);
       } else if (this.selectedRows().length > 0) {
-        // Retrocompatibilidad con consumidores que inicializan selectedRows
         const inferredKeys = this.selectedRows().map((row) => this.getRowKeyValue(row));
         this.selectedKeys.set(inferredKeys);
       }
 
-      // C6: Reinicio seguro del paginador si queda fuera de rango
       const p = this.dataSource.paginator;
       if (p) {
         const maxPageIndex = Math.max(0, Math.ceil(data.length / p.pageSize) - 1);
@@ -116,12 +123,36 @@ export class DataTableComponent<T extends Record<string, any>> {
       }
     });
 
+    // Búsqueda integrada con debounce y cleanup (Fase 2)
+    effect((onCleanup) => {
+      const term = this.searchTerm();
+      const timer = setTimeout(() => {
+        const normalized = term.trim().toLowerCase();
+        this.dataSource.filter = normalized;
+        this.dataSource.paginator?.firstPage();
+        this.searchChange.emit(term);
+      }, 300);
+
+      onCleanup(() => clearTimeout(timer));
+    });
+
+    // Ordenamiento dual local vs remoto (Fase 2 - C3)
+    effect(() => {
+      const s = this.sort();
+      if (s) {
+        this.dataSource.sort = this.sortLocally() ? s : null;
+      }
+    });
+
     afterNextRender(() => {
       const p = this.paginator();
-      const s = this.sort();
       if (p) this.dataSource.paginator = p;
-      if (s) this.dataSource.sort = s;
     });
+  }
+
+  /** Retorna las filas filtradas y ordenadas actualmente visibles (sin recorte de paginación) */
+  public visibleRows(): T[] {
+    return this.dataSource.filteredData;
   }
 
   getRowKeyValue(row: T): unknown {

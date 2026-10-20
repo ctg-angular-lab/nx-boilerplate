@@ -10,6 +10,8 @@
     [dataColumn]="columns"
     [loading]="profesionalesService.isLoading()"
     [expandable]="true"
+    [searchable]="true"
+    searchPlaceholder="Buscar por nombre, correo o profesión..."
     rowKey="cedula"
     [detailTemplate]="detailTpl"
     emptyMessage="No hay profesionales registrados."
