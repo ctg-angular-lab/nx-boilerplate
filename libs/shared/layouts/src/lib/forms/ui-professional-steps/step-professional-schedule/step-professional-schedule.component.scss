@@ -1,0 +1,91 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.step-professional-schedule {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 1.25rem;
+}
+
+.schedule-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.section-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--sys-color-on-surface);
+}
+
+.days-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.hours-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-field {
+  width: 100%;
+}
+
+.prefix-icon {
+  color: var(--sys-color-on-surface-variant);
+  font-size: 20px;
+  margin-right: 0.5rem;
+}
+
+.field-error {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--sys-color-error);
+}
+
+.group-error-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.625rem 0.875rem;
+  border-radius: 8px;
+  background-color: var(--sys-color-error-container);
+  color: var(--sys-color-on-error-container);
+  font-size: 0.8125rem;
+
+  .error-icon {
+    font-size: 18px;
+  }
+}
+
+.lunch-toggle-section {
+  padding: 0.5rem 0;
+}
+
+.lunch-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px dashed var(--sys-color-outline-variant);
+}
+
+.stepper-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}

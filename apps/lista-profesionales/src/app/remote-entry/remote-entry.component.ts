@@ -1,45 +1,69 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { IActiveProfessional } from '@nx-boilerplate/api-interfaces';
-import { DataTableComponent, TableColumnDef } from '@nx-boilerplate/layouts';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  TemplateRef,
+  viewChild,
+} from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { TabsCollectionComponent, TabItem } from '@nx-boilerplate/layouts';
+import { ProfesionalesListComponent } from '../components/profesionales-list/profesionales-list.component';
+import { ProfesionalesFormComponent } from '../components/profesionales-form/profesionales-form.component';
+import {
+  PROFESIONALES_TABS,
+  ProfesionalesTabId,
+} from '../models/profesionales-nav.models';
 import { ProfesionalesAdminService } from '../services/profesionales-admin.service';
 
 @Component({
   selector: 'app-lista-profesionales-entry',
   standalone: true,
   imports: [
-    DataTableComponent,
-    MatButtonModule,
-    MatButtonToggleModule,
-    MatTooltipModule,
+    CommonModule,
+    TabsCollectionComponent,
+    ProfesionalesListComponent,
+    ProfesionalesFormComponent,
   ],
   templateUrl: './remote-entry.component.html',
   styleUrl: './remote-entry.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RemoteEntryComponent {
-  protected readonly profesionalesService = inject(ProfesionalesAdminService);
+  readonly profesionalesService = inject(ProfesionalesAdminService);
 
-  protected readonly columns: TableColumnDef<IActiveProfessional>[] = [
-    { field: 'nombres', header: 'Nombre', sortable: true },
-    { field: 'apellidos', header: 'Apellidos', sortable: true },
-    { field: 'email', header: 'Correo', sortable: true },
-    { field: 'profesion', header: 'Profesión', sortable: true },
-  ];
+  readonly listTabTpl = viewChild<TemplateRef<unknown>>('listTab');
+  readonly formTabTpl = viewChild<TemplateRef<unknown>>('formTab');
+
+  readonly tabs = computed<TabItem[]>(() => {
+    const isEdit = this.profesionalesService.isEditMode();
+    return [
+      {
+        id: PROFESIONALES_TABS.LIST,
+        label: 'Lista de Profesionales',
+        icon: 'badge',
+        contentTemplate: this.listTabTpl(),
+      },
+      {
+        id: PROFESIONALES_TABS.FORM,
+        label: isEdit ? 'Editar Profesional' : 'Agregar Profesional',
+        icon: isEdit ? 'edit_note' : 'person_add',
+        contentTemplate: this.formTabTpl(),
+      },
+    ];
+  });
 
   constructor() {
-    // El servicio es root: se recarga en cada montaje del MFE para evitar datos obsoletos.
     this.profesionalesService.loadProfesionales();
+    this.profesionalesService.loadProcedures();
   }
 
-  // Parte 1: sin mutaciones. Los eventos solo se registran en consola.
-  onEdit(profesional: IActiveProfessional): void {
-    console.log('Editar profesional:', profesional.cedula);
-  }
-
-  onDelete(profesional: IActiveProfessional): void {
-    console.log('Eliminar profesional:', profesional.cedula);
+  onActiveTabChange(tabId: string | number | undefined): void {
+    if (
+      tabId === PROFESIONALES_TABS.LIST ||
+      tabId === PROFESIONALES_TABS.FORM
+    ) {
+      this.profesionalesService.setActiveTab(tabId as ProfesionalesTabId);
+    }
   }
 }

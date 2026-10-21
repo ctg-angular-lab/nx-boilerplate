@@ -1,83 +1,22 @@
-<section class="profesionales-container">
-  <h1 class="profesionales-title">Lista de Profesionales Activos</h1>
+<div class="profesionales-view-container">
+  <h1 class="profesionales-title">Gestión de Profesionales</h1>
 
-  @if (profesionalesService.error(); as errorMessage) {
-    <p class="profesionales-error" role="alert">{{ errorMessage }}</p>
-  }
+  <lib-tabs-collection
+    [tabs]="tabs()"
+    [preserveContent]="true"
+    [activeTabId]="profesionalesService.activeTab()"
+    (activeTabIdChange)="onActiveTabChange($event)"
+  />
 
-  <lib-data-table
-    [dataTable]="profesionalesService.profesionalesList()"
-    [dataColumn]="columns"
-    [loading]="profesionalesService.isLoading()"
-    [expandable]="true"
-    [searchable]="true"
-    searchPlaceholder="Buscar por nombre, correo o profesión..."
-    rowKey="cedula"
-    [detailTemplate]="detailTpl"
-    emptyMessage="No hay profesionales registrados."
-  >
-    <div table-header class="profesionales-toolbar">
-      <span matTooltip="Disponible próximamente" class="toolbar-toggle">
-        <mat-button-toggle-group
-          aria-label="Filtrar profesionales por estado"
-          value="activos"
-          disabled
-        >
-          <mat-button-toggle value="activos">Activos</mat-button-toggle>
-          <mat-button-toggle value="inactivos">Inactivos</mat-button-toggle>
-        </mat-button-toggle-group>
-      </span>
-
-      <button mat-flat-button type="button" id="btn-agregar-profesional">
-        <span class="material-symbols-outlined">add</span>
-        Agregar nuevo
-      </button>
+  <ng-template #listTab>
+    <div class="tab-pane-wrapper">
+      <app-profesionales-list />
     </div>
+  </ng-template>
 
-    <ng-template #detailTpl let-profesional>
-      <div class="detail-grid">
-        <div class="detail-block">
-          <h3 class="detail-label">Días laborales</h3>
-          <ul class="detail-days">
-            @for (dia of profesional.horarioTrabajo.diasLaborales; track dia) {
-              <li class="detail-day">{{ dia }}</li>
-            } @empty {
-              <li class="detail-empty">Sin días configurados</li>
-            }
-          </ul>
-        </div>
-
-        <div class="detail-block">
-          <h3 class="detail-label">Horario</h3>
-          <p class="detail-value">
-            {{ profesional.horarioTrabajo.horaInicio }} –
-            {{ profesional.horarioTrabajo.horaFin }}
-          </p>
-          @if (profesional.horarioTrabajo.recesoAlmuerzo; as receso) {
-            <p class="detail-hint">Almuerzo: {{ receso.inicio }} – {{ receso.fin }}</p>
-          }
-        </div>
-
-        <div class="detail-actions">
-          <button
-            mat-icon-button
-            type="button"
-            aria-label="Editar profesional"
-            (click)="onEdit(profesional)"
-          >
-            <span class="material-symbols-outlined">edit</span>
-          </button>
-          <button
-            mat-icon-button
-            type="button"
-            class="action-delete"
-            aria-label="Eliminar profesional"
-            (click)="onDelete(profesional)"
-          >
-            <span class="material-symbols-outlined">delete</span>
-          </button>
-        </div>
-      </div>
-    </ng-template>
-  </lib-data-table>
-</section>
+  <ng-template #formTab>
+    <div class="tab-pane-wrapper">
+      <app-profesionales-form />
+    </div>
+  </ng-template>
+</div>

@@ -1,0 +1,110 @@
+<form [formGroup]="stepForm()" class="step-professional-schedule">
+  <!-- Días Laborales -->
+  <div class="schedule-section">
+    <label class="section-label" id="label-dias-laborales">Días laborales de atención *</label>
+    <mat-chip-listbox
+      multiple
+      formControlName="diasLaborales"
+      aria-labelledby="label-dias-laborales"
+      class="days-chips"
+    >
+      @for (day of availableDays(); track day) {
+        <mat-chip-option [value]="day">{{ day }}</mat-chip-option>
+      }
+    </mat-chip-listbox>
+    @if (hasFieldError('diasLaborales', 'required')) {
+      <p class="field-error" role="alert">Debe seleccionar al menos un día laboral</p>
+    }
+  </div>
+
+  <!-- Jornada Laboral Base -->
+  <div class="hours-grid">
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Hora de inicio laboral</mat-label>
+      <span matPrefix class="material-symbols-outlined prefix-icon">schedule</span>
+      <input matInput type="time" formControlName="horaInicio" />
+      @if (hasFieldError('horaInicio', 'required')) {
+        <mat-error>La hora de inicio es obligatoria</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Hora de fin laboral</mat-label>
+      <span matPrefix class="material-symbols-outlined prefix-icon">schedule</span>
+      <input matInput type="time" formControlName="horaFin" />
+      @if (hasFieldError('horaFin', 'required')) {
+        <mat-error>La hora de fin es obligatoria</mat-error>
+      }
+    </mat-form-field>
+  </div>
+
+  @if (stepForm().hasError('invalidWorkRange')) {
+    <p class="group-error-alert" role="alert">
+      <span class="material-symbols-outlined error-icon">error</span>
+      La hora de fin laboral debe ser posterior a la hora de inicio.
+    </p>
+  }
+
+  <!-- Toggle de Receso de Almuerzo -->
+  <div class="lunch-toggle-section">
+    <mat-slide-toggle formControlName="tieneReceso">
+      ¿Cuenta con receso de almuerzo?
+    </mat-slide-toggle>
+  </div>
+
+  <!-- Horario de Receso Condicional -->
+  @if (stepForm().get('tieneReceso')?.value) {
+    <div formGroupName="recesoAlmuerzo" class="lunch-group">
+      <div class="hours-grid">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Inicio de almuerzo</mat-label>
+          <span matPrefix class="material-symbols-outlined prefix-icon">restaurant</span>
+          <input matInput type="time" formControlName="inicio" />
+          @if (hasLunchError('inicio', 'required')) {
+            <mat-error>La hora de inicio de almuerzo es obligatoria</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Fin de almuerzo</mat-label>
+          <span matPrefix class="material-symbols-outlined prefix-icon">restaurant</span>
+          <input matInput type="time" formControlName="fin" />
+          @if (hasLunchError('fin', 'required')) {
+            <mat-error>La hora de fin de almuerzo es obligatoria</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      @if (hasLunchGroupError('invalidLunchRange')) {
+        <p class="group-error-alert" role="alert">
+          <span class="material-symbols-outlined error-icon">error</span>
+          El receso de almuerzo debe finalizar después de su inicio.
+        </p>
+      }
+      @if (hasLunchGroupError('lunchOutsideWorkHours')) {
+        <p class="group-error-alert" role="alert">
+          <span class="material-symbols-outlined error-icon">error</span>
+          El receso de almuerzo debe estar contenido dentro de la jornada laboral.
+        </p>
+      }
+    </div>
+  }
+
+  <div class="stepper-actions">
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="prevStep.emit()"
+    >
+      Anterior
+    </button>
+    <button
+      mat-flat-button
+      type="button"
+      [disabled]="stepForm().invalid"
+      (click)="nextStep.emit()"
+    >
+      Siguiente
+    </button>
+  </div>
+</form>

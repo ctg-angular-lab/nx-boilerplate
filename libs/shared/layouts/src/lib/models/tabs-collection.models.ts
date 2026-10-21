@@ -6,5 +6,7 @@ export interface TabItemConfig {
   icon?: string;
   badge?: string | number;
   disabled?: boolean;
-  contentTemplate?: TemplateRef<void>;
+  contentTemplate?: TemplateRef<unknown>;
 }
+
+export type TabItem = TabItemConfig;

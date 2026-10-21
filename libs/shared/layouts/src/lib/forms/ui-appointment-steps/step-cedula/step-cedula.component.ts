@@ -26,6 +26,11 @@ export class StepCedulaComponent {
   readonly stepForm = input.required<FormGroup>();
 
   /**
+   * Sujeto o rol al que pertenece la cédula (ej. 'Paciente' o 'Profesional')
+   */
+  readonly subject = input<string>('Paciente');
+
+  /**
    * Evento emitido al presionar Enter o solicitar verificación
    */
   readonly verifyAndContinue = output<void>();

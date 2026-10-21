@@ -1,0 +1,120 @@
+<section class="feature-card">
+  <!-- Cabecera del Formulario -->
+  <header class="feature-card__header">
+    <div class="header-main">
+      <span class="material-symbols-outlined feature-card__icon">
+        {{ profesionalesService.isEditMode() ? 'edit_note' : 'person_add' }}
+      </span>
+      <h2 class="feature-card__title">
+        {{ profesionalesService.isEditMode() ? 'Editar Profesional' : 'Registro de Profesional' }}
+      </h2>
+    </div>
+
+    <button
+      mat-stroked-button
+      type="button"
+      class="cancel-button"
+      (click)="onCancel()"
+    >
+      <span class="material-symbols-outlined">arrow_back</span>
+      Volver a la lista
+    </button>
+  </header>
+
+  <!-- Banner de Error de Guardado -->
+  @if (profesionalesService.saveError(); as saveError) {
+    <div class="save-error-alert" role="alert">
+      <span class="material-symbols-outlined alert-icon">error</span>
+      <span class="alert-text">{{ saveError }}</span>
+    </div>
+  }
+
+  <!-- Stepper de 4 Pasos -->
+  <mat-stepper
+    orientation="vertical"
+    [linear]="!profesionalesService.isEditMode()"
+    #stepper
+    class="professional-stepper"
+  >
+    <ng-template matStepperIcon="edit">
+      <mat-icon class="material-symbols-outlined">edit</mat-icon>
+    </ng-template>
+    <ng-template matStepperIcon="done">
+      <mat-icon class="material-symbols-outlined">check</mat-icon>
+    </ng-template>
+
+    <!-- PASO 1: Identificación -->
+    <mat-step
+      [stepControl]="form.controls.step1"
+      [completed]="form.controls.step1.valid"
+      label="Identificación"
+    >
+      <div class="stepper-step-content">
+        <lib-step-cedula
+          [stepForm]="form.controls.step1"
+          subject="Profesional"
+          (verifyAndContinue)="onStep1Next()"
+        />
+
+        <div class="stepper-actions">
+          <button
+            mat-flat-button
+            type="button"
+            [disabled]="form.controls.step1.invalid"
+            (click)="onStep1Next()"
+          >
+            Verificar y Continuar
+          </button>
+        </div>
+      </div>
+    </mat-step>
+
+    <!-- PASO 2: Datos Personales -->
+    <mat-step
+      [stepControl]="form.controls.step2"
+      [completed]="form.controls.step2.valid"
+      label="Datos Personales"
+    >
+      <div class="stepper-step-content">
+        <lib-step-professional-info
+          [stepForm]="form.controls.step2"
+          (nextStep)="onStep2Next()"
+          (prevStep)="onStepPrev()"
+        />
+      </div>
+    </mat-step>
+
+    <!-- PASO 3: Horario Laboral -->
+    <mat-step
+      [stepControl]="form.controls.step3"
+      [completed]="form.controls.step3.valid"
+      label="Horario Laboral"
+    >
+      <div class="stepper-step-content">
+        <lib-step-professional-schedule
+          [stepForm]="form.controls.step3"
+          (nextStep)="onStep3Next()"
+          (prevStep)="onStepPrev()"
+        />
+      </div>
+    </mat-step>
+
+    <!-- PASO 4: Procedimientos y Confirmación -->
+    <mat-step
+      [stepControl]="form.controls.step4"
+      label="Procedimientos y Confirmación"
+    >
+      <div class="stepper-step-content">
+        <lib-step-professional-procedures
+          [stepForm]="form.controls.step4"
+          [procedures]="profesionalesService.procedures()"
+          [summaryData]="summaryData()"
+          [isSaving]="profesionalesService.isSaving()"
+          [isEditMode]="profesionalesService.isEditMode()"
+          (prevStep)="onStepPrev()"
+          (save)="onSubmit()"
+        />
+      </div>
+    </mat-step>
+  </mat-stepper>
+</section>
