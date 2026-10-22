@@ -25,7 +25,7 @@ export interface IActiveProfessional {
   profesion: string;
   procedimientosRelacionados?: string[];
   horarioTrabajo: IWorkSchedule;
-  isActive: boolean;
+  isActive?: boolean;
   horariosExcepcionales?: IExceptionSchedule[];
 }
 

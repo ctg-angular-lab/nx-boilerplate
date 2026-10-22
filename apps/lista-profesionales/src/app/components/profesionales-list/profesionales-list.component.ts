@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -24,12 +30,30 @@ export class ProfesionalesListComponent {
 
   readonly viewFilter = signal<'activos' | 'inactivos'>('activos');
 
+  readonly displayedProfesionales = computed(() => {
+    const list = this.profesionalesService.profesionalesList();
+    const filter = this.viewFilter();
+    return list.filter((p) =>
+      filter === 'activos' ? p.isActive !== false : p.isActive === false
+    );
+  });
+
+  readonly emptyMessage = computed(() =>
+    this.viewFilter() === 'activos'
+      ? 'No hay profesionales activos registrados.'
+      : 'No hay profesionales inactivos.'
+  );
+
   readonly columns: TableColumnDef<IActiveProfessional>[] = [
     { field: 'nombres', header: 'Nombre', sortable: true },
     { field: 'apellidos', header: 'Apellidos', sortable: true },
     { field: 'email', header: 'Correo', sortable: true },
     { field: 'profesion', header: 'Profesión', sortable: true },
   ];
+
+  onFilterChange(filter: 'activos' | 'inactivos'): void {
+    this.viewFilter.set(filter);
+  }
 
   onAddNew(): void {
     this.profesionalesService.goToCreate();
@@ -44,4 +68,10 @@ export class ProfesionalesListComponent {
     event?.stopPropagation();
     this.profesionalesService.deleteProfesional(prof.cedula).subscribe();
   }
+
+  onReactivate(prof: IActiveProfessional, event?: Event): void {
+    event?.stopPropagation();
+    this.profesionalesService.reactivateProfesional(prof.cedula).subscribe();
+  }
 }
+

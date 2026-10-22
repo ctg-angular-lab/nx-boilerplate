@@ -91,4 +91,8 @@
   .action-delete {
     color: var(--sys-color-error);
   }
+
+  .action-reactivate-btn {
+    color: var(--app-color-success, var(--sys-color-primary));
+  }
 }

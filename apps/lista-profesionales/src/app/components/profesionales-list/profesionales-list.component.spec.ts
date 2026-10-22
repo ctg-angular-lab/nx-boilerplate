@@ -41,6 +41,7 @@ describe('ProfesionalesListComponent', () => {
     goToCreate: ReturnType<typeof vi.fn>;
     goToEdit: ReturnType<typeof vi.fn>;
     deleteProfesional: ReturnType<typeof vi.fn>;
+    reactivateProfesional: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -55,6 +56,7 @@ describe('ProfesionalesListComponent', () => {
       goToCreate: vi.fn(),
       goToEdit: vi.fn(),
       deleteProfesional: vi.fn().mockReturnValue(of(true)),
+      reactivateProfesional: vi.fn().mockReturnValue(of(true)),
     };
 
     await TestBed.configureTestingModule({
@@ -121,5 +123,36 @@ describe('ProfesionalesListComponent', () => {
 
     const errorEl = fixture.debugElement.query(By.css('.profesionales-error'));
     expect(errorEl).toBeNull();
+  });
+
+  it('debe filtrar correctamente profesionales activos e inactivos en displayedProfesionales', () => {
+    const inactiveProf: IActiveProfessional = {
+      ...mockProfessional,
+      cedula: '87654321',
+      isActive: false,
+    };
+    mockProfesionalesListSignal.set([mockProfessional, inactiveProf]);
+    fixture.detectChanges();
+
+    expect(component.viewFilter()).toBe('activos');
+    expect(component.displayedProfesionales()).toEqual([mockProfessional]);
+    expect(component.emptyMessage()).toBe('No hay profesionales activos registrados.');
+
+    component.onFilterChange('inactivos');
+    fixture.detectChanges();
+
+    expect(component.viewFilter()).toBe('inactivos');
+    expect(component.displayedProfesionales()).toEqual([inactiveProf]);
+    expect(component.emptyMessage()).toBe('No hay profesionales inactivos.');
+  });
+
+  it('debe invocar reactivateProfesional(cedula) al ejecutar onReactivate deteniendo propagación', () => {
+    const stopPropagationSpy = vi.fn();
+    const fakeEvent = { stopPropagation: stopPropagationSpy } as unknown as Event;
+
+    component.onReactivate(mockProfessional, fakeEvent);
+
+    expect(stopPropagationSpy).toHaveBeenCalledTimes(1);
+    expect(mockService.reactivateProfesional).toHaveBeenCalledWith(mockProfessional.cedula);
   });
 });
