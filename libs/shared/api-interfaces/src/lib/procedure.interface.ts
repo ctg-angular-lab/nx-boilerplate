@@ -38,7 +38,13 @@ export type ICreateProfessionalRequest = Omit<
 /** Payload de actualización parcial (PATCH /api/doctors/:cedula). La cédula es inmutable (viaja en la URL). */
 export type IUpdateProfessionalRequest = Partial<
   Omit<ICreateProfessionalRequest, 'cedula'>
->;
+> & {
+  isActive?: boolean;
+};
+
+export interface IGetDoctorsQueryRequest {
+  includeInactive?: boolean;
+}
 
 
 export type IProfessionalSummary = Pick<

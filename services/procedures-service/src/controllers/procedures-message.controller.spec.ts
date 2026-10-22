@@ -92,7 +92,7 @@ describe('ProceduresMessageController', () => {
     expect(service.getDoctorsByProcedureId).toHaveBeenCalledWith('PROC-EST-001');
   });
 
-  it('debe atender doctors.get-all delegando al servicio', async () => {
+  it('debe atender doctors.get-all delegando al servicio con includeInactive', async () => {
     const mockAllDoctors = [
       {
         cedula: '52890123',
@@ -110,10 +110,10 @@ describe('ProceduresMessageController', () => {
 
     vi.spyOn(service, 'getAllDoctors').mockResolvedValueOnce(mockAllDoctors as never);
 
-    const result = await controller.getAllDoctors();
+    const result = await controller.getAllDoctors({ includeInactive: true });
 
     expect(result).toEqual(mockAllDoctors);
-    expect(service.getAllDoctors).toHaveBeenCalled();
+    expect(service.getAllDoctors).toHaveBeenCalledWith(true);
   });
 
   it('debe atender area-codes.get-all delegando al servicio', async () => {

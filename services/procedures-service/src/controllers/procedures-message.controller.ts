@@ -9,6 +9,7 @@ import {
 import {
   FindProcedureByIdDto,
   FindProceduresByDoctorDto,
+  GetDoctorsMessageDto,
 } from '@nx-boilerplate/shared-dtos';
 import { ProceduresDomainService } from '@nx-boilerplate/backend/procedures-domain';
 
@@ -45,8 +46,12 @@ export class ProceduresMessageController {
   }
 
   @MessagePattern('doctors.get-all')
-  async getAllDoctors(): Promise<IActiveProfessional[]> {
-    return this.proceduresDomainService.getAllDoctors();
+  async getAllDoctors(
+    @Payload() payload: GetDoctorsMessageDto
+  ): Promise<IActiveProfessional[]> {
+    return this.proceduresDomainService.getAllDoctors(
+      payload?.includeInactive ?? false
+    );
   }
 
   @MessagePattern('area-codes.get-all')
