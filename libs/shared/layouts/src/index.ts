@@ -18,3 +18,8 @@ export * from './lib/forms/ui-appointment-steps/step-cedula/step-cedula.componen
 export * from './lib/forms/ui-appointment-steps/step-personal-info/step-personal-info.component';
 export * from './lib/forms/ui-appointment-steps/step-procedure-selection/step-procedure-selection.component';
 
+// Professional Form Steps
+export * from './lib/forms/ui-professional-steps/step-professional-info/step-professional-info.component';
+export * from './lib/forms/ui-professional-steps/step-professional-schedule/step-professional-schedule.component';
+export * from './lib/forms/ui-professional-steps/step-professional-procedures/step-professional-procedures.component';
+

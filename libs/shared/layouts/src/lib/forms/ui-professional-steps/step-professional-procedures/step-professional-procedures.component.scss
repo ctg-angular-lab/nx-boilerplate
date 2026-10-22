@@ -1,0 +1,99 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.step-professional-procedures {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 1.25rem;
+}
+
+.procedures-section {
+  width: 100%;
+}
+
+.form-field {
+  width: 100%;
+}
+
+.prefix-icon {
+  color: var(--sys-color-on-surface-variant);
+  font-size: 20px;
+  margin-right: 0.5rem;
+}
+
+.summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-radius: 12px;
+  background-color: var(--sys-color-surface-container-low);
+  border: 1px solid var(--sys-color-outline-variant);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--sys-color-primary);
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--sys-color-on-surface);
+  }
+}
+
+.summary-icon {
+  font-size: 22px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  &--full {
+    grid-column: 1 / -1;
+  }
+}
+
+.summary-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--sys-color-on-surface-variant);
+}
+
+.summary-value {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--sys-color-on-surface);
+}
+
+.summary-hint {
+  font-size: 0.8125rem;
+  color: var(--sys-color-on-surface-variant);
+}
+
+.stepper-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}

@@ -1,22 +1,56 @@
-<div class="table-wrapper">
+<div class="table-wrapper" [attr.data-density]="density()">
   @if (loading()) {
     <mat-progress-bar mode="indeterminate" class="table-loader" />
   }
 
   <header class="table-header-slot">
-    <ng-content select="[table-header], [tableHeader]" />
+    <div class="table-header-content">
+      <div class="table-header-main">
+        <ng-content select="[table-header], [tableHeader]" />
+      </div>
+
+      @if (searchable()) {
+        <div class="search-box">
+          <span class="material-symbols-outlined search-icon">search</span>
+          <input
+            type="text"
+            class="search-input"
+            [placeholder]="searchPlaceholder()"
+            [value]="searchTerm()"
+            (input)="searchTerm.set($any($event.target).value)"
+            aria-label="Buscar en la tabla"
+          />
+          @if (searchTerm().length > 0) {
+            <button
+              type="button"
+              class="clear-button"
+              (click)="searchTerm.set('')"
+              aria-label="Limpiar búsqueda"
+            >
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          }
+        </div>
+      }
+    </div>
   </header>
 
   <div class="table-container">
-    <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortChange.emit($event)">
+    <table
+      mat-table
+      multiTemplateDataRows
+      [dataSource]="dataSource"
+      matSort
+      (matSortChange)="sortChange.emit($event)"
+    >
       <!-- Checkbox Column -->
       @if (selectable()) {
         <ng-container matColumnDef="__select__">
           <th mat-header-cell *matHeaderCellDef class="checkbox-cell">
             <mat-checkbox
               (change)="$event ? masterToggle() : null"
-              [checked]="selectedRows().length > 0 && isAllSelected()"
-              [indeterminate]="selectedRows().length > 0 && !isAllSelected()"
+              [checked]="selectedKeys().length > 0 && isAllSelected()"
+              [indeterminate]="selectedKeys().length > 0 && !isAllSelected()"
               aria-label="Seleccionar todos"
             />
           </th>
@@ -27,6 +61,31 @@
               [checked]="isRowSelected(row)"
               aria-label="Seleccionar fila"
             />
+          </td>
+        </ng-container>
+      }
+
+      <!-- Expand Indicator Column (Izquierda) -->
+      @if (expandable()) {
+        <ng-container matColumnDef="__expand__">
+          <th mat-header-cell *matHeaderCellDef class="expand-cell" aria-label="Expandir fila"></th>
+          <td
+            mat-cell
+            *matCellDef="let row"
+            class="expand-cell"
+            (click)="$event.stopPropagation(); onRowClick(row)"
+          >
+            <button
+              mat-icon-button
+              type="button"
+              class="expand-toggle-button"
+              [attr.aria-label]="isExpanded(row) ? 'Colapsar fila' : 'Expandir fila'"
+              [attr.aria-expanded]="isExpanded(row)"
+            >
+              <span class="material-symbols-outlined expand-icon">
+                {{ isExpanded(row) ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}
+              </span>
+            </button>
           </td>
         </ng-container>
       }
@@ -86,6 +145,21 @@
         </ng-container>
       }
 
+      <!-- Expanded Row Detail Column -->
+      @if (expandable()) {
+        <ng-container matColumnDef="__detail__">
+          <td mat-cell *matCellDef="let row" class="detail-cell" [attr.colspan]="displayedColumns().length">
+            <div class="detail-wrapper" [class.expanded]="isExpanded(row)">
+              <div class="detail-inner">
+                @if (isExpanded(row) && detailTemplate(); as tpl) {
+                  <ng-container *ngTemplateOutlet="tpl; context: { $implicit: row }" />
+                }
+              </div>
+            </div>
+          </td>
+        </ng-container>
+      }
+
       <!-- Headers and Rows -->
       <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
       <tr
@@ -93,17 +167,27 @@
         *matRowDef="let row; columns: displayedColumns()"
         class="table-row"
         [class.selected-row]="isRowSelected(row)"
+        [class.expanded-row]="isExpanded(row)"
+        [attr.aria-expanded]="expandable() ? isExpanded(row) : null"
+        [attr.tabindex]="expandable() ? 0 : null"
         (click)="onRowClick(row)"
+        (keydown.enter)="expandable() && onRowClick(row)"
+        (keydown.space)="expandable() && $event.preventDefault(); expandable() && onRowClick(row)"
       ></tr>
+      @if (expandable()) {
+        <tr mat-row *matRowDef="let row; columns: detailColumns" class="detail-row"></tr>
+      }
 
       <!-- Empty State -->
-      <tr class="mat-row empty-row" *matNoDataRow>
-        <td class="mat-cell empty-cell" [attr.colspan]="displayedColumns().length">
-          <div class="empty-content">
-            <span class="material-symbols-outlined empty-icon">inbox</span>
-            <p>{{ emptyMessage() }}</p>
-          </div>
-        </td>
+      <tr class="empty-row" *matNoDataRow>
+        @if (!loading() && dataTable().length === 0) {
+          <td class="empty-cell" [attr.colspan]="displayedColumns().length">
+            <div class="empty-content">
+              <span class="material-symbols-outlined empty-icon">inbox</span>
+              <p>{{ emptyMessage() }}</p>
+            </div>
+          </td>
+        }
       </tr>
     </table>
   </div>
@@ -114,7 +198,6 @@
     [pageSize]="pageSize()"
     [pageIndex]="pageIndex()"
     [pageSizeOptions]="pageSizeOptions()"
-    (page)="pageIndex.set($event.pageIndex); pageSize.set($event.pageSize); pageChange.emit($event)"
-    showFirstLastButtons
+    (page)="pageChange.emit($event); pageSize.set($event.pageSize); pageIndex.set($event.pageIndex)"
   />
 </div>

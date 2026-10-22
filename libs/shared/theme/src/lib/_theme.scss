@@ -61,6 +61,17 @@ html, :root {
   --sys-color-error-container: var(--mat-sys-error-container, #ffdad6);
   --sys-color-on-error-container: var(--mat-sys-on-error-container, #410002);
 
+  // Tokens Semánticos de Aplicación (Status / Feedback) - Modo Claro
+  --app-color-success: #1b6d2e;
+  --app-color-on-success: #ffffff;
+  --app-color-success-container: #a3f5a7;
+  --app-color-on-success-container: #002206;
+
+  --app-color-warning: #7d5700;
+  --app-color-on-warning: #ffffff;
+  --app-color-warning-container: #ffdf9e;
+  --app-color-on-warning-container: #261900;
+
   --sys-color-surface: var(--mat-sys-surface, #f8fafc);
   --sys-color-on-surface: var(--mat-sys-on-surface, #191c20);
   --sys-color-surface-variant: var(--mat-sys-surface-variant, #dde3eb);
@@ -129,6 +140,17 @@ html.dark-theme {
   --sys-color-on-error: var(--mat-sys-on-error, #690005);
   --sys-color-error-container: var(--mat-sys-error-container, #93000a);
   --sys-color-on-error-container: var(--mat-sys-on-error-container, #ffdad6);
+
+  // Tokens Semánticos de Aplicación (Status / Feedback) - Modo Oscuro
+  --app-color-success: #88d88e;
+  --app-color-on-success: #00390f;
+  --app-color-success-container: #005319;
+  --app-color-on-success-container: #a3f5a7;
+
+  --app-color-warning: #ffba2f;
+  --app-color-on-warning: #432c00;
+  --app-color-warning-container: #604000;
+  --app-color-on-warning-container: #ffdf9e;
 
   --sys-color-surface: var(--mat-sys-surface, #101418);
   --sys-color-on-surface: var(--mat-sys-on-surface, #e1e2e8);

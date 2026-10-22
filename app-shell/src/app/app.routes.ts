@@ -29,4 +29,15 @@ export const appRoutes: Route[] = [
     path: 'Login',
     redirectTo: 'login',
   },
+  {
+    path: 'profesionales',
+    loadChildren: () =>
+      loadRemote<typeof import('lista-profesionales/Routes')>(
+        'lista-profesionales/Routes'
+      ).then((m) => m!.remoteRoutes),
+  },
+  {
+    path: 'lista-profesionales',
+    redirectTo: 'profesionales',
+  },
 ];

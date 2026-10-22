@@ -1,7 +1,7 @@
 <div class="step-cedula">
   <div class="step-cedula__instructions">
     <p class="instruction-text">
-      Ingrese el documento de identidad del Paciente</p>
+      Ingrese el documento de identidad del {{ subject() }}</p>
   </div>
 
   <form [formGroup]="stepForm()" class="step-cedula__form">
@@ -26,6 +26,9 @@
       }
       @if (hasError('pattern')) {
         <mat-error>La cédula debe contener solo números</mat-error>
+      }
+      @if (hasError('duplicateCedula')) {
+        <mat-error>Ya existe un {{ subject().toLowerCase() }} registrado con esta cédula.</mat-error>
       }
     </mat-form-field>
   </form>

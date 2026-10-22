@@ -1,0 +1,93 @@
+<form [formGroup]="stepForm()" class="step-professional-info">
+  <div class="form-grid">
+    <!-- Nombres -->
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Nombres</mat-label>
+      <span matPrefix class="material-symbols-outlined prefix-icon">person</span>
+      <input
+        matInput
+        type="text"
+        formControlName="nombres"
+        placeholder="Ej. Carlos Eduardo"
+        autocomplete="given-name"
+      />
+      @if (hasError('nombres', 'required')) {
+        <mat-error>Los nombres son obligatorios</mat-error>
+      }
+      @if (hasError('nombres', 'pattern')) {
+        <mat-error>Solo se permiten letras, acentos y espacios</mat-error>
+      }
+    </mat-form-field>
+
+    <!-- Apellidos -->
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Apellidos</mat-label>
+      <span matPrefix class="material-symbols-outlined prefix-icon">person</span>
+      <input
+        matInput
+        type="text"
+        formControlName="apellidos"
+        placeholder="Ej. Gómez Restrepo"
+        autocomplete="family-name"
+      />
+      @if (hasError('apellidos', 'required')) {
+        <mat-error>Los apellidos son obligatorios</mat-error>
+      }
+      @if (hasError('apellidos', 'pattern')) {
+        <mat-error>Solo se permiten letras, acentos y espacios</mat-error>
+      }
+    </mat-form-field>
+
+    <!-- Correo Electrónico -->
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Correo electrónico</mat-label>
+      <span matPrefix class="material-symbols-outlined prefix-icon">mail</span>
+      <input
+        matInput
+        type="email"
+        formControlName="email"
+        placeholder="ejemplo@clinica.com"
+        autocomplete="email"
+      />
+      @if (hasError('email', 'required')) {
+        <mat-error>El correo electrónico es obligatorio</mat-error>
+      }
+      @if (hasError('email', 'email') || hasError('email', 'pattern')) {
+        <mat-error>Ingrese un correo electrónico válido</mat-error>
+      }
+    </mat-form-field>
+
+    <!-- Profesión / Especialidad -->
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Profesión / Especialidad</mat-label>
+      <span matPrefix class="material-symbols-outlined prefix-icon">medical_services</span>
+      <input
+        matInput
+        type="text"
+        formControlName="profesion"
+        placeholder="Ej. Cirujana Plástica y Reconstructiva"
+      />
+      @if (hasError('profesion', 'required')) {
+        <mat-error>La profesión o especialidad es obligatoria</mat-error>
+      }
+    </mat-form-field>
+  </div>
+
+  <div class="stepper-actions">
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="prevStep.emit()"
+    >
+      Anterior
+    </button>
+    <button
+      mat-flat-button
+      type="button"
+      [disabled]="stepForm().invalid"
+      (click)="nextStep.emit()"
+    >
+      Siguiente
+    </button>
+  </div>
+</form>

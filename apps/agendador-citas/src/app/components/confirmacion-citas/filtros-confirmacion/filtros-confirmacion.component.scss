@@ -1,3 +1,8 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
 .toolbar-confirmacion {
   display: flex;
   flex-direction: column;
@@ -7,6 +12,8 @@
   border-radius: 1rem;
   border: 1px solid var(--sys-color-outline-variant, #e1e3eb);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  box-sizing: border-box;
 
   &__primary-row {
     display: flex;

@@ -14,7 +14,7 @@ export interface IWorkSchedule {
   recesoAlmuerzo?: {
     inicio: string;
     fin: string;
-  };
+  } | null;
 }
 
 export interface IActiveProfessional {
@@ -28,6 +28,18 @@ export interface IActiveProfessional {
   isActive: boolean;
   horariosExcepcionales?: IExceptionSchedule[];
 }
+
+/** Payload de alta (POST /api/doctors). El backend fija isActive y horariosExcepcionales. */
+export type ICreateProfessionalRequest = Omit<
+  IActiveProfessional,
+  'isActive' | 'horariosExcepcionales'
+>;
+
+/** Payload de actualización parcial (PATCH /api/doctors/:cedula). La cédula es inmutable (viaja en la URL). */
+export type IUpdateProfessionalRequest = Partial<
+  Omit<ICreateProfessionalRequest, 'cedula'>
+>;
+
 
 export type IProfessionalSummary = Pick<
   IActiveProfessional,

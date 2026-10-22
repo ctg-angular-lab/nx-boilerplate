@@ -1,0 +1,88 @@
+<form [formGroup]="stepForm()" class="step-professional-procedures">
+  <!-- Selector de Procedimientos Relacionados -->
+  <div class="procedures-section">
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Procedimientos autorizados</mat-label>
+      <span matPrefix class="material-symbols-outlined prefix-icon">local_hospital</span>
+      <mat-select formControlName="procedimientosRelacionados" multiple placeholder="Seleccione uno o varios">
+        @for (proc of procedures(); track proc.idProcedimiento) {
+          <mat-option [value]="proc.idProcedimiento">
+            {{ proc.nombreProcedimiento }}
+          </mat-option>
+        } @empty {
+          <mat-option disabled>No hay procedimientos disponibles</mat-option>
+        }
+      </mat-select>
+      <mat-hint>Opcional: puede asociar procedimientos ahora o gestionarlos más adelante.</mat-hint>
+    </mat-form-field>
+  </div>
+
+  <!-- Resumen de Confirmación -->
+  @if (summaryData(); as summary) {
+    <div class="summary-card">
+      <header class="summary-card__header">
+        <span class="material-symbols-outlined summary-icon">verified_user</span>
+        <h4 class="summary-card__title">Resumen de Registro del Profesional</h4>
+      </header>
+
+      <div class="summary-grid">
+        <div class="summary-item">
+          <span class="summary-label">Documento / Cédula</span>
+          <span class="summary-value">{{ summary.cedula }}</span>
+        </div>
+
+        <div class="summary-item">
+          <span class="summary-label">Nombre Completo</span>
+          <span class="summary-value">{{ summary.nombres }} {{ summary.apellidos }}</span>
+        </div>
+
+        <div class="summary-item">
+          <span class="summary-label">Correo Electrónico</span>
+          <span class="summary-value">{{ summary.email }}</span>
+        </div>
+
+        <div class="summary-item">
+          <span class="summary-label">Profesión / Especialidad</span>
+          <span class="summary-value">{{ summary.profesion }}</span>
+        </div>
+
+        <div class="summary-item summary-item--full">
+          <span class="summary-label">Jornada y Días de Atención</span>
+          <span class="summary-value">
+            {{ summary.horaInicio }} – {{ summary.horaFin }}
+            ({{ summary.diasLaborales.join(', ') }})
+          </span>
+          @if (summary.receso) {
+            <span class="summary-hint">Almuerzo: {{ summary.receso }}</span>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Botonera de Acción -->
+  <div class="stepper-actions">
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="isSaving()"
+      (click)="prevStep.emit()"
+    >
+      Anterior
+    </button>
+    <button
+      mat-flat-button
+      type="button"
+      [disabled]="isSaving() || stepForm().invalid"
+      (click)="save.emit()"
+    >
+      @if (isSaving()) {
+        Guardando...
+      } @else if (isEditMode()) {
+        Actualizar Profesional
+      } @else {
+        Guardar Profesional
+      }
+    </button>
+  </div>
+</form>

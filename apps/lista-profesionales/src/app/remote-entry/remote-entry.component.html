@@ -1,0 +1,22 @@
+<div class="profesionales-view-container">
+  <h1 class="profesionales-title">Gestión de Profesionales</h1>
+
+  <lib-tabs-collection
+    [tabs]="tabs()"
+    [preserveContent]="true"
+    [activeTabId]="profesionalesService.activeTab()"
+    (activeTabIdChange)="onActiveTabChange($event)"
+  />
+
+  <ng-template #listTab>
+    <div class="tab-pane-wrapper">
+      <app-profesionales-list />
+    </div>
+  </ng-template>
+
+  <ng-template #formTab>
+    <div class="tab-pane-wrapper">
+      <app-profesionales-form />
+    </div>
+  </ng-template>
+</div>

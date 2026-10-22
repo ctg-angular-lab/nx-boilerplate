@@ -35,7 +35,10 @@
         "./libs/backend/scheduling-domain/src/index.ts"
       ],
       "@nx-boilerplate/data-access": ["./libs/shared/data-access/src/index.ts"],
-      "@nx-boilerplate/utils": ["./libs/shared/utils/src/index.ts"]
+      "@nx-boilerplate/utils": ["./libs/shared/utils/src/index.ts"],
+      "lista-profesionales/Routes": [
+        "./apps/lista-profesionales/src/app/remote-entry/entry.routes.ts"
+      ]
     }
   },
   "exclude": ["node_modules", "tmp"]
