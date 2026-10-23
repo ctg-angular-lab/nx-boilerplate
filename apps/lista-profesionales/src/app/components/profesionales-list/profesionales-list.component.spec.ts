@@ -3,8 +3,9 @@ import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { signal } from '@angular/core';
 import { of } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
 import { IActiveProfessional } from '@nx-boilerplate/api-interfaces';
-import { DataTableComponent } from '@nx-boilerplate/layouts';
+import { ConfirmationModalComponent, DataTableComponent } from '@nx-boilerplate/layouts';
 import { ProfesionalesAdminService } from '../../services/profesionales-admin.service';
 import { ProfesionalesListComponent } from './profesionales-list.component';
 
@@ -44,6 +45,10 @@ describe('ProfesionalesListComponent', () => {
     reactivateProfesional: ReturnType<typeof vi.fn>;
   };
 
+  let mockDialog: {
+    open: ReturnType<typeof vi.fn>;
+  };
+
   beforeEach(async () => {
     mockProfesionalesListSignal = signal<IActiveProfessional[]>([mockProfessional]);
     mockIsLoadingSignal = signal<boolean>(false);
@@ -59,11 +64,18 @@ describe('ProfesionalesListComponent', () => {
       reactivateProfesional: vi.fn().mockReturnValue(of(true)),
     };
 
+    mockDialog = {
+      open: vi.fn().mockReturnValue({
+        afterClosed: vi.fn().mockReturnValue(of(true)),
+      }),
+    };
+
     await TestBed.configureTestingModule({
       imports: [ProfesionalesListComponent],
       providers: [
         provideNoopAnimations(),
         { provide: ProfesionalesAdminService, useValue: mockService },
+        { provide: MatDialog, useValue: mockDialog },
       ],
     }).compileComponents();
 
@@ -98,14 +110,32 @@ describe('ProfesionalesListComponent', () => {
     expect(mockService.goToEdit).toHaveBeenCalledWith(mockProfessional);
   });
 
-  it('debe invocar profesionalesService.deleteProfesional(cedula) al ejecutar onDelete deteniendo propagación', () => {
+  it('debe abrir modal de confirmación y desactivar al confirmar', () => {
     const stopPropagationSpy = vi.fn();
     const fakeEvent = { stopPropagation: stopPropagationSpy } as unknown as Event;
 
     component.onDelete(mockProfessional, fakeEvent);
 
     expect(stopPropagationSpy).toHaveBeenCalledTimes(1);
+    expect(mockDialog.open).toHaveBeenCalledWith(ConfirmationModalComponent, {
+      data: expect.objectContaining({
+        title: 'Desactivar profesional',
+      }),
+      width: '450px',
+      disableClose: false,
+    });
     expect(mockService.deleteProfesional).toHaveBeenCalledWith(mockProfessional.cedula);
+  });
+
+  it('no debe desactivar profesional si el usuario cancela o cierra el modal', () => {
+    mockDialog.open.mockReturnValueOnce({
+      afterClosed: vi.fn().mockReturnValue(of(false)),
+    });
+
+    component.onDelete(mockProfessional);
+
+    expect(mockDialog.open).toHaveBeenCalled();
+    expect(mockService.deleteProfesional).not.toHaveBeenCalled();
   });
 
   it('debe renderizar mensaje de error cuando profesionalesService.error() tiene valor', () => {
@@ -146,13 +176,31 @@ describe('ProfesionalesListComponent', () => {
     expect(component.emptyMessage()).toBe('No hay profesionales inactivos.');
   });
 
-  it('debe invocar reactivateProfesional(cedula) al ejecutar onReactivate deteniendo propagación', () => {
+  it('debe abrir modal de confirmación y reactivar al confirmar', () => {
     const stopPropagationSpy = vi.fn();
     const fakeEvent = { stopPropagation: stopPropagationSpy } as unknown as Event;
 
     component.onReactivate(mockProfessional, fakeEvent);
 
     expect(stopPropagationSpy).toHaveBeenCalledTimes(1);
+    expect(mockDialog.open).toHaveBeenCalledWith(ConfirmationModalComponent, {
+      data: expect.objectContaining({
+        title: 'Reactivar profesional',
+      }),
+      width: '450px',
+      disableClose: false,
+    });
     expect(mockService.reactivateProfesional).toHaveBeenCalledWith(mockProfessional.cedula);
+  });
+
+  it('no debe reactivar profesional si el usuario cancela o cierra el modal', () => {
+    mockDialog.open.mockReturnValueOnce({
+      afterClosed: vi.fn().mockReturnValue(of(false)),
+    });
+
+    component.onReactivate(mockProfessional);
+
+    expect(mockDialog.open).toHaveBeenCalled();
+    expect(mockService.reactivateProfesional).not.toHaveBeenCalled();
   });
 });
