@@ -1,0 +1,160 @@
+<form [formGroup]="stepForm()" class="step-procedure-pricing">
+  <div class="pricing-grid">
+    <!-- Valor Estándar -->
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Valor estándar (COP)</mat-label>
+      <span matPrefix class="material-symbols-outlined prefix-icon">attach_money</span>
+      <input
+        matInput
+        type="number"
+        formControlName="valorStandar"
+        placeholder="Ej. 150000"
+        min="0"
+      />
+      @if (hasError('valorStandar', 'required')) {
+        <mat-error>El valor estándar es requerido</mat-error>
+      }
+      @if (hasError('valorStandar', 'min')) {
+        <mat-error>El valor debe ser mayor o igual a 0</mat-error>
+      }
+    </mat-form-field>
+
+    <!-- Duración Estándar -->
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Duración estándar</mat-label>
+      <span matPrefix class="material-symbols-outlined prefix-icon">schedule</span>
+      <input
+        matInput
+        type="number"
+        formControlName="duracionStandar"
+        placeholder="Ej. 60"
+        min="5"
+        max="480"
+      />
+      <span matSuffix class="suffix-text">min</span>
+      @if (hasError('duracionStandar', 'required')) {
+        <mat-error>La duración estándar es requerida</mat-error>
+      }
+      @if (hasError('duracionStandar', 'min')) {
+        <mat-error>La duración mínima es de 5 minutos</mat-error>
+      }
+      @if (hasError('duracionStandar', 'max')) {
+        <mat-error>La duración máxima es de 480 minutos (8h)</mat-error>
+      }
+    </mat-form-field>
+  </div>
+
+  <!-- Toggle Insumos de Laboratorio -->
+  <div class="laboratory-toggle-section">
+    <mat-slide-toggle formControlName="tieneLaboratorio">
+      ¿Requiere insumos de laboratorio?
+    </mat-slide-toggle>
+  </div>
+
+  <!-- Grilla de Laboratorios Dinámicos -->
+  @if (stepForm().get('tieneLaboratorio')?.value) {
+    <div class="laboratories-section">
+      <div class="section-header">
+        <h3 class="section-title">Insumos y Laboratorios</h3>
+        <button
+          mat-stroked-button
+          color="primary"
+          type="button"
+          class="add-lab-button"
+          (click)="addLaboratory.emit()"
+        >
+          <span class="material-symbols-outlined">add</span>
+          Agregar laboratorio
+        </button>
+      </div>
+
+      <div class="labs-grid">
+        @for (labGroup of labs; track $index; let i = $index) {
+          <div class="laboratory-card" [formGroup]="labGroup">
+            <div class="card-header">
+              <span class="card-badge">Insumo #{{ i + 1 }}</span>
+              <button
+                mat-icon-button
+                type="button"
+                aria-label="Eliminar laboratorio"
+                (click)="removeLaboratory.emit(i)"
+              >
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <!-- Nombre Laboratorio (100% ancho) -->
+            <mat-form-field appearance="outline" class="form-field full-width">
+              <mat-label>Nombre del insumo / laboratorio</mat-label>
+              <input
+                matInput
+                type="text"
+                formControlName="nombreLaboratorio"
+                placeholder="Ej. Anestésico local"
+              />
+              @if (hasLabError(labGroup, 'nombreLaboratorio', 'required')) {
+                <mat-error>El nombre del laboratorio es requerido</mat-error>
+              }
+              @if (hasLabError(labGroup, 'nombreLaboratorio', 'minlength')) {
+                <mat-error>Debe tener al menos 2 caracteres</mat-error>
+              }
+            </mat-form-field>
+
+            <!-- Fila Inferior: Precio y Medida -->
+            <div class="card-row">
+              <mat-form-field appearance="outline" class="form-field half-width">
+                <mat-label>Precio unitario</mat-label>
+                <span matPrefix class="material-symbols-outlined prefix-icon">attach_money</span>
+                <input
+                  matInput
+                  type="number"
+                  formControlName="precio"
+                  placeholder="0"
+                  min="0"
+                />
+                @if (hasLabError(labGroup, 'precio', 'required')) {
+                  <mat-error>El precio es requerido</mat-error>
+                }
+                @if (hasLabError(labGroup, 'precio', 'min')) {
+                  <mat-error>Debe ser mayor o igual a 0</mat-error>
+                }
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field half-width">
+                <mat-label>Medida por unidad</mat-label>
+                <input
+                  matInput
+                  type="text"
+                  formControlName="medidaPorUnidad"
+                  placeholder="Ej. ampolla, ml, kit"
+                />
+                @if (hasLabError(labGroup, 'medidaPorUnidad', 'required')) {
+                  <mat-error>La medida es requerida</mat-error>
+                }
+              </mat-form-field>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <div class="stepper-actions">
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="prevStep.emit()"
+    >
+      Anterior
+    </button>
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      [disabled]="stepForm().invalid"
+      (click)="nextStep.emit()"
+    >
+      Continuar
+    </button>
+  </div>
+</form>

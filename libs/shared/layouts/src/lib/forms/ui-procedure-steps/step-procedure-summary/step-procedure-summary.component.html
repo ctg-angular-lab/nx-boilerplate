@@ -1,0 +1,93 @@
+<div class="step-procedure-summary">
+  <!-- Banner Informativo de Reactivación de Inactivo -->
+  @if (isRestoringInactive()) {
+    <div class="restore-alert-banner" role="alert">
+      <span class="material-symbols-outlined alert-icon">history</span>
+      <div class="alert-text">
+        <strong>Procedimiento previamente inactivo:</strong>
+        Este procedimiento ya existía de forma inactiva. Al guardar, se actualizarán sus datos y será reactivado automáticamente en el catálogo activo.
+      </div>
+    </div>
+  }
+
+  <!-- Tarjeta de Resumen -->
+  <div class="summary-card">
+    <div class="summary-header">
+      <span class="material-symbols-outlined header-icon">medical_services</span>
+      <div class="header-titles">
+        <span class="header-eyebrow">Resumen del Procedimiento</span>
+        <h2 class="procedure-title">{{ summaryData().nombreProcedimiento }}</h2>
+      </div>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-item">
+        <span class="metric-label">Valor Estándar</span>
+        <span class="metric-value">{{ formatCop(summaryData().valorStandar) }}</span>
+      </div>
+
+      <div class="metric-item">
+        <span class="metric-label">Duración Estándar</span>
+        <span class="metric-value">{{ summaryData().duracionStandar }} min</span>
+      </div>
+
+      <div class="metric-item">
+        <span class="metric-label">Insumos de Laboratorio</span>
+        <span class="metric-value">
+          {{ (summaryData().laboratorios?.length ?? 0) > 0 ? (summaryData().laboratorios?.length + ' insumo(s)') : 'Sin insumos' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Lista de Insumos -->
+    @if ((summaryData().laboratorios?.length ?? 0) > 0) {
+      <div class="laboratories-summary">
+        <h3 class="labs-title">Detalle de Insumos / Laboratorios</h3>
+        <div class="labs-table">
+          <div class="table-header">
+            <span>Insumo</span>
+            <span>Precio</span>
+            <span>Medida</span>
+          </div>
+          @for (lab of summaryData().laboratorios; track $index) {
+            <div class="table-row">
+              <span class="col-name">{{ lab.nombreLaboratorio }}</span>
+              <span class="col-price">{{ formatCop(lab.precio) }}</span>
+              <span class="col-unit">{{ lab.medidaPorUnidad }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Botones de Acción -->
+  <div class="stepper-actions">
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="isSaving()"
+      (click)="prevStep.emit()"
+    >
+      Anterior
+    </button>
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      [disabled]="isSaving()"
+      (click)="save.emit()"
+    >
+      @if (isSaving()) {
+        <span class="material-symbols-outlined spin">progress_activity</span>
+        Guardando...
+      } @else if (isRestoringInactive()) {
+        Reactivar Procedimiento
+      } @else if (isEditMode()) {
+        Actualizar Procedimiento
+      } @else {
+        Guardar Procedimiento
+      }
+    </button>
+  </div>
+</div>
