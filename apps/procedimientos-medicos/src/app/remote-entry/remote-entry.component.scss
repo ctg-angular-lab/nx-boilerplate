@@ -1,6 +1,11 @@
-.procedimientos-entry-wrapper {
-  padding: 1.5rem;
+.procedimientos-view-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
   color: var(--sys-color-on-surface);
-  background-color: var(--sys-color-surface);
-  border-radius: 8px;
+}
+
+.tab-pane-wrapper {
+  padding: 16px 0;
+  width: 100%;
 }
