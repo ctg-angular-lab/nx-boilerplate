@@ -40,4 +40,12 @@ export const appRoutes: Route[] = [
     path: 'lista-profesionales',
     redirectTo: 'profesionales',
   },
+  {
+    path: 'procedimientos-medicos',
+    loadChildren: () =>
+      loadRemote<typeof import('procedimientos-medicos/Routes')>(
+        'procedimientos-medicos/Routes'
+      ).then((m) => m!.remoteRoutes),
+  },
 ];
+

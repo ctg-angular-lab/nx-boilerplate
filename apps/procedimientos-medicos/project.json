@@ -1,0 +1,111 @@
+{
+  "name": "procedimientos-medicos",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "prefix": "app",
+  "sourceRoot": "apps/procedimientos-medicos/src",
+  "tags": ["scope:frontend", "type:app"],
+  "targets": {
+    "build": {
+      "executor": "@nx/angular:webpack-browser",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/procedimientos-medicos",
+        "index": "apps/procedimientos-medicos/src/index.html",
+        "main": "apps/procedimientos-medicos/src/main.ts",
+        "tsConfig": "apps/procedimientos-medicos/tsconfig.app.json",
+        "inlineStyleLanguage": "scss",
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "apps/procedimientos-medicos/public"
+          }
+        ],
+        "styles": ["apps/procedimientos-medicos/src/styles.scss"],
+        "customWebpackConfig": {
+          "path": "apps/procedimientos-medicos/webpack.config.ts"
+        }
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kb",
+              "maximumError": "1mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "12kb",
+              "maximumError": "16kb"
+            }
+          ],
+          "outputHashing": "all",
+          "customWebpackConfig": {
+            "path": "apps/procedimientos-medicos/webpack.prod.config.ts"
+          }
+        },
+        "development": {
+          "buildOptimizer": false,
+          "optimization": false,
+          "vendorChunk": true,
+          "extractLicenses": false,
+          "sourceMap": true,
+          "namedChunks": true
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@nx/angular:dev-server",
+      "options": {
+        "port": 4204,
+        "publicHost": "http://localhost:4204"
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "procedimientos-medicos:build:production"
+        },
+        "development": {
+          "buildTarget": "procedimientos-medicos:build:development"
+        }
+      },
+      "defaultConfiguration": "development"
+    },
+    "extract-i18n": {
+      "executor": "@angular-devkit/build-angular:extract-i18n",
+      "options": {
+        "buildTarget": "procedimientos-medicos:build"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": ["{workspaceRoot}/coverage/apps/procedimientos-medicos"],
+      "options": {
+        "config": "apps/procedimientos-medicos/vite.config.mts"
+      }
+    },
+    "serve-static": {
+      "continuous": true,
+      "executor": "@nx/web:file-server",
+      "defaultConfiguration": "production",
+      "options": {
+        "buildTarget": "procedimientos-medicos:build",
+        "port": 4214,
+        "watch": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "procedimientos-medicos:build:development"
+        },
+        "production": {
+          "buildTarget": "procedimientos-medicos:build:production"
+        }
+      }
+    }
+  }
+}
