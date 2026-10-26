@@ -8,9 +8,12 @@ import {
   IProfessionalSummary,
   IAreaCode,
   IExceptionSchedule,
+  IProcedureSoftDeleteResponse,
 } from '@nx-boilerplate/api-interfaces';
 import {
+  CreateProcedureDto,
   CreateProfessionalDto,
+  UpdateProcedureDto,
   UpdateProfessionalDto,
 } from '@nx-boilerplate/shared-dtos';
 import { ProceduresRepository } from '../repositories/procedures.repository';
@@ -23,8 +26,161 @@ export class ProceduresDomainService {
     @InjectConnection() private readonly connection: Connection
   ) {}
 
-  async getAll(): Promise<IProcedure[]> {
-    return this.proceduresRepository.findAll();
+  async getAll(includeInactive = false): Promise<IProcedure[]> {
+    return this.proceduresRepository.findAll(includeInactive);
+  }
+
+  async createProcedure(dto: CreateProcedureDto): Promise<IProcedure> {
+    const existing = await this.proceduresRepository.findByNameNormalized(
+      dto.nombreProcedimiento
+    );
+
+    if (existing) {
+      if (existing.isActive !== false) {
+        throw new RpcException({
+          status: 'error',
+          code: 409,
+          message: `Ya existe un procedimiento activo con el nombre "${dto.nombreProcedimiento}"`,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      throw new RpcException({
+        status: 'error',
+        code: 409,
+        message: `Existe un procedimiento inactivo con el nombre "${dto.nombreProcedimiento}". Puede reactivarlo en lugar de crearlo.`,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    const idProcedimiento =
+      await this.proceduresRepository.getNextProcedureId();
+
+    const created = await this.proceduresRepository.createProcedure({
+      idProcedimiento,
+      nombreProcedimiento: dto.nombreProcedimiento.trim(),
+      valorStandar: dto.valorStandar,
+      duracionStandar: dto.duracionStandar,
+      laboratorios: dto.laboratorios || [],
+      isActive: true,
+      medicosRelacionados: [],
+    });
+
+    return {
+      idProcedimiento: created.idProcedimiento,
+      nombreProcedimiento: created.nombreProcedimiento,
+      valorStandar: created.valorStandar,
+      duracionStandar: created.duracionStandar,
+      medicosRelacionados: created.medicosRelacionados || [],
+      isActive: created.isActive,
+      laboratorios: created.laboratorios || [],
+    };
+  }
+
+  async updateProcedure(
+    idProcedimiento: string,
+    dto: UpdateProcedureDto
+  ): Promise<IProcedure> {
+    const current = await this.proceduresRepository.findById(idProcedimiento);
+
+    if (!current) {
+      throw new RpcException({
+        status: 'error',
+        code: 404,
+        message: `Procedimiento médico con identificador ${idProcedimiento} no encontrado`,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    if (
+      dto.nombreProcedimiento &&
+      dto.nombreProcedimiento.trim().toLowerCase() !==
+        current.nombreProcedimiento.trim().toLowerCase()
+    ) {
+      const homonym = await this.proceduresRepository.findByNameNormalized(
+        dto.nombreProcedimiento,
+        idProcedimiento
+      );
+
+      if (homonym) {
+        throw new RpcException({
+          status: 'error',
+          code: 409,
+          message: `Ya existe otro procedimiento con el nombre "${dto.nombreProcedimiento}"`,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }
+
+    const updatePayload = {
+      ...dto,
+      ...(dto.nombreProcedimiento
+        ? { nombreProcedimiento: dto.nombreProcedimiento.trim() }
+        : {}),
+    };
+
+    const updated = await this.proceduresRepository.updateProcedure(
+      idProcedimiento,
+      updatePayload
+    );
+
+    if (!updated) {
+      throw new RpcException({
+        status: 'error',
+        code: 404,
+        message: `No fue posible actualizar el procedimiento médico con identificador ${idProcedimiento}`,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    return updated;
+  }
+
+  async softDeleteProcedure(
+    idProcedimiento: string
+  ): Promise<IProcedureSoftDeleteResponse> {
+    const matchedCount =
+      await this.proceduresRepository.softDeleteIfFree(idProcedimiento);
+
+    if (matchedCount === 0) {
+      const procedure =
+        await this.proceduresRepository.findById(idProcedimiento);
+
+      if (!procedure) {
+        throw new RpcException({
+          status: 'error',
+          code: 404,
+          message: `Procedimiento médico con identificador ${idProcedimiento} no encontrado`,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      if (
+        procedure.medicosRelacionados &&
+        procedure.medicosRelacionados.length > 0
+      ) {
+        throw new RpcException({
+          status: 'error',
+          code: 409,
+          message: `No es posible desactivar este procedimiento porque está asignado a ${procedure.medicosRelacionados.length} profesional(es) médico(s)`,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      return {
+        success: true,
+        message: `El procedimiento médico ${idProcedimiento} ya se encontraba inactivo`,
+        idProcedimiento,
+        isActive: false,
+      };
+    }
+
+    return {
+      success: true,
+      message: `Procedimiento médico ${idProcedimiento} desactivado correctamente`,
+      idProcedimiento,
+      isActive: false,
+    };
   }
 
   async getById(idProcedimiento: string): Promise<IProcedure> {

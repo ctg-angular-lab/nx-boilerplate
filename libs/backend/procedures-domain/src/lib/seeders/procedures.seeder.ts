@@ -10,6 +10,13 @@ export class ProceduresSeeder implements OnModuleInit {
 
   async onModuleInit(): Promise<void> {
     await this.seedInitialProceduresIfEmpty();
+    try {
+      await this.proceduresRepository.ensureProcedureCounter();
+    } catch (error) {
+      this.logger.warn(
+        `Aviso al sincronizar contador de procedimientos: ${(error as Error).message}`
+      );
+    }
   }
 
   async seedInitialProceduresIfEmpty(): Promise<void> {

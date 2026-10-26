@@ -5,3 +5,4 @@ export * from './lib/schemas/procedure.schema';
 export * from './lib/schemas/active-professional.schema';
 export * from './lib/seeders/procedures.seeder';
 export * from './lib/schemas/area-code.schema';
+export * from './lib/schemas/counter.schema';

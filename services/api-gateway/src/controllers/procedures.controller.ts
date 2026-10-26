@@ -1,11 +1,27 @@
-import { Controller, Get, Inject, Param, Query } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
-import { IProcedure, IProfessionalSummary } from '@nx-boilerplate/api-interfaces';
 import {
-  FindProcedureParamDto,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import {
+  IProcedure,
+  IProcedureSoftDeleteResponse,
+  IProfessionalSummary,
+} from '@nx-boilerplate/api-interfaces';
+import {
+  CreateProcedureDto,
   FilterProceduresQueryDto,
+  FindProcedureParamDto,
+  UpdateProcedureDto,
 } from '@nx-boilerplate/shared-dtos';
-import { firstValueFrom, timeout } from 'rxjs';
+import { Observable, timeout } from 'rxjs';
 
 @Controller('procedures')
 export class ProceduresController {
@@ -15,50 +31,76 @@ export class ProceduresController {
   ) {}
 
   @Get()
-  async getProcedures(
+  getProcedures(
     @Query() query: FilterProceduresQueryDto,
-  ): Promise<IProcedure[]> {
-    if (query.doctorCedula) {
-      return firstValueFrom(
-        this.proceduresClient
-          .send<IProcedure[]>('procedures.find-by-doctor', {
-            doctorCedula: query.doctorCedula,
-          })
-          .pipe(timeout(5000)),
-      );
+  ): Observable<IProcedure[]> {
+    if (query?.doctorCedula) {
+      return this.proceduresClient
+        .send<IProcedure[]>('procedures.find-by-doctor', {
+          doctorCedula: query.doctorCedula,
+        })
+        .pipe(timeout(5000));
     }
 
-    return firstValueFrom(
-      this.proceduresClient
-        .send<IProcedure[]>('procedures.get-all', {})
-        .pipe(timeout(5000)),
-    );
+    return this.proceduresClient
+      .send<IProcedure[]>('procedures.get-all', {
+        includeInactive: query?.includeInactive,
+      })
+      .pipe(timeout(5000));
+  }
+
+  @Post()
+  createProcedure(
+    @Body() payload: CreateProcedureDto,
+  ): Observable<IProcedure> {
+    return this.proceduresClient
+      .send<IProcedure>('procedures.create', payload)
+      .pipe(timeout(5000));
+  }
+
+  @Patch(':idProcedimiento')
+  updateProcedure(
+    @Param() params: FindProcedureParamDto,
+    @Body() payload: UpdateProcedureDto,
+  ): Observable<IProcedure> {
+    return this.proceduresClient
+      .send<IProcedure>('procedures.update', {
+        idProcedimiento: params.idProcedimiento,
+        data: payload,
+      })
+      .pipe(timeout(10000));
+  }
+
+  @Delete(':idProcedimiento')
+  softDeleteProcedure(
+    @Param() params: FindProcedureParamDto,
+  ): Observable<IProcedureSoftDeleteResponse> {
+    return this.proceduresClient
+      .send<IProcedureSoftDeleteResponse>('procedures.soft-delete', {
+        idProcedimiento: params.idProcedimiento,
+      })
+      .pipe(timeout(5000));
   }
 
   @Get(':idProcedimiento')
-  async getProcedureById(
+  getProcedureById(
     @Param() params: FindProcedureParamDto,
-  ): Promise<IProcedure> {
-    return firstValueFrom(
-      this.proceduresClient
-        .send<IProcedure>('procedures.find-by-id', {
-          idProcedimiento: params.idProcedimiento,
-        })
-        .pipe(timeout(5000)),
-    );
+  ): Observable<IProcedure> {
+    return this.proceduresClient
+      .send<IProcedure>('procedures.find-by-id', {
+        idProcedimiento: params.idProcedimiento,
+      })
+      .pipe(timeout(5000));
   }
 
   @Get(':idProcedimiento/doctors')
-  async getProcedureDoctors(
+  getProcedureDoctors(
     @Param() params: FindProcedureParamDto,
-  ): Promise<IProfessionalSummary[]> {
-    return firstValueFrom(
-      this.proceduresClient
-        .send<IProfessionalSummary[]>('procedures.get-doctors-by-procedure', {
-          idProcedimiento: params.idProcedimiento,
-        })
-        .pipe(timeout(5000)),
-    );
+  ): Observable<IProfessionalSummary[]> {
+    return this.proceduresClient
+      .send<IProfessionalSummary[]>('procedures.get-doctors-by-procedure', {
+        idProcedimiento: params.idProcedimiento,
+      })
+      .pipe(timeout(5000));
   }
 }
-
