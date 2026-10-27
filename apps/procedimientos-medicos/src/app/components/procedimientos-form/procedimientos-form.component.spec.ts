@@ -93,6 +93,40 @@ describe('ProcedimientosFormComponent', () => {
     expect(component.laboratoriosArray.length).toBe(0);
   });
 
+  it('no debe borrar el nombre ni resetear el formulario al escribir en modo creación', () => {
+    // Simular escritura progresiva en el input
+    component.form.controls.step1.controls.nombreProcedimiento.setValue('Bio');
+    fixture.detectChanges();
+    expect(component.form.controls.step1.controls.nombreProcedimiento.value).toBe('Bio');
+    expect(component.form.controls.step1.valid).toBe(true);
+
+    // Escribir el 4to caracter y más
+    component.form.controls.step1.controls.nombreProcedimiento.setValue('Bioestimuladores de colágeno');
+    fixture.detectChanges();
+
+    // El valor debe preservarse intacto y el formulario no debe haberse reseteado
+    expect(component.form.controls.step1.controls.nombreProcedimiento.value).toBe(
+      'Bioestimuladores de colágeno'
+    );
+    expect(component.form.controls.step1.valid).toBe(true);
+  });
+
+  it('debe sincronizar correctamente entre modo edición y regreso a modo creación', () => {
+    // 1. Pasar a modo edición
+    mockEditingProcedure.set(procActive);
+    fixture.detectChanges();
+
+    expect(component.form.controls.step1.controls.nombreProcedimiento.value).toBe('Rinoplastia');
+    expect(component.form.controls.step2.controls.valorStandar.value).toBe(3500000);
+
+    // 2. Regresar a modo creación (editingProcedure = null)
+    mockEditingProcedure.set(null);
+    fixture.detectChanges();
+
+    expect(component.form.controls.step1.controls.nombreProcedimiento.value).toBe('');
+    expect(component.form.controls.step2.controls.valorStandar.value).toBeNull();
+  });
+
   describe('Paso 1: Validación y Regla de Negocio 3', () => {
     it('no debe avanzar si el nombre es inválido', () => {
       component.form.controls.step1.controls.nombreProcedimiento.setValue('Ab'); // Menos de 3 letras

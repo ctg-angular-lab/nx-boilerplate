@@ -45,10 +45,7 @@ export class App {
     { path: '/agendador-citas', label: 'Agendar Cita', icon: 'calendar_add_on' },
     { path: '/profesionales', label: 'Profesionales', icon: 'badge' },
     { path: '/procedimientos-medicos', label: 'Procedimientos Médicos', icon: 'medical_services' },
-    { path: '/mfe-users', label: 'Gestión de Usuarios', icon: 'people' },
-    { path: '/mfe-billing', label: 'Módulo Facturación', icon: 'receipt_long' },
-    { path: '/mfe-reports', label: 'Analíticas', icon: 'analytics' },
-    { path: '/settings', label: 'Configuración', icon: 'settings' }
+    { path: '/mfe-pacientes', label: 'Pacientes', icon: 'person' }
   ]);
 
   constructor() {

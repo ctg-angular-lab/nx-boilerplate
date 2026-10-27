@@ -5,6 +5,7 @@ import {
   effect,
   inject,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -85,6 +86,8 @@ export class ProcedimientosFormComponent {
 
   readonly summaryData = signal<ProcedureSummaryData | null>(null);
 
+  private lastEditingId: string | null = null;
+
   constructor() {
     this.updateSummary();
 
@@ -110,11 +113,19 @@ export class ProcedimientosFormComponent {
     // Sincronización con el estado de edición del SSOT
     effect(() => {
       const proc = this.procedimientosService.editingProcedure();
-      if (proc) {
-        this.populateForEdit(proc);
-      } else {
-        this.resetForm();
-      }
+
+      untracked(() => {
+        if (proc) {
+          if (this.lastEditingId !== proc.idProcedimiento) {
+            this.populateForEdit(proc);
+          }
+        } else {
+          // Solo limpiamos el formulario si veníamos de un modo de edición activo
+          if (this.lastEditingId !== null) {
+            this.resetForm();
+          }
+        }
+      });
     });
   }
 
@@ -154,6 +165,8 @@ export class ProcedimientosFormComponent {
   }
 
   private populateForEdit(proc: IProcedure): void {
+    this.lastEditingId = proc.idProcedimiento;
+
     this.form.controls.step1.patchValue({
       nombreProcedimiento: proc.nombreProcedimiento,
     });
@@ -176,6 +189,7 @@ export class ProcedimientosFormComponent {
   }
 
   public resetForm(): void {
+    this.lastEditingId = null;
     this.form.reset({
       step1: { nombreProcedimiento: '' },
       step2: {

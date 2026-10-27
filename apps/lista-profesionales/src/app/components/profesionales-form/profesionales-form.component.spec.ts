@@ -92,6 +92,38 @@ describe('ProfesionalesFormComponent', () => {
         'VIERNES',
       ]);
     });
+
+    it('no debe borrar el documento ni resetear el formulario al tipear en modo creación', () => {
+      // 1. Simular escritura de los primeros 6 dígitos (inválido según pattern ^\d{7,15}$)
+      component.form.controls.step1.controls.cedula.setValue('234567');
+      fixture.detectChanges();
+      expect(component.form.controls.step1.controls.cedula.value).toBe('234567');
+      expect(component.form.controls.step1.valid).toBe(false);
+
+      // 2. Simular escritura del 7mo dígito ('0') alcanzando validez (2345670)
+      component.form.controls.step1.controls.cedula.setValue('2345670');
+      fixture.detectChanges();
+
+      // El valor debe mantenerse íntegro y el formulario no debe haberse reseteado
+      expect(component.form.controls.step1.controls.cedula.value).toBe('2345670');
+      expect(component.form.controls.step1.valid).toBe(true);
+    });
+
+    it('debe sincronizar correctamente entre modo edición y regreso a modo creación', () => {
+      // 1. Pasar a modo edición
+      mockEditingSignal.set(mockProfessional);
+      fixture.detectChanges();
+
+      expect(component.form.controls.step1.controls.cedula.value).toBe('12345678');
+      expect(component.form.controls.step2.controls.nombres.value).toBe('Laura');
+
+      // 2. Regresar a modo creación (editingProfessional = null)
+      mockEditingSignal.set(null);
+      fixture.detectChanges();
+
+      expect(component.form.controls.step1.controls.cedula.value).toBe('');
+      expect(component.form.controls.step2.controls.nombres.value).toBe('');
+    });
   });
 
   describe('2. scheduleRangeValidator (Paso 3)', () => {
