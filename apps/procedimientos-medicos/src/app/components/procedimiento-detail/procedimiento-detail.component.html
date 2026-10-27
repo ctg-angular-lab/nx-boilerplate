@@ -1,0 +1,75 @@
+<div class="procedure-detail">
+  <!-- Sección Valor y Duración -->
+  <section class="detail-section detail-metrics">
+    <div class="metric-card">
+      <span class="metric-label">Valor Estándar</span>
+      <span class="metric-value">{{ procedure().valorStandar | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Duración Estimada</span>
+      <span class="metric-value">{{ procedure().duracionStandar }} min</span>
+    </div>
+  </section>
+
+  <!-- Sección Doctores Relacionados -->
+  <section class="detail-section">
+    <div class="section-header">
+      <span class="material-symbols-outlined section-icon">stethoscope</span>
+      <h3 class="section-title">Profesionales Vinculados</h3>
+      <span class="section-badge">{{ relatedDoctorNames().length }}</span>
+    </div>
+
+    @if (relatedDoctorNames().length > 0) {
+      <div class="doctors-list">
+        @for (docName of relatedDoctorNames(); track docName) {
+          <div class="doctor-item">
+            <span class="material-symbols-outlined doctor-icon">person</span>
+            <span class="doctor-name">{{ docName }}</span>
+          </div>
+        }
+      </div>
+    } @else {
+      <p class="empty-state-text">Sin doctores relacionados actualmente.</p>
+    }
+  </section>
+
+  <!-- Sección Insumos y Laboratorios -->
+  <section class="detail-section">
+    <div class="section-header">
+      <span class="material-symbols-outlined section-icon">science</span>
+      <h3 class="section-title">Insumos y Laboratorios</h3>
+      <span class="section-badge">{{ procedure().laboratorios?.length ?? 0 }}</span>
+    </div>
+
+    @if (procedure().laboratorios && procedure().laboratorios!.length > 0) {
+      <div class="laboratories-grid">
+        @for (lab of procedure().laboratorios!; track lab.nombreLaboratorio) {
+          <div class="lab-card">
+            <div class="lab-card__header">
+              <span class="lab-name">{{ lab.nombreLaboratorio }}</span>
+              <span class="lab-price">{{ lab.precio | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+            </div>
+            <div class="lab-card__meta">
+              <span class="meta-label">Medida por unidad:</span>
+              <span class="meta-value">{{ lab.medidaPorUnidad }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <p class="empty-state-text">No aplica precio especial por laboratorio / insumos.</p>
+    }
+  </section>
+
+  <!-- Pie de Acciones Fijo -->
+  <footer class="detail-modal__actions">
+    <button
+      mat-stroked-button
+      type="button"
+      class="detail-modal__close-btn"
+      (click)="onClose()"
+    >
+      Cerrar
+    </button>
+  </footer>
+</div>

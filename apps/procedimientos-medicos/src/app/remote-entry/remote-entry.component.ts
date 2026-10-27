@@ -68,6 +68,7 @@ export class RemoteEntryComponent {
 
   constructor() {
     this.procedimientosService.loadProcedimientos();
+    this.procedimientosService.loadDoctors();
   }
 
   onActiveTabChange(tabId: string | number | undefined): void {

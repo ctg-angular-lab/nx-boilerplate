@@ -4,8 +4,10 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { IProcedure } from '@nx-boilerplate/api-interfaces';
+import { AsideModalService } from '@nx-boilerplate/layouts';
 import { ProcedimientosAdminService } from '../../services/procedimientos-admin.service';
 import { ProcedimientosListComponent } from './procedimientos-list.component';
+import { ProcedimientoDetailComponent } from '../procedimiento-detail/procedimiento-detail.component';
 
 describe('ProcedimientosListComponent', () => {
   let component: ProcedimientosListComponent;
@@ -19,9 +21,14 @@ describe('ProcedimientosListComponent', () => {
     goToCreate: ReturnType<typeof vi.fn>;
     goToEdit: ReturnType<typeof vi.fn>;
     deleteProcedimiento: ReturnType<typeof vi.fn>;
+    resolveDoctorNames: ReturnType<typeof vi.fn>;
   };
 
   let mockDialog: {
+    open: ReturnType<typeof vi.fn>;
+  };
+
+  let mockAsideModal: {
     open: ReturnType<typeof vi.fn>;
   };
 
@@ -53,11 +60,18 @@ describe('ProcedimientosListComponent', () => {
       goToCreate: vi.fn(),
       goToEdit: vi.fn(),
       deleteProcedimiento: vi.fn().mockReturnValue(of(true)),
+      resolveDoctorNames: vi.fn().mockReturnValue(['Dr. Carlos Gómez (Cirujano)']),
     };
 
     mockDialog = {
       open: vi.fn().mockReturnValue({
         afterClosed: () => of(true),
+      }),
+    };
+
+    mockAsideModal = {
+      open: vi.fn().mockReturnValue({
+        afterClosed: () => of(false),
       }),
     };
 
@@ -67,6 +81,7 @@ describe('ProcedimientosListComponent', () => {
         provideNoopAnimations(),
         { provide: ProcedimientosAdminService, useValue: mockService },
         { provide: MatDialog, useValue: mockDialog },
+        { provide: AsideModalService, useValue: mockAsideModal },
       ],
     }).compileComponents();
 
@@ -87,6 +102,49 @@ describe('ProcedimientosListComponent', () => {
   it('debe llamar a goToEdit al manejar la acción edit', () => {
     component.handleAction({ action: 'edit', row: procFree });
     expect(mockService.goToEdit).toHaveBeenCalledWith(procFree);
+  });
+
+  it('debe abrir asideModal con ProcedimientoDetailComponent al invocar acción view', () => {
+    component.handleAction({ action: 'view', row: procLinked });
+
+    expect(mockService.resolveDoctorNames).toHaveBeenCalledWith(procLinked.medicosRelacionados);
+    expect(mockAsideModal.open).toHaveBeenCalledWith(
+      {
+        title: procLinked.nombreProcedimiento,
+        component: ProcedimientoDetailComponent,
+        inputs: {
+          procedure: procLinked,
+          relatedDoctorNames: ['Dr. Carlos Gómez (Cirujano)'],
+        },
+        showCloseIcon: true,
+        showActions: false,
+      },
+      {
+        width: '480px',
+      }
+    );
+  });
+
+  it('debe abrir asideModal con ProcedimientoDetailComponent al hacer clic en el nombre del procedimiento', () => {
+    const mockEvent = { stopPropagation: vi.fn() } as unknown as Event;
+    component.onViewProcedure(procFree, mockEvent);
+
+    expect(mockEvent.stopPropagation).toHaveBeenCalledTimes(1);
+    expect(mockAsideModal.open).toHaveBeenCalledWith(
+      {
+        title: procFree.nombreProcedimiento,
+        component: ProcedimientoDetailComponent,
+        inputs: {
+          procedure: procFree,
+          relatedDoctorNames: ['Dr. Carlos Gómez (Cirujano)'],
+        },
+        showCloseIcon: true,
+        showActions: false,
+      },
+      {
+        width: '480px',
+      }
+    );
   });
 
   it('debe mostrar modal informativo y NO invocar deleteProcedimiento si tiene médicos vinculados', () => {

@@ -1,0 +1,170 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.procedure-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.detail-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+
+  .metric-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1rem;
+    background-color: var(--sys-color-surface-container-low, #f0f0f7);
+    border-radius: 12px;
+    border: 1px solid var(--sys-color-outline-variant, rgba(0, 0, 0, 0.08));
+
+    .metric-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--sys-color-on-surface-variant);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .metric-value {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--sys-color-primary);
+    }
+  }
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  .section-icon {
+    font-size: 20px;
+    color: var(--sys-color-primary);
+  }
+
+  .section-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--sys-color-on-surface);
+  }
+
+  .section-badge {
+    margin-left: auto;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.125rem 0.5rem;
+    border-radius: 12px;
+    background-color: var(--sys-color-primary-container);
+    color: var(--sys-color-on-primary-container);
+  }
+}
+
+.empty-state-text {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: var(--sys-color-on-surface-variant);
+  background-color: var(--sys-color-surface-container-lowest, #ffffff);
+  border-radius: 8px;
+  border: 1px dashed var(--sys-color-outline-variant, #c1c7cf);
+}
+
+.doctors-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  .doctor-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 0.875rem;
+    background-color: var(--sys-color-surface-container-low, #f0f0f7);
+    border-radius: 8px;
+    border: 1px solid var(--sys-color-outline-variant, rgba(0, 0, 0, 0.08));
+
+    .doctor-icon {
+      font-size: 18px;
+      color: var(--sys-color-secondary);
+    }
+
+    .doctor-name {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--sys-color-on-surface);
+    }
+  }
+}
+
+.laboratories-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  .lab-card {
+    padding: 0.875rem 1rem;
+    background-color: var(--sys-color-surface-container-low, #f0f0f7);
+    border-radius: 8px;
+    border: 1px solid var(--sys-color-outline-variant, rgba(0, 0, 0, 0.08));
+
+    &__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.375rem;
+
+      .lab-name {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--sys-color-on-surface);
+      }
+
+      .lab-price {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--sys-color-primary);
+      }
+    }
+
+    &__meta {
+      display: flex;
+      gap: 0.375rem;
+      font-size: 0.8125rem;
+      color: var(--sys-color-on-surface-variant);
+
+      .meta-label {
+        font-weight: 400;
+      }
+      .meta-value {
+        font-weight: 500;
+        color: var(--sys-color-on-surface);
+      }
+    }
+  }
+}
+
+.detail-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--sys-color-outline-variant, rgba(0, 0, 0, 0.08));
+
+  .detail-modal__close-btn {
+    min-width: 96px;
+  }
+}

@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import {
+  IActiveProfessional,
   IApiResponse,
   ICreateProcedureRequest,
   IProcedure,
@@ -262,6 +263,62 @@ describe('ProcedimientosAdminService', () => {
       // El procedimiento volvió a estar presente en activos
       expect(service.activeProcedimientos().length).toBe(initialActiveCount);
       expect(service.error()).toBe('El procedimiento está asignado a 2 profesionales activos');
+    });
+  });
+
+  describe('Carga y Resolución de Doctores', () => {
+    const mockDoctors: IActiveProfessional[] = [
+      {
+        cedula: '1001',
+        nombres: 'Carlos',
+        apellidos: 'Gómez',
+        email: 'carlos@test.com',
+        profesion: 'Cirujano Plástico',
+        horarioTrabajo: { diasLaborales: ['Lunes'], horaInicio: '08:00', horaFin: '17:00' },
+      },
+      {
+        cedula: '1002',
+        nombres: 'Ana',
+        apellidos: 'López',
+        email: 'ana@test.com',
+        profesion: '',
+        horarioTrabajo: { diasLaborales: ['Martes'], horaInicio: '08:00', horaFin: '17:00' },
+      },
+    ];
+
+    it('loadDoctors debe actualizar el signal doctors con la respuesta del API', () => {
+      apiClient.get.mockReturnValue(of(ok(mockDoctors)));
+
+      service.loadDoctors();
+
+      expect(apiClient.get).toHaveBeenCalledWith('/api/doctors');
+      expect(service.doctors()).toEqual(mockDoctors);
+    });
+
+    it('loadDoctors debe manejar errores de red asignando un arreglo vacío sin romper', () => {
+      apiClient.get.mockReturnValue(throwError(() => new Error('Network error')));
+
+      service.loadDoctors();
+
+      expect(service.doctors()).toEqual([]);
+    });
+
+    it('resolveDoctorNames debe formatear nombres cuando coinciden con el catálogo', () => {
+      apiClient.get.mockReturnValue(of(ok(mockDoctors)));
+      service.loadDoctors();
+
+      const result = service.resolveDoctorNames(['1001', '1002', '9999']);
+
+      expect(result).toEqual([
+        'Carlos Gómez (Cirujano Plástico)',
+        'Ana López',
+        '9999',
+      ]);
+    });
+
+    it('resolveDoctorNames debe retornar arreglo vacío si recibe undefined o vacío', () => {
+      expect(service.resolveDoctorNames(undefined)).toEqual([]);
+      expect(service.resolveDoctorNames([])).toEqual([]);
     });
   });
 });

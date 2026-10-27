@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, catchError, defer, finalize, map, of, tap } from 'rxjs';
 import {
+  IActiveProfessional,
   ICreateProcedureRequest,
   IProcedure,
   IUpdateProcedureRequest,
@@ -29,6 +30,10 @@ export class ProcedimientosAdminService {
   );
   readonly isLoading = this.#isLoading.asReadonly();
   readonly error = this.#error.asReadonly();
+
+  // --- Estado de doctores para resolución de nombres ---
+  readonly #doctors = signal<IActiveProfessional[]>([]);
+  readonly doctors = this.#doctors.asReadonly();
 
   // --- Navegación y modos (alta, edición, auto-recuperación de inactivos) ---
   readonly #activeTab = signal<ProcedimientosTabId>(PROCEDIMIENTOS_TABS.LIST);
@@ -68,6 +73,43 @@ export class ProcedimientosAdminService {
         finalize(() => this.#isLoading.set(false))
       )
       .subscribe((list) => this.#allProcedimientos.set(list));
+  }
+
+  /**
+   * Carga el catálogo de doctores activos desde el API Gateway.
+   */
+  loadDoctors(): void {
+    this.apiClient
+      .get<IActiveProfessional[]>('/api/doctors')
+      .pipe(
+        map((response) => response.data ?? []),
+        catchError((error) => {
+          console.error('Error al cargar doctores en ProcedimientosAdminService:', error);
+          return of([] as IActiveProfessional[]);
+        })
+      )
+      .subscribe((doctors) => this.#doctors.set(doctors));
+  }
+
+  /**
+   * Cruza las cédulas de médicos relacionados contra el catálogo en memoria y retorna
+   * sus nombres formateados ("${nombres} ${apellidos} (${profesion})") o la cédula como fallback.
+   */
+  resolveDoctorNames(cedulas: string[] | undefined): string[] {
+    if (!cedulas || cedulas.length === 0) {
+      return [];
+    }
+    const currentDoctors = this.#doctors();
+    const docMap = new Map(currentDoctors.map((doc) => [doc.cedula, doc]));
+
+    return cedulas.map((cedula) => {
+      const found = docMap.get(cedula);
+      if (found) {
+        const fullName = `${found.nombres} ${found.apellidos}`.trim();
+        return found.profesion ? `${fullName} (${found.profesion})` : fullName;
+      }
+      return cedula;
+    });
   }
 
   /**

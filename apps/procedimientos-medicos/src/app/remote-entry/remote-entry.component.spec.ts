@@ -33,6 +33,7 @@ describe('RemoteEntryComponent (Procedimientos Tab Host)', () => {
     isRestoringInactive: WritableSignal<boolean>;
     isEditMode: () => boolean;
     loadProcedimientos: ReturnType<typeof vi.fn>;
+    loadDoctors: ReturnType<typeof vi.fn>;
     setActiveTab: ReturnType<typeof vi.fn>;
     goToEdit: ReturnType<typeof vi.fn>;
     startRestoreInactive: ReturnType<typeof vi.fn>;
@@ -55,6 +56,7 @@ describe('RemoteEntryComponent (Procedimientos Tab Host)', () => {
       isEditMode: () =>
         mockEditingProcedureSignal() !== null && !mockIsRestoringInactiveSignal(),
       loadProcedimientos: vi.fn(),
+      loadDoctors: vi.fn(),
       setActiveTab: vi.fn((tab: ProcedimientosTabId) => {
         mockActiveTabSignal.set(tab);
       }),
@@ -91,9 +93,10 @@ describe('RemoteEntryComponent (Procedimientos Tab Host)', () => {
     fixture.detectChanges();
   });
 
-  it('debe crearse, invocar loadProcedimientos() al inicializar y renderizar lib-tabs-collection', () => {
+  it('debe crearse, invocar loadProcedimientos() y loadDoctors() al inicializar y renderizar lib-tabs-collection', () => {
     expect(component).toBeTruthy();
     expect(mockService.loadProcedimientos).toHaveBeenCalledTimes(1);
+    expect(mockService.loadDoctors).toHaveBeenCalledTimes(1);
 
     const tabsCollectionDebug = fixture.debugElement.query(
       By.directive(TabsCollectionComponent)

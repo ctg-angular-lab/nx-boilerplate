@@ -5,12 +5,15 @@ export * from './lib/models/metric-card.models';
 export * from './lib/models/appointment-steps.models';
 export * from './lib/models/confirmation-modal.models';
 export * from './lib/modals/models/agendar-modal.models';
+export * from './lib/modals/models/aside-modal.models';
 
 export * from './lib/models/procedure-steps.models';
 
 // Modals
 export * from './lib/modals/confirmation-modal/confirmation-modal.component';
 export * from './lib/modals/agendar-modal/agendar-modal.component';
+export * from './lib/modals/aside-modal/aside-modal.component';
+export * from './lib/modals/aside-modal/aside-modal.service';
 
 // Components
 export * from './lib/data-table/data-table.component';

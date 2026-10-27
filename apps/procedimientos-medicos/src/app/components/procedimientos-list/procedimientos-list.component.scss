@@ -25,3 +25,20 @@
     }
   }
 }
+
+.procedure-name-link {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--sys-color-primary);
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+    outline: none;
+  }
+}

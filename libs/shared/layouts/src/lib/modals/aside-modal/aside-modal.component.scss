@@ -1,0 +1,48 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: var(--sys-color-surface);
+  color: var(--sys-color-on-surface);
+}
+
+.aside-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem 0.75rem;
+  border-bottom: 1px solid var(--sys-color-outline-variant, rgba(0, 0, 0, 0.08));
+
+  .aside-dialog-title {
+    margin: 0;
+    padding: 0;
+    font: var(--mat-sys-title-large, 500 1.375rem/1.75rem Roboto, sans-serif);
+    color: var(--sys-color-on-surface);
+  }
+
+  .aside-close-button {
+    color: var(--sys-color-on-surface-variant);
+  }
+}
+
+.aside-dialog-content {
+  flex: 1;
+  margin: 0;
+  padding: 1.5rem;
+  overflow-y: auto;
+  color: var(--sys-color-on-surface-variant);
+  font: var(--mat-sys-body-medium, 400 0.875rem/1.25rem Roboto, sans-serif);
+}
+
+.aside-dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  margin: 0;
+  border-top: 1px solid var(--sys-color-outline-variant, rgba(0, 0, 0, 0.08));
+  background-color: var(--sys-color-surface-container-low, var(--sys-color-surface));
+}

@@ -1,12 +1,16 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
+  TemplateRef,
+  viewChild,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { IProcedure } from '@nx-boilerplate/api-interfaces';
 import {
+  AsideModalService,
   ConfirmationModalComponent,
   ConfirmationModalData,
   DataTableComponent,
@@ -14,6 +18,7 @@ import {
   TableColumnDef,
 } from '@nx-boilerplate/layouts';
 import { ProcedimientosAdminService } from '../../services/procedimientos-admin.service';
+import { ProcedimientoDetailComponent } from '../procedimiento-detail/procedimiento-detail.component';
 
 @Component({
   selector: 'app-procedimientos-list',
@@ -26,9 +31,17 @@ import { ProcedimientosAdminService } from '../../services/procedimientos-admin.
 export class ProcedimientosListComponent {
   public readonly procedimientosService = inject(ProcedimientosAdminService);
   private readonly dialog = inject(MatDialog);
+  readonly #asideModal = inject(AsideModalService);
 
-  readonly columns: TableColumnDef<IProcedure>[] = [
-    { field: 'nombreProcedimiento', header: 'Nombre del Procedimiento', sortable: true },
+  readonly nombreCellTpl = viewChild<TemplateRef<{ $implicit: IProcedure }>>('nombreCellTpl');
+
+  readonly columns = computed<TableColumnDef<IProcedure>[]>(() => [
+    {
+      field: 'nombreProcedimiento',
+      header: 'Nombre del Procedimiento',
+      sortable: true,
+      cellTemplate: this.nombreCellTpl(),
+    },
     {
       field: 'valorStandar',
       header: 'Valor Estándar',
@@ -46,9 +59,10 @@ export class ProcedimientosListComponent {
       sortable: true,
       formatter: (row) => `${row.duracionStandar} min`,
     },
-  ];
+  ]);
 
   readonly actions: TableActionDef<IProcedure>[] = [
+    { id: 'view', label: 'Ver detalle', icon: 'visibility', color: 'primary' },
     { id: 'edit', label: 'Editar', icon: 'edit', color: 'primary' },
     { id: 'delete', label: 'Eliminar', icon: 'delete', color: 'warn' },
   ];
@@ -58,11 +72,36 @@ export class ProcedimientosListComponent {
   }
 
   handleAction(event: { action: string; row: IProcedure }): void {
-    if (event.action === 'edit') {
+    if (event.action === 'view') {
+      this.onViewProcedure(event.row);
+    } else if (event.action === 'edit') {
       this.onEdit(event.row);
     } else if (event.action === 'delete') {
       this.onDelete(event.row);
     }
+  }
+
+  onViewProcedure(proc: IProcedure, event?: Event): void {
+    event?.stopPropagation();
+    const relatedDoctorNames = this.procedimientosService.resolveDoctorNames(
+      proc.medicosRelacionados
+    );
+
+    this.#asideModal.open(
+      {
+        title: proc.nombreProcedimiento,
+        component: ProcedimientoDetailComponent,
+        inputs: {
+          procedure: proc,
+          relatedDoctorNames,
+        },
+        showCloseIcon: true,
+        showActions: false,
+      },
+      {
+        width: '480px',
+      }
+    );
   }
 
   onEdit(proc: IProcedure): void {
