@@ -20,6 +20,7 @@
           mat-list-item 
           [routerLink]="route.path" 
           routerLinkActive="is-active"
+          (click)="closeSidenav()"
           class="shell-nav-item">
           <mat-icon matListItemIcon class="nav-icon">{{ route.icon }}</mat-icon>
           <span matListItemTitle class="nav-label">{{ route.label }}</span>

@@ -1,0 +1,106 @@
+<section class="feature-card">
+  <!-- Cabecera del Formulario -->
+  <header class="feature-card__header">
+    <div class="header-main">
+      <span class="material-symbols-outlined feature-card__icon">
+        @if (procedimientosService.isRestoringInactive()) {
+          history
+        } @else if (procedimientosService.isEditMode()) {
+          edit_note
+        } @else {
+          add_circle
+        }
+      </span>
+      <h2 class="feature-card__title">
+        @if (procedimientosService.isRestoringInactive()) {
+          Reactivar Procedimiento Inactivo
+        } @else if (procedimientosService.isEditMode()) {
+          Editar Procedimiento
+        } @else {
+          Registro de Procedimiento
+        }
+      </h2>
+    </div>
+
+    <button
+      mat-stroked-button
+      type="button"
+      class="cancel-button"
+      (click)="onCancel()"
+    >
+      <span class="material-symbols-outlined">arrow_back</span>
+      Volver a la lista
+    </button>
+  </header>
+
+  <!-- Banner de Error de Guardado -->
+  @if (procedimientosService.saveError(); as saveError) {
+    <div class="save-error-alert" role="alert">
+      <span class="material-symbols-outlined alert-icon">error</span>
+      <span class="alert-text">{{ saveError }}</span>
+    </div>
+  }
+
+  <!-- Stepper Vertical de 3 Pasos -->
+  <mat-stepper
+    orientation="vertical"
+    [linear]="!procedimientosService.isEditMode() && !procedimientosService.isRestoringInactive()"
+    #stepper
+    class="procedure-stepper"
+  >
+    <ng-template matStepperIcon="edit">
+      <mat-icon class="material-symbols-outlined">edit</mat-icon>
+    </ng-template>
+    <ng-template matStepperIcon="done">
+      <mat-icon class="material-symbols-outlined">check</mat-icon>
+    </ng-template>
+
+    <!-- PASO 1: Nombre del Procedimiento -->
+    <mat-step
+      [stepControl]="form.controls.step1"
+      [completed]="form.controls.step1.valid"
+      label="Nombre del Procedimiento"
+    >
+      <div class="stepper-step-content">
+        <lib-step-procedure-name
+          [stepForm]="form.controls.step1"
+          (nextStep)="onStep1Next()"
+        />
+      </div>
+    </mat-step>
+
+    <!-- PASO 2: Valores y Laboratorios -->
+    <mat-step
+      [stepControl]="form.controls.step2"
+      [completed]="form.controls.step2.valid"
+      label="Valores y Laboratorios"
+    >
+      <div class="stepper-step-content">
+        <lib-step-procedure-pricing
+          [stepForm]="form.controls.step2"
+          [laboratoriosArray]="laboratoriosArray"
+          (addLaboratory)="onAddLaboratory()"
+          (removeLaboratory)="onRemoveLaboratory($event)"
+          (prevStep)="onStepPrev()"
+          (nextStep)="onStep2Next()"
+        />
+      </div>
+    </mat-step>
+
+    <!-- PASO 3: Resumen y Confirmación -->
+    <mat-step label="Resumen y Confirmación">
+      <div class="stepper-step-content">
+        @if (summaryData(); as summary) {
+          <lib-step-procedure-summary
+            [summaryData]="summary"
+            [isSaving]="procedimientosService.isSaving()"
+            [isEditMode]="procedimientosService.isEditMode()"
+            [isRestoringInactive]="procedimientosService.isRestoringInactive()"
+            (prevStep)="onStepPrev()"
+            (save)="onSubmit()"
+          />
+        }
+      </div>
+    </mat-step>
+  </mat-stepper>
+</section>

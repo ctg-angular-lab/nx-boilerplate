@@ -1,0 +1,29 @@
+@if (procedimientosService.error(); as errorMessage) {
+  <p class="procedimientos-error" role="alert">{{ errorMessage }}</p>
+}
+
+<lib-data-table
+  [dataTable]="procedimientosService.activeProcedimientos()"
+  [dataColumn]="columns"
+  [actions]="actions"
+  (actionClick)="handleAction($event)"
+  [loading]="procedimientosService.isLoading()"
+  [expandable]="false"
+  [searchable]="true"
+  searchPlaceholder="Buscar procedimiento por nombre..."
+  rowKey="idProcedimiento"
+  emptyMessage="No hay procedimientos activos registrados."
+>
+  <div table-header class="procedimientos-toolbar">
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      id="btn-agregar-procedimiento"
+      (click)="onAddNew()"
+    >
+      <span class="material-symbols-outlined">add</span>
+      Agregar nuevo
+    </button>
+  </div>
+</lib-data-table>

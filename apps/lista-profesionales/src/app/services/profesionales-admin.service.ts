@@ -50,7 +50,9 @@ export class ProfesionalesAdminService {
     this.#error.set(null);
 
     this.apiClient
-      .get<IActiveProfessional[]>('/api/doctors')
+      .get<IActiveProfessional[]>('/api/doctors', {
+        params: { includeInactive: 'true' },
+      })
       .pipe(
         map((response) => response.data ?? []),
         catchError((error) => {
@@ -175,12 +177,14 @@ export class ProfesionalesAdminService {
 
   /**
    * Baja lógica (DELETE /api/doctors/:cedula) con Optimistic UI:
-   * la fila desaparece de inmediato y se restaura si el backend falla.
+   * se marca de inmediato isActive: false en memoria y se revierte al estado previo si el backend falla.
    */
   deleteProfesional(cedula: string): Observable<boolean> {
     return defer(() => {
       const snapshot = this.#profesionalesList();
-      this.#profesionalesList.set(snapshot.filter((p) => p.cedula !== cedula));
+      this.#profesionalesList.update((list) =>
+        list.map((p) => (p.cedula === cedula ? { ...p, isActive: false } : p))
+      );
 
       return this.apiClient
         .delete<unknown>(`/api/doctors/${encodeURIComponent(cedula)}`)
@@ -190,6 +194,40 @@ export class ProfesionalesAdminService {
             this.#profesionalesList.set(snapshot);
             this.#error.set(
               this.extractErrorMessage(error, 'No se pudo eliminar el profesional.')
+            );
+            return of(false);
+          })
+        );
+    });
+  }
+
+  /**
+   * Reactivación de profesional (PATCH /api/doctors/:cedula con { isActive: true }) con Optimistic UI:
+   * se marca inmediatamente isActive: true en memoria y se revierte al estado previo si el backend falla.
+   */
+  reactivateProfesional(cedula: string): Observable<boolean> {
+    return defer(() => {
+      const previous = this.#profesionalesList();
+      this.#error.set(null);
+
+      this.#profesionalesList.update((list) =>
+        list.map((p) => (p.cedula === cedula ? { ...p, isActive: true } : p))
+      );
+
+      return this.apiClient
+        .patch<IActiveProfessional, IUpdateProfessionalRequest>(
+          `/api/doctors/${encodeURIComponent(cedula)}`,
+          { isActive: true }
+        )
+        .pipe(
+          map(() => true),
+          catchError((error) => {
+            this.#profesionalesList.set(previous);
+            this.#error.set(
+              this.extractErrorMessage(
+                error,
+                'No se pudo reactivar el profesional. Intente nuevamente.'
+              )
             );
             return of(false);
           })

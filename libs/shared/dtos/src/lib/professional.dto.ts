@@ -10,7 +10,7 @@ import {
   Matches,
   ValidateNested,
 } from 'class-validator';
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import {
   ExceptionScheduleType,
   IActiveProfessional,
@@ -234,3 +234,17 @@ export class UpdateDoctorScheduleMessageDto {
   @Type(() => ExceptionScheduleDto)
   exceptions!: ExceptionScheduleDto[];
 }
+
+export class GetDoctorsFilterDto {
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean({ message: 'includeInactive debe ser booleano' })
+  includeInactive?: boolean;
+}
+
+export class GetDoctorsMessageDto {
+  @IsOptional()
+  @IsBoolean({ message: 'includeInactive debe ser booleano' })
+  includeInactive?: boolean;
+}
+

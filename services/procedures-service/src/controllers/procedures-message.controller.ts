@@ -4,11 +4,16 @@ import {
   IActiveProfessional,
   IAreaCode,
   IProcedure,
+  IProcedureSoftDeleteResponse,
   IProfessionalSummary,
 } from '@nx-boilerplate/api-interfaces';
 import {
+  CreateProcedureDto,
   FindProcedureByIdDto,
   FindProceduresByDoctorDto,
+  GetDoctorsMessageDto,
+  GetProceduresMessageDto,
+  UpdateProcedureMessageDto,
 } from '@nx-boilerplate/shared-dtos';
 import { ProceduresDomainService } from '@nx-boilerplate/backend/procedures-domain';
 
@@ -19,8 +24,12 @@ export class ProceduresMessageController {
   ) {}
 
   @MessagePattern('procedures.get-all')
-  async getAll(): Promise<IProcedure[]> {
-    return this.proceduresDomainService.getAll();
+  async getAll(
+    @Payload() payload?: GetProceduresMessageDto
+  ): Promise<IProcedure[]> {
+    return this.proceduresDomainService.getAll(
+      payload?.includeInactive ?? false
+    );
   }
 
   @MessagePattern('procedures.find-by-id')
@@ -44,9 +53,39 @@ export class ProceduresMessageController {
     );
   }
 
+  @MessagePattern('procedures.create')
+  async createProcedure(
+    @Payload() payload: CreateProcedureDto
+  ): Promise<IProcedure> {
+    return this.proceduresDomainService.createProcedure(payload);
+  }
+
+  @MessagePattern('procedures.update')
+  async updateProcedure(
+    @Payload() payload: UpdateProcedureMessageDto
+  ): Promise<IProcedure> {
+    return this.proceduresDomainService.updateProcedure(
+      payload.idProcedimiento,
+      payload.data
+    );
+  }
+
+  @MessagePattern('procedures.soft-delete')
+  async softDeleteProcedure(
+    @Payload() payload: FindProcedureByIdDto
+  ): Promise<IProcedureSoftDeleteResponse> {
+    return this.proceduresDomainService.softDeleteProcedure(
+      payload.idProcedimiento
+    );
+  }
+
   @MessagePattern('doctors.get-all')
-  async getAllDoctors(): Promise<IActiveProfessional[]> {
-    return this.proceduresDomainService.getAllDoctors();
+  async getAllDoctors(
+    @Payload() payload: GetDoctorsMessageDto
+  ): Promise<IActiveProfessional[]> {
+    return this.proceduresDomainService.getAllDoctors(
+      payload?.includeInactive ?? false
+    );
   }
 
   @MessagePattern('area-codes.get-all')
@@ -54,4 +93,3 @@ export class ProceduresMessageController {
     return this.proceduresDomainService.getAllAreaCodes();
   }
 }
-

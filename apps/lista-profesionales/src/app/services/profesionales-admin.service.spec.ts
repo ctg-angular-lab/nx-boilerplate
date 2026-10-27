@@ -78,7 +78,9 @@ describe('ProfesionalesAdminService', () => {
   describe('Carga de datos', () => {
     it('loadProfesionales debe poblar la lista y apagar isLoading', () => {
       service.loadProfesionales();
-      expect(apiClient.get).toHaveBeenCalledWith('/api/doctors');
+      expect(apiClient.get).toHaveBeenCalledWith('/api/doctors', {
+        params: { includeInactive: 'true' },
+      });
       expect(service.profesionalesList()).toEqual([ana, luis]);
       expect(service.isLoading()).toBe(false);
     });
@@ -158,7 +160,9 @@ describe('ProfesionalesAdminService', () => {
 
       expect(apiClient.post).toHaveBeenCalledWith('/api/doctors', createPayload);
       expect(result).toEqual(created);
-      expect(apiClient.get).toHaveBeenCalledWith('/api/doctors');
+      expect(apiClient.get).toHaveBeenCalledWith('/api/doctors', {
+        params: { includeInactive: 'true' },
+      });
       expect(service.activeTab()).toBe(PROFESIONALES_TABS.LIST);
       expect(service.isSaving()).toBe(false);
       expect(service.saveError()).toBeNull();
@@ -244,7 +248,7 @@ describe('ProfesionalesAdminService', () => {
       service.loadProfesionales();
     });
 
-    it('éxito: debe quitar la fila de inmediato y emitir true', () => {
+    it('éxito: debe marcar isActive: false de inmediato y emitir true', () => {
       apiClient.delete.mockReturnValue(of(ok(null)));
 
       let result: boolean | undefined;
@@ -252,7 +256,11 @@ describe('ProfesionalesAdminService', () => {
 
       expect(apiClient.delete).toHaveBeenCalledWith('/api/doctors/1001');
       expect(result).toBe(true);
-      expect(service.profesionalesList()).toEqual([luis]);
+      expect(service.profesionalesList()).toEqual([
+        { ...ana, isActive: false },
+        luis,
+      ]);
+      expect(service.profesionalesList().find((p) => p.cedula === ana.cedula)?.isActive).toBe(false);
       expect(service.error()).toBeNull();
     });
 
@@ -265,6 +273,47 @@ describe('ProfesionalesAdminService', () => {
       expect(result).toBe(false);
       expect(service.profesionalesList()).toEqual([ana, luis]);
       expect(service.error()).toBe('No se pudo eliminar el profesional.');
+    });
+  });
+
+  describe('reactivateProfesional (Optimistic UI)', () => {
+    const anaInactiva = { ...ana, isActive: false };
+
+    beforeEach(() => {
+      apiClient.get.mockReturnValue(of(ok([anaInactiva, luis])));
+      service.loadProfesionales();
+    });
+
+    it('éxito: debe marcar isActive: true de inmediato y emitir true', () => {
+      apiClient.patch.mockReturnValue(of(ok({ ...ana, isActive: true })));
+
+      let result: boolean | undefined;
+      service.reactivateProfesional(ana.cedula).subscribe((r) => (result = r));
+
+      expect(apiClient.patch).toHaveBeenCalledWith('/api/doctors/1001', {
+        isActive: true,
+      });
+      expect(result).toBe(true);
+      expect(service.profesionalesList()).toEqual([
+        { ...anaInactiva, isActive: true },
+        luis,
+      ]);
+      expect(service.profesionalesList().find((p) => p.cedula === ana.cedula)?.isActive).toBe(true);
+      expect(service.error()).toBeNull();
+    });
+
+    it('fallo: debe revertir la lista con rollback a isActive: false, setear error y emitir false', () => {
+      apiClient.patch.mockReturnValue(throwError(() => new Error('network')));
+
+      let result: boolean | undefined;
+      service.reactivateProfesional(ana.cedula).subscribe((r) => (result = r));
+
+      expect(result).toBe(false);
+      expect(service.profesionalesList()).toEqual([anaInactiva, luis]);
+      expect(service.profesionalesList().find((p) => p.cedula === ana.cedula)?.isActive).toBe(false);
+      expect(service.error()).toBe(
+        'No se pudo reactivar el profesional. Intente nuevamente.'
+      );
     });
   });
 });

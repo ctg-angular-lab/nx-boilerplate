@@ -38,6 +38,9 @@
       "@nx-boilerplate/utils": ["./libs/shared/utils/src/index.ts"],
       "lista-profesionales/Routes": [
         "./apps/lista-profesionales/src/app/remote-entry/entry.routes.ts"
+      ],
+      "procedimientos-medicos/Routes": [
+        "./apps/procedimientos-medicos/src/app/remote-entry/entry.routes.ts"
       ]
     }
   },

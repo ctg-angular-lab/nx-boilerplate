@@ -5,6 +5,7 @@ import {
   effect,
   inject,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -85,6 +86,8 @@ export class ProfesionalesFormComponent {
 
   readonly summaryData = signal<ProfessionalSummaryData | null>(null);
 
+  private lastEditingCedula: string | null = null;
+
   constructor() {
     this.updateSummary();
 
@@ -106,11 +109,19 @@ export class ProfesionalesFormComponent {
     // Efecto de sincronización con el modo de edición del SSOT
     effect(() => {
       const prof = this.profesionalesService.editingProfessional();
-      if (prof) {
-        this.populateForEdit(prof);
-      } else {
-        this.resetForm();
-      }
+
+      untracked(() => {
+        if (prof) {
+          if (this.lastEditingCedula !== prof.cedula) {
+            this.populateForEdit(prof);
+          }
+        } else {
+          // Solo limpiamos el formulario si veníamos de un modo de edición activo
+          if (this.lastEditingCedula !== null) {
+            this.resetForm();
+          }
+        }
+      });
     });
   }
 
@@ -136,6 +147,8 @@ export class ProfesionalesFormComponent {
   }
 
   private populateForEdit(prof: IActiveProfessional): void {
+    this.lastEditingCedula = prof.cedula;
+
     this.form.controls.step1.patchValue({ cedula: prof.cedula });
     this.form.controls.step1.controls.cedula.disable({ emitEvent: false });
 
@@ -173,6 +186,7 @@ export class ProfesionalesFormComponent {
   }
 
   public resetForm(): void {
+    this.lastEditingCedula = null;
     this.form.controls.step1.controls.cedula.enable({ emitEvent: false });
     this.form.reset({
       step1: { cedula: '' },

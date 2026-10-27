@@ -1,5 +1,6 @@
 {
   "agendador-citas": "http://localhost:4201/mf-manifest.json",
   "Login": "http://localhost:4202/mf-manifest.json",
-  "lista-profesionales": "http://localhost:4203/mf-manifest.json"
+  "lista-profesionales": "http://localhost:4203/mf-manifest.json",
+  "procedimientos-medicos": "http://localhost:4204/mf-manifest.json"
 }

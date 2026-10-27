@@ -7,12 +7,14 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Observable, timeout } from 'rxjs';
 import { IActiveProfessional } from '@nx-boilerplate/api-interfaces';
 import {
   CreateProfessionalDto,
+  GetDoctorsFilterDto,
   UpdateProfessionalDto,
   UpdateScheduleExceptionsDto,
 } from '@nx-boilerplate/shared-dtos';
@@ -25,9 +27,13 @@ export class DoctorsController {
   ) {}
 
   @Get()
-  getAllDoctors(): Observable<IActiveProfessional[]> {
+  getAllDoctors(
+    @Query() query: GetDoctorsFilterDto
+  ): Observable<IActiveProfessional[]> {
     return this.proceduresClient
-      .send<IActiveProfessional[]>('doctors.get-all', {})
+      .send<IActiveProfessional[]>('doctors.get-all', {
+        includeInactive: query?.includeInactive === true,
+      })
       .pipe(timeout(5000));
   }
 

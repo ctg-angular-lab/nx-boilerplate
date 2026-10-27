@@ -3,8 +3,9 @@ import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { signal } from '@angular/core';
 import { of } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
 import { IActiveProfessional } from '@nx-boilerplate/api-interfaces';
-import { DataTableComponent } from '@nx-boilerplate/layouts';
+import { ConfirmationModalComponent, DataTableComponent } from '@nx-boilerplate/layouts';
 import { ProfesionalesAdminService } from '../../services/profesionales-admin.service';
 import { ProfesionalesListComponent } from './profesionales-list.component';
 
@@ -41,6 +42,11 @@ describe('ProfesionalesListComponent', () => {
     goToCreate: ReturnType<typeof vi.fn>;
     goToEdit: ReturnType<typeof vi.fn>;
     deleteProfesional: ReturnType<typeof vi.fn>;
+    reactivateProfesional: ReturnType<typeof vi.fn>;
+  };
+
+  let mockDialog: {
+    open: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -55,6 +61,13 @@ describe('ProfesionalesListComponent', () => {
       goToCreate: vi.fn(),
       goToEdit: vi.fn(),
       deleteProfesional: vi.fn().mockReturnValue(of(true)),
+      reactivateProfesional: vi.fn().mockReturnValue(of(true)),
+    };
+
+    mockDialog = {
+      open: vi.fn().mockReturnValue({
+        afterClosed: vi.fn().mockReturnValue(of(true)),
+      }),
     };
 
     await TestBed.configureTestingModule({
@@ -62,6 +75,7 @@ describe('ProfesionalesListComponent', () => {
       providers: [
         provideNoopAnimations(),
         { provide: ProfesionalesAdminService, useValue: mockService },
+        { provide: MatDialog, useValue: mockDialog },
       ],
     }).compileComponents();
 
@@ -96,14 +110,32 @@ describe('ProfesionalesListComponent', () => {
     expect(mockService.goToEdit).toHaveBeenCalledWith(mockProfessional);
   });
 
-  it('debe invocar profesionalesService.deleteProfesional(cedula) al ejecutar onDelete deteniendo propagación', () => {
+  it('debe abrir modal de confirmación y desactivar al confirmar', () => {
     const stopPropagationSpy = vi.fn();
     const fakeEvent = { stopPropagation: stopPropagationSpy } as unknown as Event;
 
     component.onDelete(mockProfessional, fakeEvent);
 
     expect(stopPropagationSpy).toHaveBeenCalledTimes(1);
+    expect(mockDialog.open).toHaveBeenCalledWith(ConfirmationModalComponent, {
+      data: expect.objectContaining({
+        title: 'Desactivar profesional',
+      }),
+      width: '450px',
+      disableClose: false,
+    });
     expect(mockService.deleteProfesional).toHaveBeenCalledWith(mockProfessional.cedula);
+  });
+
+  it('no debe desactivar profesional si el usuario cancela o cierra el modal', () => {
+    mockDialog.open.mockReturnValueOnce({
+      afterClosed: vi.fn().mockReturnValue(of(false)),
+    });
+
+    component.onDelete(mockProfessional);
+
+    expect(mockDialog.open).toHaveBeenCalled();
+    expect(mockService.deleteProfesional).not.toHaveBeenCalled();
   });
 
   it('debe renderizar mensaje de error cuando profesionalesService.error() tiene valor', () => {
@@ -121,5 +153,54 @@ describe('ProfesionalesListComponent', () => {
 
     const errorEl = fixture.debugElement.query(By.css('.profesionales-error'));
     expect(errorEl).toBeNull();
+  });
+
+  it('debe filtrar correctamente profesionales activos e inactivos en displayedProfesionales', () => {
+    const inactiveProf: IActiveProfessional = {
+      ...mockProfessional,
+      cedula: '87654321',
+      isActive: false,
+    };
+    mockProfesionalesListSignal.set([mockProfessional, inactiveProf]);
+    fixture.detectChanges();
+
+    expect(component.viewFilter()).toBe('activos');
+    expect(component.displayedProfesionales()).toEqual([mockProfessional]);
+    expect(component.emptyMessage()).toBe('No hay profesionales activos registrados.');
+
+    component.onFilterChange('inactivos');
+    fixture.detectChanges();
+
+    expect(component.viewFilter()).toBe('inactivos');
+    expect(component.displayedProfesionales()).toEqual([inactiveProf]);
+    expect(component.emptyMessage()).toBe('No hay profesionales inactivos.');
+  });
+
+  it('debe abrir modal de confirmación y reactivar al confirmar', () => {
+    const stopPropagationSpy = vi.fn();
+    const fakeEvent = { stopPropagation: stopPropagationSpy } as unknown as Event;
+
+    component.onReactivate(mockProfessional, fakeEvent);
+
+    expect(stopPropagationSpy).toHaveBeenCalledTimes(1);
+    expect(mockDialog.open).toHaveBeenCalledWith(ConfirmationModalComponent, {
+      data: expect.objectContaining({
+        title: 'Reactivar profesional',
+      }),
+      width: '450px',
+      disableClose: false,
+    });
+    expect(mockService.reactivateProfesional).toHaveBeenCalledWith(mockProfessional.cedula);
+  });
+
+  it('no debe reactivar profesional si el usuario cancela o cierra el modal', () => {
+    mockDialog.open.mockReturnValueOnce({
+      afterClosed: vi.fn().mockReturnValue(of(false)),
+    });
+
+    component.onReactivate(mockProfessional);
+
+    expect(mockDialog.open).toHaveBeenCalled();
+    expect(mockService.reactivateProfesional).not.toHaveBeenCalled();
   });
 });

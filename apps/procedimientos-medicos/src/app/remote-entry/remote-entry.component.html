@@ -1,0 +1,20 @@
+<div class="procedimientos-view-container">
+  <lib-tabs-collection
+    [tabs]="tabs()"
+    [preserveContent]="true"
+    [activeTabId]="procedimientosService.activeTab()"
+    (activeTabIdChange)="onActiveTabChange($event)"
+  />
+
+  <ng-template #listTab>
+    <div class="tab-pane-wrapper">
+      <app-procedimientos-list />
+    </div>
+  </ng-template>
+
+  <ng-template #formTab>
+    <div class="tab-pane-wrapper">
+      <app-procedimientos-form />
+    </div>
+  </ng-template>
+</div>

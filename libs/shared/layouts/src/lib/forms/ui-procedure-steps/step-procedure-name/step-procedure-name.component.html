@@ -1,0 +1,40 @@
+<form [formGroup]="stepForm()" class="step-procedure-name">
+  <div class="form-content">
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Nombre del Procedimiento</mat-label>
+      <span matPrefix class="material-symbols-outlined prefix-icon">medical_services</span>
+      <input
+        matInput
+        type="text"
+        formControlName="nombreProcedimiento"
+        placeholder="Ej. Rinoplastia Estética"
+        autocomplete="off"
+        maxlength="100"
+      />
+      @if (hasError('nombreProcedimiento', 'required')) {
+        <mat-error>El nombre del procedimiento es requerido</mat-error>
+      }
+      @if (hasError('nombreProcedimiento', 'minlength')) {
+        <mat-error>Debe tener al menos 3 caracteres</mat-error>
+      }
+      @if (hasError('nombreProcedimiento', 'maxlength')) {
+        <mat-error>No puede exceder 100 caracteres</mat-error>
+      }
+      @if (hasError('nombreProcedimiento', 'duplicateName')) {
+        <mat-error>Ya existe un procedimiento activo con este nombre</mat-error>
+      }
+    </mat-form-field>
+  </div>
+
+  <div class="stepper-actions">
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      [disabled]="stepForm().invalid"
+      (click)="nextStep.emit()"
+    >
+      Continuar
+    </button>
+  </div>
+</form>

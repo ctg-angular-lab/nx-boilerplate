@@ -1,11 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterModule } from '@angular/router';
+import { filter } from 'rxjs';
 import { MatIconModule, MAT_ICON_DEFAULT_OPTIONS } from '@angular/material/icon';
-import {MatButtonModule} from '@angular/material/button';
-import {MatSidenavModule} from '@angular/material/sidenav';
-import {MatToolbarModule} from '@angular/material/toolbar';
-import {MatListModule} from '@angular/material/list';
+import { MatButtonModule } from '@angular/material/button';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatListModule } from '@angular/material/list';
 
 interface MfeRoute {
   path: string;
@@ -35,18 +37,33 @@ interface MfeRoute {
   styleUrls: ['./app.scss'],
 })
 export class App {
+  private readonly router = inject(Router);
+
   readonly isSidenavOpen = signal<boolean>(false);
 
   readonly mfeRoutes = signal<MfeRoute[]>([
     { path: '/agendador-citas', label: 'Agendar Cita', icon: 'calendar_add_on' },
     { path: '/profesionales', label: 'Profesionales', icon: 'badge' },
-    { path: '/mfe-users', label: 'Gestión de Usuarios', icon: 'people' },
-    { path: '/mfe-billing', label: 'Módulo Facturación', icon: 'receipt_long' },
-    { path: '/mfe-reports', label: 'Analíticas', icon: 'analytics' },
-    { path: '/settings', label: 'Configuración', icon: 'settings' }
+    { path: '/procedimientos-medicos', label: 'Procedimientos Médicos', icon: 'medical_services' },
+    { path: '/mfe-pacientes', label: 'Pacientes', icon: 'person' }
   ]);
+
+  constructor() {
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed()
+      )
+      .subscribe(() => {
+        this.closeSidenav();
+      });
+  }
 
   toggleSidenav(): void {
     this.isSidenavOpen.update((currentState) => !currentState);
+  }
+
+  closeSidenav(): void {
+    this.isSidenavOpen.set(false);
   }
 }

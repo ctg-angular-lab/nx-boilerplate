@@ -1,0 +1,11 @@
+.procedimientos-view-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  color: var(--sys-color-on-surface);
+}
+
+.tab-pane-wrapper {
+  padding: 16px 0;
+  width: 100%;
+}

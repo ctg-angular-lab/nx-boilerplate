@@ -2,7 +2,14 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProceduresMessageController } from './procedures-message.controller';
 import { ProceduresDomainService } from '@nx-boilerplate/backend/procedures-domain';
-import { IProcedure } from '@nx-boilerplate/api-interfaces';
+import {
+  IProcedure,
+  IProcedureSoftDeleteResponse,
+} from '@nx-boilerplate/api-interfaces';
+import {
+  CreateProcedureDto,
+  UpdateProcedureMessageDto,
+} from '@nx-boilerplate/shared-dtos';
 
 describe('ProceduresMessageController', () => {
   let controller: ProceduresMessageController;
@@ -15,6 +22,7 @@ describe('ProceduresMessageController', () => {
       valorStandar: 850000,
       duracionStandar: 45,
       medicosRelacionados: ['52890123', '1032456789'],
+      isActive: true,
     },
   ];
 
@@ -31,6 +39,14 @@ describe('ProceduresMessageController', () => {
             getDoctorsByProcedureId: vi.fn().mockResolvedValue([]),
             getAllDoctors: vi.fn().mockResolvedValue([]),
             getAllAreaCodes: vi.fn().mockResolvedValue([]),
+            createProcedure: vi.fn().mockResolvedValue(mockProcedures[0]),
+            updateProcedure: vi.fn().mockResolvedValue(mockProcedures[0]),
+            softDeleteProcedure: vi.fn().mockResolvedValue({
+              success: true,
+              message: 'Desactivado',
+              idProcedimiento: 'PROC-EST-001',
+              isActive: false,
+            } as IProcedureSoftDeleteResponse),
           },
         },
       ],
@@ -46,10 +62,16 @@ describe('ProceduresMessageController', () => {
     expect(controller).toBeDefined();
   });
 
-  it('debe atender procedures.get-all delegando al servicio', async () => {
+  it('debe atender procedures.get-all delegando al servicio sin payload', async () => {
     const result = await controller.getAll();
     expect(result).toEqual(mockProcedures);
-    expect(service.getAll).toHaveBeenCalled();
+    expect(service.getAll).toHaveBeenCalledWith(false);
+  });
+
+  it('debe atender procedures.get-all delegando al servicio con includeInactive: true', async () => {
+    const result = await controller.getAll({ includeInactive: true });
+    expect(result).toEqual(mockProcedures);
+    expect(service.getAll).toHaveBeenCalledWith(true);
   });
 
   it('debe atender procedures.find-by-id con el payload recibido', async () => {
@@ -92,7 +114,48 @@ describe('ProceduresMessageController', () => {
     expect(service.getDoctorsByProcedureId).toHaveBeenCalledWith('PROC-EST-001');
   });
 
-  it('debe atender doctors.get-all delegando al servicio', async () => {
+  it('debe atender procedures.create delegando al servicio de dominio', async () => {
+    const createDto: CreateProcedureDto = {
+      nombreProcedimiento: 'Nuevo Procedimiento',
+      valorStandar: 500000,
+      duracionStandar: 30,
+    };
+
+    const result = await controller.createProcedure(createDto);
+
+    expect(result).toEqual(mockProcedures[0]);
+    expect(service.createProcedure).toHaveBeenCalledWith(createDto);
+  });
+
+  it('debe atender procedures.update delegando al servicio de dominio', async () => {
+    const updatePayload: UpdateProcedureMessageDto = {
+      idProcedimiento: 'PROC-EST-001',
+      data: {
+        nombreProcedimiento: 'Procedimiento Actualizado',
+        valorStandar: 600000,
+      },
+    };
+
+    const result = await controller.updateProcedure(updatePayload);
+
+    expect(result).toEqual(mockProcedures[0]);
+    expect(service.updateProcedure).toHaveBeenCalledWith(
+      updatePayload.idProcedimiento,
+      updatePayload.data
+    );
+  });
+
+  it('debe atender procedures.soft-delete delegando al servicio de dominio', async () => {
+    const result = await controller.softDeleteProcedure({
+      idProcedimiento: 'PROC-EST-001',
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.isActive).toBe(false);
+    expect(service.softDeleteProcedure).toHaveBeenCalledWith('PROC-EST-001');
+  });
+
+  it('debe atender doctors.get-all delegando al servicio con includeInactive', async () => {
     const mockAllDoctors = [
       {
         cedula: '52890123',
@@ -110,10 +173,10 @@ describe('ProceduresMessageController', () => {
 
     vi.spyOn(service, 'getAllDoctors').mockResolvedValueOnce(mockAllDoctors as never);
 
-    const result = await controller.getAllDoctors();
+    const result = await controller.getAllDoctors({ includeInactive: true });
 
     expect(result).toEqual(mockAllDoctors);
-    expect(service.getAllDoctors).toHaveBeenCalled();
+    expect(service.getAllDoctors).toHaveBeenCalledWith(true);
   });
 
   it('debe atender area-codes.get-all delegando al servicio', async () => {
@@ -142,4 +205,3 @@ describe('ProceduresMessageController', () => {
     expect(service.getAllAreaCodes).toHaveBeenCalled();
   });
 });
-

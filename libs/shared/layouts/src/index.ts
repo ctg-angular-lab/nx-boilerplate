@@ -6,6 +6,8 @@ export * from './lib/models/appointment-steps.models';
 export * from './lib/models/confirmation-modal.models';
 export * from './lib/modals/models/agendar-modal.models';
 
+export * from './lib/models/procedure-steps.models';
+
 // Modals
 export * from './lib/modals/confirmation-modal/confirmation-modal.component';
 export * from './lib/modals/agendar-modal/agendar-modal.component';
@@ -22,4 +24,9 @@ export * from './lib/forms/ui-appointment-steps/step-procedure-selection/step-pr
 export * from './lib/forms/ui-professional-steps/step-professional-info/step-professional-info.component';
 export * from './lib/forms/ui-professional-steps/step-professional-schedule/step-professional-schedule.component';
 export * from './lib/forms/ui-professional-steps/step-professional-procedures/step-professional-procedures.component';
+
+// Procedure Form Steps
+export * from './lib/forms/ui-procedure-steps/step-procedure-name/step-procedure-name.component';
+export * from './lib/forms/ui-procedure-steps/step-procedure-pricing/step-procedure-pricing.component';
+export * from './lib/forms/ui-procedure-steps/step-procedure-summary/step-procedure-summary.component';
 

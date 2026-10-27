@@ -3,7 +3,7 @@
 }
 
 <lib-data-table
-  [dataTable]="profesionalesService.profesionalesList()"
+  [dataTable]="displayedProfesionales()"
   [dataColumn]="columns"
   [loading]="profesionalesService.isLoading()"
   [expandable]="true"
@@ -11,20 +11,17 @@
   searchPlaceholder="Buscar por nombre, correo o profesión..."
   rowKey="cedula"
   [detailTemplate]="detailTpl"
-  emptyMessage="No hay profesionales registrados."
+  [emptyMessage]="emptyMessage()"
 >
   <div table-header class="profesionales-toolbar">
-    <span matTooltip="Disponible próximamente" class="toolbar-toggle">
-      <mat-button-toggle-group
-        aria-label="Filtrar profesionales por estado"
-        [value]="viewFilter()"
-        (change)="viewFilter.set($event.value)"
-        disabled
-      >
-        <mat-button-toggle value="activos">Activos</mat-button-toggle>
-        <mat-button-toggle value="inactivos">Inactivos</mat-button-toggle>
-      </mat-button-toggle-group>
-    </span>
+    <mat-button-toggle-group
+      aria-label="Filtrar profesionales por estado"
+      [value]="viewFilter()"
+      (change)="onFilterChange($event.value)"
+    >
+      <mat-button-toggle value="activos">Activos</mat-button-toggle>
+      <mat-button-toggle value="inactivos">Inactivos</mat-button-toggle>
+    </mat-button-toggle-group>
 
     <button
       mat-flat-button
@@ -62,23 +59,38 @@
       </div>
 
       <div class="detail-actions">
-        <button
-          mat-icon-button
-          type="button"
-          aria-label="Editar profesional"
-          (click)="onEdit(profesional, $event)"
-        >
-          <span class="material-symbols-outlined">edit</span>
-        </button>
-        <button
-          mat-icon-button
-          type="button"
-          class="action-delete"
-          aria-label="Eliminar profesional"
-          (click)="onDelete(profesional, $event)"
-        >
-          <span class="material-symbols-outlined">delete</span>
-        </button>
+        @if (profesional.isActive !== false) {
+          <button
+            mat-icon-button
+            type="button"
+            matTooltip="Editar profesional"
+            aria-label="Editar profesional"
+            (click)="onEdit(profesional, $event)"
+          >
+            <span class="material-symbols-outlined">edit</span>
+          </button>
+          <button
+            mat-icon-button
+            type="button"
+            class="action-delete"
+            matTooltip="Eliminar profesional"
+            aria-label="Eliminar profesional"
+            (click)="onDelete(profesional, $event)"
+          >
+            <span class="material-symbols-outlined">delete</span>
+          </button>
+        } @else {
+          <button
+            mat-icon-button
+            type="button"
+            class="action-reactivate-btn"
+            matTooltip="Reactivar profesional"
+            aria-label="Reactivar profesional"
+            (click)="onReactivate(profesional, $event)"
+          >
+            <span class="material-symbols-outlined">how_to_reg</span>
+          </button>
+        }
       </div>
     </div>
   </ng-template>

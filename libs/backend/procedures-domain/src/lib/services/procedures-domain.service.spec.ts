@@ -7,6 +7,7 @@ import { CreateProfessionalDto } from '@nx-boilerplate/shared-dtos';
 import { ProceduresDomainService } from './procedures-domain.service';
 import { ProceduresRepository } from '../repositories/procedures.repository';
 import { ActiveProfessionalDocument } from '../schemas/active-professional.schema';
+import { ProcedureDocument } from '../schemas/procedure.schema';
 
 describe('ProceduresDomainService', () => {
   let service: ProceduresDomainService;
@@ -69,6 +70,11 @@ describe('ProceduresDomainService', () => {
             pullDoctorFromProcedures: vi.fn(),
             findAllDoctors: vi.fn(),
             findAllAreaCodes: vi.fn(),
+            getNextProcedureId: vi.fn().mockResolvedValue('PROC-EST-006'),
+            findByNameNormalized: vi.fn().mockResolvedValue(null),
+            createProcedure: vi.fn(),
+            updateProcedure: vi.fn(),
+            softDeleteIfFree: vi.fn(),
           },
         },
       ],
@@ -337,4 +343,174 @@ describe('ProceduresDomainService', () => {
       });
     });
   });
+
+  describe('createProcedure', () => {
+    const createDto = {
+      nombreProcedimiento: 'Rinomodelación con Ácido Hialurónico',
+      valorStandar: 950000,
+      duracionStandar: 50,
+      laboratorios: [
+        {
+          nombreLaboratorio: 'Juvederm',
+          precio: 450000,
+          medidaPorUnidad: '1 vial',
+        },
+      ],
+    };
+
+    it('debe crear un procedimiento con id seguro generado por el contador atómico', async () => {
+      vi.spyOn(repository, 'findByNameNormalized').mockResolvedValue(null);
+      vi.spyOn(repository, 'getNextProcedureId').mockResolvedValue('PROC-EST-006');
+      vi.spyOn(repository, 'createProcedure').mockResolvedValue({
+        ...createDto,
+        idProcedimiento: 'PROC-EST-006',
+        isActive: true,
+        medicosRelacionados: [],
+      } as unknown as ProcedureDocument);
+
+      const result = await service.createProcedure(createDto);
+
+      expect(result.idProcedimiento).toBe('PROC-EST-006');
+      expect(result.nombreProcedimiento).toBe(createDto.nombreProcedimiento);
+      expect(result.isActive).toBe(true);
+      expect(repository.findByNameNormalized).toHaveBeenCalledWith(
+        createDto.nombreProcedimiento
+      );
+      expect(repository.getNextProcedureId).toHaveBeenCalled();
+      expect(repository.createProcedure).toHaveBeenCalled();
+    });
+
+    it('debe lanzar RpcException 409 si ya existe un procedimiento activo con el mismo nombre', async () => {
+      vi.spyOn(repository, 'findByNameNormalized').mockResolvedValue({
+        idProcedimiento: 'PROC-EST-001',
+        nombreProcedimiento: createDto.nombreProcedimiento,
+        isActive: true,
+      } as unknown as ProcedureDocument);
+
+      await expect(service.createProcedure(createDto)).rejects.toThrow(RpcException);
+    });
+
+    it('debe lanzar RpcException 409 si existe un procedimiento inactivo con el mismo nombre indicando que se puede reactivar', async () => {
+      vi.spyOn(repository, 'findByNameNormalized').mockResolvedValue({
+        idProcedimiento: 'PROC-EST-001',
+        nombreProcedimiento: createDto.nombreProcedimiento,
+        isActive: false,
+      } as unknown as ProcedureDocument);
+
+      await expect(service.createProcedure(createDto)).rejects.toThrow(RpcException);
+    });
+  });
+
+  describe('updateProcedure', () => {
+    const updateDto = {
+      nombreProcedimiento: 'Nombre Editado',
+      valorStandar: 900000,
+    };
+
+    it('debe actualizar el procedimiento correctamente', async () => {
+      vi.spyOn(repository, 'findById').mockResolvedValue({
+        idProcedimiento: 'PROC-EST-001',
+        nombreProcedimiento: 'Nombre Anterior',
+        valorStandar: 850000,
+        duracionStandar: 45,
+        medicosRelacionados: [],
+        isActive: true,
+      } as unknown as IProcedure);
+      vi.spyOn(repository, 'findByNameNormalized').mockResolvedValue(null);
+      vi.spyOn(repository, 'updateProcedure').mockResolvedValue({
+        idProcedimiento: 'PROC-EST-001',
+        nombreProcedimiento: 'Nombre Editado',
+        valorStandar: 900000,
+        duracionStandar: 45,
+        medicosRelacionados: [],
+        isActive: true,
+      } as unknown as IProcedure);
+
+      const result = await service.updateProcedure('PROC-EST-001', updateDto);
+
+      expect(result.nombreProcedimiento).toBe('Nombre Editado');
+      expect(repository.updateProcedure).toHaveBeenCalledWith(
+        'PROC-EST-001',
+        expect.objectContaining({ nombreProcedimiento: 'Nombre Editado' })
+      );
+    });
+
+    it('debe lanzar RpcException 404 si el procedimiento a actualizar no existe', async () => {
+      vi.spyOn(repository, 'findById').mockResolvedValue(null);
+
+      await expect(
+        service.updateProcedure('PROC-INEXISTENTE', updateDto)
+      ).rejects.toThrow(RpcException);
+    });
+
+    it('debe lanzar RpcException 409 si el nuevo nombre entra en conflicto con otro procedimiento', async () => {
+      vi.spyOn(repository, 'findById').mockResolvedValue({
+        idProcedimiento: 'PROC-EST-001',
+        nombreProcedimiento: 'Nombre Anterior',
+      } as unknown as IProcedure);
+      vi.spyOn(repository, 'findByNameNormalized').mockResolvedValue({
+        idProcedimiento: 'PROC-EST-002',
+        nombreProcedimiento: 'Nombre Editado',
+      } as unknown as ProcedureDocument);
+
+      await expect(
+        service.updateProcedure('PROC-EST-001', updateDto)
+      ).rejects.toThrow(RpcException);
+    });
+  });
+
+  describe('softDeleteProcedure', () => {
+    it('debe desactivar el procedimiento si no tiene médicos asignados (matchedCount > 0)', async () => {
+      vi.spyOn(repository, 'softDeleteIfFree').mockResolvedValue(1);
+
+      const result = await service.softDeleteProcedure('PROC-EST-001');
+
+      expect(result.success).toBe(true);
+      expect(result.isActive).toBe(false);
+      expect(repository.softDeleteIfFree).toHaveBeenCalledWith('PROC-EST-001');
+    });
+
+    it('debe lanzar RpcException 404 si softDeleteIfFree retorna 0 y el procedimiento no existe', async () => {
+      vi.spyOn(repository, 'softDeleteIfFree').mockResolvedValue(0);
+      vi.spyOn(repository, 'findById').mockResolvedValue(null);
+
+      await expect(
+        service.softDeleteProcedure('PROC-INEXISTENTE')
+      ).rejects.toThrow(RpcException);
+    });
+
+    it('debe lanzar RpcException 409 si softDeleteIfFree retorna 0 porque tiene médicos relacionados', async () => {
+      vi.spyOn(repository, 'softDeleteIfFree').mockResolvedValue(0);
+      vi.spyOn(repository, 'findById').mockResolvedValue({
+        idProcedimiento: 'PROC-EST-001',
+        medicosRelacionados: ['12345678'],
+        isActive: true,
+      } as unknown as IProcedure);
+
+      try {
+        await service.softDeleteProcedure('PROC-EST-001');
+        expect.unreachable('Se esperaba RpcException');
+      } catch (error) {
+        expect(error).toBeInstanceOf(RpcException);
+        const errPayload = (error as RpcException).getError() as { code: number };
+        expect(errPayload.code).toBe(409);
+      }
+    });
+
+    it('debe responder de forma idempotente con éxito si el procedimiento ya estaba inactivo y sin médicos', async () => {
+      vi.spyOn(repository, 'softDeleteIfFree').mockResolvedValue(0);
+      vi.spyOn(repository, 'findById').mockResolvedValue({
+        idProcedimiento: 'PROC-EST-001',
+        medicosRelacionados: [],
+        isActive: false,
+      } as unknown as IProcedure);
+
+      const result = await service.softDeleteProcedure('PROC-EST-001');
+
+      expect(result.success).toBe(true);
+      expect(result.isActive).toBe(false);
+      expect(result.message).toContain('ya se encontraba inactivo');
+    });
+  });
 });
+
