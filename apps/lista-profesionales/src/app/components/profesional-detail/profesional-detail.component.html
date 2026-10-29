@@ -1,0 +1,99 @@
+<div class="profesional-detail">
+  <!-- Datos de Contacto y Profesión -->
+  <section class="detail-section">
+    <div class="contact-card">
+      <div class="contact-item">
+        <span class="material-symbols-outlined contact-icon">mail</span>
+        <div class="contact-info">
+          <span class="contact-label">Correo electrónico</span>
+          <span class="contact-value">{{ professional().email }}</span>
+        </div>
+      </div>
+
+      <div class="contact-item">
+        <span class="material-symbols-outlined contact-icon">call</span>
+        <div class="contact-info">
+          <span class="contact-label">Teléfono de contacto</span>
+          <span class="contact-value placeholder-text">No registrado (próxima versión)</span>
+        </div>
+      </div>
+
+      <div class="contact-item">
+        <span class="material-symbols-outlined contact-icon">badge</span>
+        <div class="contact-info">
+          <span class="contact-label">Cédula / Profesión</span>
+          <span class="contact-value">{{ professional().cedula }} — {{ professional().profesion }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Horario de Trabajo -->
+  <section class="detail-section">
+    <div class="section-header">
+      <span class="material-symbols-outlined section-icon">schedule</span>
+      <h3 class="section-title">Horario y Disponibilidad</h3>
+    </div>
+
+    <div class="schedule-card">
+      <div class="schedule-block">
+        <span class="schedule-subtitle">Días laborales:</span>
+        <div class="days-chips">
+          @for (dia of professional().horarioTrabajo.diasLaborales; track dia) {
+            <span class="day-chip">{{ dia }}</span>
+          } @empty {
+            <span class="empty-hint">Sin días configurados</span>
+          }
+        </div>
+      </div>
+
+      <div class="schedule-block">
+        <span class="schedule-subtitle">Jornada:</span>
+        <span class="schedule-text">
+          {{ professional().horarioTrabajo.horaInicio }} – {{ professional().horarioTrabajo.horaFin }}
+        </span>
+      </div>
+
+      @if (professional().horarioTrabajo.recesoAlmuerzo; as receso) {
+        <div class="schedule-block">
+          <span class="schedule-subtitle">Receso de almuerzo:</span>
+          <span class="schedule-text">{{ receso.inicio }} – {{ receso.fin }}</span>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- Procedimientos que Realiza (Chips MD3 compactos) -->
+  <section class="detail-section">
+    <div class="section-header">
+      <span class="material-symbols-outlined section-icon">medical_services</span>
+      <h3 class="section-title">Procedimientos que Realiza</h3>
+      <span class="section-badge">{{ relatedProcedureNames().length }}</span>
+    </div>
+
+    @if (relatedProcedureNames().length > 0) {
+      <div class="procedures-chips-container">
+        @for (procName of relatedProcedureNames(); track procName) {
+          <span class="procedure-chip">
+            <span class="material-symbols-outlined chip-icon">check_circle</span>
+            <span class="chip-label">{{ procName }}</span>
+          </span>
+        }
+      </div>
+    } @else {
+      <p class="empty-state-text">Este profesional no tiene procedimientos relacionados actualmente.</p>
+    }
+  </section>
+
+  <!-- Pie de Acciones Fijo -->
+  <footer class="detail-modal__actions">
+    <button
+      mat-stroked-button
+      type="button"
+      class="detail-modal__close-btn"
+      (click)="onClose()"
+    >
+      Cerrar
+    </button>
+  </footer>
+</div>

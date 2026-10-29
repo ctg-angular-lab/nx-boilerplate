@@ -59,6 +59,16 @@
       </div>
 
       <div class="detail-actions">
+        <button
+          mat-icon-button
+          type="button"
+          class="action-view"
+          matTooltip="Ver detalle del profesional"
+          aria-label="Ver detalle del profesional"
+          (click)="onViewProfessional(profesional, $event)"
+        >
+          <span class="material-symbols-outlined">visibility</span>
+        </button>
         @if (profesional.isActive !== false) {
           <button
             mat-icon-button

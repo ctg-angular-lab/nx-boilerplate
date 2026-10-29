@@ -316,4 +316,40 @@ describe('ProfesionalesAdminService', () => {
       );
     });
   });
+
+  describe('resolveProcedureNames', () => {
+    it('debe mapear los IDs de procedimientos a sus nombres legibles usando el catálogo en memoria', () => {
+      const mockProcedures = [
+        {
+          idProcedimiento: 'PROC-001',
+          nombreProcedimiento: 'Rinoplastia Estética',
+          valorStandar: 3500000,
+          duracionStandar: 90,
+          medicosRelacionados: [],
+        },
+        {
+          idProcedimiento: 'PROC-002',
+          nombreProcedimiento: 'Blefaroplastia',
+          valorStandar: 2000000,
+          duracionStandar: 60,
+          medicosRelacionados: [],
+        },
+      ];
+      apiClient.get.mockReturnValue(of(ok(mockProcedures)));
+      service.loadProcedures();
+
+      const result = service.resolveProcedureNames(['PROC-001', 'PROC-002', 'PROC-999']);
+
+      expect(result).toEqual([
+        'Rinoplastia Estética',
+        'Blefaroplastia',
+        'PROC-999',
+      ]);
+    });
+
+    it('debe retornar un arreglo vacío si el parámetro es undefined o vacío', () => {
+      expect(service.resolveProcedureNames(undefined)).toEqual([]);
+      expect(service.resolveProcedureNames([])).toEqual([]);
+    });
+  });
 });
