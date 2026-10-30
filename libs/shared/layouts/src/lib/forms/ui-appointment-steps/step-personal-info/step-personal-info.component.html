@@ -1,39 +1,45 @@
 <div class="step-personal-info">
   <!-- Historial Clínico del Paciente (si existe) -->
   @if (history(); as patient) {
-    <mat-card class="history-card">
-      <mat-card-header class="history-card__header">
-        <span class="material-symbols-outlined history-card__icon">clinical_notes</span>
-        <mat-card-title class="history-card__title">Último Procedimiento y Recomendaciones</mat-card-title>
-      </mat-card-header>
+    @if (patient.recomendaciones || patient.ultimosProcedimientos?.length) {
+      <mat-card class="history-card">
+        <mat-card-header class="history-card__header">
+          <span class="material-symbols-outlined history-card__icon">clinical_notes</span>
+          <mat-card-title class="history-card__title">Último Procedimiento y Recomendaciones</mat-card-title>
+        </mat-card-header>
 
-      <mat-card-content class="history-card__content">
-        <p class="history-card__recommendations">
-          <strong>Recomendaciones Médicas:</strong> {{ patient.recomendaciones }}
-        </p>
+        <mat-card-content class="history-card__content">
+          @if (patient.recomendaciones) {
+            <p class="history-card__recommendations">
+              <strong>Recomendaciones Médicas:</strong> {{ patient.recomendaciones }}
+            </p>
+          }
 
-        <div class="history-table-container">
-          <table class="history-table">
-            <thead>
-              <tr>
-                <th>Procedimiento</th>
-                <th>Fecha</th>
-                <th>Especialista</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (item of patient.ultimosProcedimientos; track item.id) {
-                <tr>
-                  <td>{{ item.nombre }}</td>
-                  <td>{{ item.fecha }}</td>
-                  <td>{{ item.profesional }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      </mat-card-content>
-    </mat-card>
+          @if (patient.ultimosProcedimientos?.length) {
+            <div class="history-table-container">
+              <table class="history-table">
+                <thead>
+                  <tr>
+                    <th>Procedimiento</th>
+                    <th>Fecha</th>
+                    <th>Especialista</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of patient.ultimosProcedimientos ?? []; track item.id) {
+                    <tr>
+                      <td>{{ item.nombre }}</td>
+                      <td>{{ item.fecha }}</td>
+                      <td>{{ item.profesional }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
   }
 
   <!-- Formulario de Datos Personales y Contacto -->

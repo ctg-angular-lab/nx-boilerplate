@@ -280,8 +280,6 @@ export class AgendarCitaComponent {
       apellidos: step2Values.apellidos?.trim() || '',
       correo: step2Values.correo?.trim() || '',
       celular: celularCompleto,
-      ultimosProcedimientos: [],
-      recomendaciones: '',
     };
 
     this.isSubmittingPatient.set(true);

@@ -92,11 +92,17 @@ export class PatientsRepository implements OnModuleInit {
    * Consulta el paciente por cédula devolviendo un POJO limpio (lean).
    */
   async findByCedula(cedula: string): Promise<IPatientHistory | null> {
-    return this.patientModel
+    const doc = await this.patientModel
       .findOne({ cedula })
-      .select('-_id -__v -createdAt -updatedAt')
-      .lean<IPatientHistory>()
+      .select('-__v')
+      .lean<any>()
       .exec();
+
+    if (!doc) return null;
+    return {
+      ...doc,
+      _id: doc._id ? String(doc._id) : undefined,
+    };
   }
 
   /**
@@ -104,19 +110,63 @@ export class PatientsRepository implements OnModuleInit {
    */
   async create(patientData: ICreatePatientRequest): Promise<IPatientHistory> {
     const createdPatient = new this.patientModel({
-      ...patientData,
-      ultimosProcedimientos: patientData.ultimosProcedimientos ?? [],
-      recomendaciones: patientData.recomendaciones ?? '',
+      cedula: patientData.cedula,
+      tipo_documento: patientData.tipo_documento ?? 'CC',
+      nombre: patientData.nombre,
+      apellidos: patientData.apellidos,
+      correo: patientData.correo,
+      celular: patientData.celular,
+      fecha_nacimiento: patientData.fecha_nacimiento ?? null,
+      edad: patientData.edad ?? null,
+      sexo: patientData.sexo ?? null,
+      estado_civil: patientData.estado_civil ?? null,
+      ocupacion: patientData.ocupacion ?? null,
+      direccion_residencia: patientData.direccion_residencia ?? null,
+      aseguradora: patientData.aseguradora ?? null,
+      tipo_vinculacion: patientData.tipo_vinculacion ?? null,
+      es_menor_de_edad: patientData.es_menor_de_edad ?? false,
+      acompanante: patientData.acompanante ?? { nombre: null, telefono: null },
+      persona_responsable: patientData.persona_responsable ?? {
+        nombre: null,
+        telefono: null,
+        parentesco: null,
+      },
+      ...(patientData.ultimosProcedimientos
+        ? { ultimosProcedimientos: patientData.ultimosProcedimientos }
+        : {}),
+      ...(patientData.recomendaciones !== undefined
+        ? { recomendaciones: patientData.recomendaciones }
+        : {}),
     });
     const saved = await createdPatient.save();
+    const obj = saved.toObject();
     return {
-      cedula: saved.cedula,
-      nombre: saved.nombre,
-      apellidos: saved.apellidos,
-      correo: saved.correo,
-      celular: saved.celular,
-      ultimosProcedimientos: saved.ultimosProcedimientos ?? [],
-      recomendaciones: saved.recomendaciones ?? '',
+      _id: String(obj._id),
+      cedula: obj.cedula,
+      tipo_documento: obj.tipo_documento ?? 'CC',
+      nombre: obj.nombre,
+      apellidos: obj.apellidos,
+      correo: obj.correo,
+      celular: obj.celular,
+      fecha_nacimiento: obj.fecha_nacimiento ?? null,
+      edad: obj.edad ?? null,
+      sexo: obj.sexo ?? null,
+      estado_civil: obj.estado_civil ?? null,
+      ocupacion: obj.ocupacion ?? null,
+      direccion_residencia: obj.direccion_residencia ?? null,
+      aseguradora: obj.aseguradora ?? null,
+      tipo_vinculacion: obj.tipo_vinculacion ?? null,
+      es_menor_de_edad: obj.es_menor_de_edad ?? false,
+      acompanante: obj.acompanante ?? { nombre: null, telefono: null },
+      persona_responsable: obj.persona_responsable ?? {
+        nombre: null,
+        telefono: null,
+        parentesco: null,
+      },
+      ...(obj.ultimosProcedimientos ? { ultimosProcedimientos: obj.ultimosProcedimientos } : {}),
+      ...(obj.recomendaciones !== undefined ? { recomendaciones: obj.recomendaciones } : {}),
+      createdAt: (obj as unknown as { createdAt?: Date }).createdAt,
+      updatedAt: (obj as unknown as { updatedAt?: Date }).updatedAt,
     };
   }
 }
