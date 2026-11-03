@@ -7,6 +7,7 @@ import { AppointmentConfirmationController } from './controllers/appointment-con
 import { ProceduresController } from './controllers/procedures.controller';
 import { DoctorsController } from './controllers/doctors.controller';
 import { AreaCodesController } from './controllers/area-codes.controller';
+import { ClinicalRecordsController } from './controllers/clinical-records.controller';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { AreaCodesController } from './controllers/area-codes.controller';
     ProceduresController,
     DoctorsController,
     AreaCodesController,
+    ClinicalRecordsController,
   ],
 })
 export class AppModule {}

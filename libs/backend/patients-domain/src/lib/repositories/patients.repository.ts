@@ -1,7 +1,11 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { ICreatePatientRequest, IPatientHistory } from '@nx-boilerplate/api-interfaces';
+import {
+  ICreatePatientRequest,
+  IPatientHistory,
+  IUpdatePatientRequest,
+} from '@nx-boilerplate/api-interfaces';
 import { Patient, PatientDocument } from '../schemas/patient.schema';
 
 @Injectable()
@@ -86,6 +90,47 @@ export class PatientsRepository implements OnModuleInit {
         `Aviso en auto-seeder MongoDB (posible arranque sin conexión): ${(error as Error).message}`
       );
     }
+  }
+
+  /**
+   * Consulta todos los pacientes registrados en la colección 'patients'.
+   */
+  async findAll(): Promise<IPatientHistory[]> {
+    const docs = await this.patientModel
+      .find()
+      .sort({ createdAt: -1 })
+      .select('-__v')
+      .lean<any[]>()
+      .exec();
+
+    return docs.map((doc) => ({
+      ...doc,
+      _id: doc._id ? String(doc._id) : undefined,
+    }));
+  }
+
+  /**
+   * Actualiza los datos demográficos de un paciente por su cédula.
+   */
+  async updateByCedula(
+    cedula: string,
+    data: IUpdatePatientRequest
+  ): Promise<IPatientHistory | null> {
+    const updated = await this.patientModel
+      .findOneAndUpdate(
+        { cedula },
+        { $set: data },
+        { new: true }
+      )
+      .select('-__v')
+      .lean<any>()
+      .exec();
+
+    if (!updated) return null;
+    return {
+      ...updated,
+      _id: updated._id ? String(updated._id) : undefined,
+    };
   }
 
   /**

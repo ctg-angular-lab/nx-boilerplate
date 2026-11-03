@@ -23,6 +23,8 @@ export class AppointmentConfirmationController {
   constructor(
     @Inject('SCHEDULING_SERVICE')
     private readonly schedulingClient: ClientProxy,
+    @Inject('PATIENTS_SERVICE')
+    private readonly patientsClient: ClientProxy,
   ) {}
 
   @Get('daily')
@@ -41,7 +43,7 @@ export class AppointmentConfirmationController {
     @Param('id') id: string,
     @Body() body: UpdateAppointmentStatusDto,
   ): Promise<IAppointmentDashboard> {
-    return firstValueFrom(
+    const updated = await firstValueFrom(
       this.schedulingClient
         .send<IAppointmentDashboard>('appointments.update-status', {
           appointmentId: id,
@@ -49,6 +51,21 @@ export class AppointmentConfirmationController {
         })
         .pipe(timeout(10000)),
     );
+
+    // Si la cita fue confirmada exitosamente, emitimos asíncronamente el evento hacia patients_queue
+    if (body.status === 'CONFIRMED' && updated) {
+      this.patientsClient.emit('appointment.confirmed', {
+        appointmentId: updated.appointmentId,
+        patientNationalId: updated.patientNationalId,
+        doctorCedula: updated.doctorCedula,
+        doctorEmail: updated.doctorEmail,
+        procedureId: updated.procedureId,
+        procedureName: updated.procedureName,
+        appointmentDate: new Date(updated.startTime).toISOString(),
+      });
+    }
+
+    return updated;
   }
 
   @Post(':id/track-contact')

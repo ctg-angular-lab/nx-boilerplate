@@ -1,13 +1,15 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { RpcException } from '@nestjs/microservices';
-import { IPatientHistory } from '@nx-boilerplate/api-interfaces';
+import { IPatientHistory, ICitaMedica } from '@nx-boilerplate/api-interfaces';
 import { PatientsDomainService } from './patients-domain.service';
 import { PatientsRepository } from '../repositories/patients.repository';
+import { ClinicalRecordsRepository } from '../repositories/clinical-records.repository';
 
 describe('PatientsDomainService', () => {
   let service: PatientsDomainService;
-  let repository: PatientsRepository;
+  let patientsRepository: PatientsRepository;
+  let clinicalRecordsRepository: ClinicalRecordsRepository;
 
   const mockPatient: IPatientHistory = {
     cedula: '1020304050',
@@ -26,6 +28,39 @@ describe('PatientsDomainService', () => {
     recomendaciones: 'Paciente en control preventivo.',
   };
 
+  const mockClinicalRecord: ICitaMedica = {
+    _id: 'rec-1',
+    appointmentId: 'APT-100',
+    cedula_paciente: '1020304050',
+    estado_registro: 'COMPLETADA',
+    medico_tratante: [
+      {
+        cedula_profesional: 'DOC-1',
+        nombre_profesional: 'Dra. María Gómez',
+        fecha_atencion: new Date('2026-10-20'),
+      },
+    ],
+    registro_clinico: {
+      motivo_consulta: 'Control',
+      enfermedad_actual: '',
+      antecedentes_medicos: {
+        patologicos: 'Niega',
+        alergicos: 'Niega',
+        farmacologicos: 'Niega',
+        procedimientos_previos: 'Niega',
+      },
+      examen_fisico: 'Normal',
+      ultimosProcedimientos: ['Toxina Botulínica'],
+      procedimiento_realizado: 'Toxina Botulínica',
+      lote_producto: 'LOTE-123',
+      recomendaciones: 'Evitar masajear la zona por 24 horas',
+    },
+    soporte_documental: {
+      consentimiento_informado: true,
+      descargable_consentimiento: 'url',
+    },
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -33,6 +68,7 @@ describe('PatientsDomainService', () => {
         {
           provide: PatientsRepository,
           useValue: {
+            findAll: vi.fn().mockResolvedValue([mockPatient]),
             findByCedula: vi.fn().mockImplementation((cedula: string) => {
               if (cedula === '1020304050') {
                 return Promise.resolve(mockPatient);
@@ -46,31 +82,60 @@ describe('PatientsDomainService', () => {
                 recomendaciones: '',
               });
             }),
+            updateByCedula: vi.fn().mockImplementation((cedula, data) => {
+              if (cedula === '1020304050') {
+                return Promise.resolve({ ...mockPatient, ...data });
+              }
+              return Promise.resolve(null);
+            }),
+          },
+        },
+        {
+          provide: ClinicalRecordsRepository,
+          useValue: {
+            findByPatientCedula: vi.fn().mockImplementation((cedula: string) => {
+              if (cedula === '1020304050') {
+                return Promise.resolve([mockClinicalRecord]);
+              }
+              return Promise.resolve([]);
+            }),
           },
         },
       ],
     }).compile();
 
     service = module.get<PatientsDomainService>(PatientsDomainService);
-    repository = module.get<PatientsRepository>(PatientsRepository);
+    patientsRepository = module.get<PatientsRepository>(PatientsRepository);
+    clinicalRecordsRepository = module.get<ClinicalRecordsRepository>(ClinicalRecordsRepository);
   });
 
   it('debe estar definido', () => {
     expect(service).toBeDefined();
   });
 
-  it('debe retornar el historial cuando el paciente existe en el repositorio', async () => {
+  it('debe listar todos los pacientes delegando al repositorio', async () => {
+    const result = await service.findAllPatients();
+    expect(result).toHaveLength(1);
+    expect(result[0].cedula).toBe('1020304050');
+    expect(patientsRepository.findAll).toHaveBeenCalled();
+  });
+
+  it('debe retornar el paciente hidratado con registros clínicos cuando existe', async () => {
     const result = await service.findByNationalId('1020304050');
     expect(result).toBeDefined();
     expect(result.cedula).toBe('1020304050');
-    expect(result.nombre).toBe('Laura Sofía');
-    expect(result.apellidos).toBe('Gómez');
-    expect(result.correo).toBe('laura.gomez@example.com');
-    expect(result.celular).toBe('3001234567');
-    expect(repository.findByCedula).toHaveBeenCalledWith('1020304050');
+    expect(result.recomendaciones).toBe('Evitar masajear la zona por 24 horas');
+    expect(result.ultimosProcedimientos).toEqual([
+      expect.objectContaining({
+        nombre: 'Toxina Botulínica',
+        profesional: 'Dra. María Gómez',
+      }),
+    ]);
+    expect(patientsRepository.findByCedula).toHaveBeenCalledWith('1020304050');
+    expect(clinicalRecordsRepository.findByPatientCedula).toHaveBeenCalledWith('1020304050');
   });
 
-  it('debe lanzar RpcException con status 404 cuando el paciente no existe en el repositorio', async () => {
+  it('debe lanzar RpcException 404 cuando el paciente no existe', async () => {
     try {
       await service.findByNationalId('9999999999');
       expect.unreachable('Se esperaba que lanzara RpcException');
@@ -102,10 +167,10 @@ describe('PatientsDomainService', () => {
     expect(result).toBeDefined();
     expect(result.cedula).toBe('55667788');
     expect(result.nombre).toBe('Carlos');
-    expect(repository.create).toHaveBeenCalledWith(newPatientData);
+    expect(patientsRepository.create).toHaveBeenCalledWith(newPatientData);
   });
 
-  it('debe lanzar RpcException 409 si el paciente ya existe al intentar registrarlo', async () => {
+  it('debe lanzar RpcException 409 si el paciente ya existe al registrarlo', async () => {
     const existingPatientData = {
       cedula: '1020304050',
       nombre: 'Laura Sofía',
@@ -126,6 +191,34 @@ describe('PatientsDomainService', () => {
           status: 'error',
           code: 409,
           message: 'El paciente con cédula 1020304050 ya se encuentra registrado',
+        })
+      );
+    }
+  });
+
+  it('debe actualizar los datos demográficos del paciente exitosamente', async () => {
+    const updateData = {
+      ocupacion: 'Ingeniera de Software',
+      direccion_residencia: 'Calle 100 # 15-20, Bogotá',
+    };
+
+    const result = await service.updatePatient('1020304050', updateData);
+    expect(result.ocupacion).toBe('Ingeniera de Software');
+    expect(patientsRepository.updateByCedula).toHaveBeenCalledWith('1020304050', updateData);
+  });
+
+  it('debe lanzar RpcException 404 si el paciente a actualizar no existe', async () => {
+    try {
+      await service.updatePatient('9999999999', { ocupacion: 'Médico' });
+      expect.unreachable('Se esperaba que lanzara RpcException 404');
+    } catch (error: unknown) {
+      expect(error).toBeInstanceOf(RpcException);
+      const rpcError = error as RpcException;
+      const errPayload = rpcError.getError();
+      expect(errPayload).toEqual(
+        expect.objectContaining({
+          status: 'error',
+          code: 404,
         })
       );
     }

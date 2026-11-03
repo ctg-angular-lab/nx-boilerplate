@@ -69,4 +69,25 @@ export interface ICreatePatientRequest {
   recomendaciones?: string;
 }
 
+export interface IUpdatePatientRequest {
+  tipo_documento?: string | null;
+  nombre?: string;
+  apellidos?: string;
+  correo?: string;
+  celular?: string;
+  fecha_nacimiento?: string | null;
+  edad?: number | null;
+  sexo?: string | null;
+  estado_civil?: string | null;
+  ocupacion?: string | null;
+  direccion_residencia?: string | null;
+  aseguradora?: string | null;
+  tipo_vinculacion?: string | null;
+  es_menor_de_edad?: boolean | null;
+  acompanante?: IPatientCompanion;
+  persona_responsable?: IPatientResponsible;
+  ultimosProcedimientos?: IProcedureItem[];
+  recomendaciones?: string;
+}
+
 export type { IAreaCode } from './area-code.interface';
