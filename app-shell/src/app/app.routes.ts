@@ -47,5 +47,16 @@ export const appRoutes: Route[] = [
         'procedimientos-medicos/Routes'
       ).then((m) => m!.remoteRoutes),
   },
+  {
+    path: 'historial-pacientes',
+    loadChildren: () =>
+      loadRemote<typeof import('historial-pacientes/Routes')>(
+        'historial-pacientes/Routes'
+      ).then((m) => m!.remoteRoutes),
+  },
+  {
+    path: 'mfe-pacientes',
+    redirectTo: 'historial-pacientes',
+  },
 ];
 

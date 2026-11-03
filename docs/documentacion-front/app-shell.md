@@ -5,7 +5,7 @@
 > * **Tipo de Módulo:** Host Microfrontend Angular 21+ (Dynamic Module Federation Host, Standalone + Zoneless)  
 > * **Tags Nx (`project.json`):** `["scope:frontend", "type:app"]`  
 > * **Puerto Dev Local:** `4200` (`http://localhost:4200`)  
-> * **Remotes Federados Activos:** `agendador-citas` (:4201), `Login` (:4202), `lista-profesionales` (:4203), `procedimientos-medicos` (:4204)  
+> * **Remotes Federados Activos:** `agendador-citas` (:4201), `Login` (:4202), `lista-profesionales` (:4203), `procedimientos-medicos` (:4204), `historial-pacientes` (:4205)  
 > * **Rol Documental:** **Documento Nexo Central** del Frontend. Conecta el contenedor principal con todos los Microfrontends remotos y las librerías compartidas.
 
 ---
@@ -21,7 +21,7 @@ El ecosistema Frontend está compuesto por el Host (`app-shell`), los Microfront
 | **[`lista-profesionales.md`](./lista-profesionales.md)** | `apps/lista-profesionales` | `4203` | `/profesionales` | **Activo:** Gestión CRUD de especialistas (Tab Host, tabla Activos/Inactivos, `AsideModal` de detalle y Stepper de 4 pasos para alta/edición). |
 | **[`procedimientos-medicos.md`](./procedimientos-medicos.md)** | `apps/procedimientos-medicos` | `4204` | `/procedimientos-medicos` | **Activo:** Gestión CRUD de procedimientos y laboratorios (Tab Host, auto-recuperación de inactivos, bloqueo de baja si tiene médicos asignados). |
 | **[`homologacion-navegacion.md`](./homologacion-navegacion.md)** | `libs/shared/layouts` & `apps/*` | *Transversal* | *N/A* | **Estándar Implementado:** Patrón canónico de navegación por pestañas (`lib-tabs-collection`), tablas (`lib-data-table`), modales y steppers. |
-| *(Próximo MFE)* | `apps/historial-pacientes` | `4205` *(Plan)* | `/mfe-pacientes` | **En Planificación:** Expediente demográfico de 20 campos e Historias Clínicas (Resolución 1995). Ruta ya enlazada en el Sidenav del Host. |
+| **[`historial-pacientes`](../../apps/historial-pacientes)** | `apps/historial-pacientes` | `4205` | `/historial-pacientes` | **En Desarrollo (Fase 1 completada):** Expediente demográfico de 20 campos e Historias Clínicas (Resolución 1995 de 1999). Integrado en Host con manifest dinámico. |
 
 > **Conexión con la Documentación Backend:**  
 > Todos los Microfrontends se comunican exclusivamente con el API Gateway (`:3000/api`). Consulta el nexo de backend en [`docs/documentacion-back/00-api-gateway.md`](../documentacion-back/00-api-gateway.md).

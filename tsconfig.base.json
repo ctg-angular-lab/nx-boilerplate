@@ -41,6 +41,9 @@
       ],
       "procedimientos-medicos/Routes": [
         "./apps/procedimientos-medicos/src/app/remote-entry/entry.routes.ts"
+      ],
+      "historial-pacientes/Routes": [
+        "./apps/historial-pacientes/src/app/remote-entry/entry.routes.ts"
       ]
     }
   },
