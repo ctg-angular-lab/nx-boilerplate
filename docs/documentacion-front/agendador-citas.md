@@ -1,11 +1,13 @@
-# Agendador de Citas
+# Agendador de Citas (MFE `agendador-citas`)
 
 > **Ficha Técnica del Módulo**  
 > * **Ubicación en Monorepo:** `apps/agendador-citas`  
 > * **Tipo de Módulo:** Microfrontend Angular 21+ Standalone (Module Federation Remote)  
 > * **Tags Nx (`project.json`):** `["scope:frontend", "type:app"]`  
 > * **Puerto de Desarrollo:** `4201`  
+> * **Ruta en Host (`app-shell`):** `http://localhost:4200/agendador-citas`  
 > * **Estado:** Activo  
+> * **Nexo Padre:** [Volver a `app-shell.md`](./app-shell.md) | **Backend Relacionado:** [`02-scheduling-service.md`](../documentacion-back/02-scheduling-service.md) y [`01-patients-clinical-service.md`](../documentacion-back/01-patients-clinical-service.md)  
 
 ---
 
@@ -125,12 +127,13 @@ graph TD
 
 ### 4.2 `AgendarCitaComponent` (Formulario Stepper de 3 Pasos)
 - **Ubicación:** `apps/agendador-citas/src/app/components/agendar-cita/`
-- **Paso 1 — Cédula:** El usuario ingresa su documento. El servicio consulta `GET /api/patients/:cedula`. Si existe, auto-completa el paso 2; si no existe, activa la bandera `isNewPatient: true`.
+- **Paso 1 — Cédula:** El usuario ingresa su documento. El servicio consulta `GET /api/patients/:cedula`. Si existe, recibe la ficha de 20 campos del paciente junto con sus `ultimosProcedimientos` y `recomendaciones` hidratados automáticamente desde la colección `historialMedico`, auto-completando el paso 2; si no existe, activa la bandera `isNewPatient: true`.
 - **Paso 2 — Información Personal y Validación Telefónica Dinámica:**
+  - Si el paciente existe, `StepPersonalInfoComponent` muestra sus datos de contacto en modo lectura junto con la tarjeta de antecedentes clínicos (`ultimosProcedimientos` y última recomendación médica).
   - Si el paciente es nuevo, captura nombres, apellidos, correo, indicativo internacional y celular.
   - **Validación Dinámica:** Al cambiar el país en el selector de indicativos (`+57`, `+1`, `+34`), un suscriptor reactivo actualiza el validador `Validators.pattern` del campo `numeroCelular` con la expresión regular exacta del país seleccionado provista por `IAreaCode`.
   - **Aislamiento de Errores:** Utiliza `PersonalInfoErrorStateMatcher` y resetea el formulario con `markAsPristine()` y `step.interacted = false` para evitar que un campo aparezca en rojo por validaciones de una cédula consultada anteriormente.
-  - **Auto-Creación:** Al pulsar "Guardar y Continuar", si el paciente no existía, envía automáticamente `POST /api/patients` antes de avanzar al paso 3.
+  - **Auto-Creación:** Al pulsar "Guardar y Continuar", si el paciente no existía, envía automáticamente `POST /api/patients` (creación rápida de 5 campos con defaults `null` en los 15 campos demográficos restantes) antes de avanzar al paso 3.
 - **Paso 3 — Procedimiento y Especialista:**
   - El usuario selecciona el tratamiento médico deseado. El sistema consulta en tiempo real los médicos autorizados para dicho procedimiento (`GET /api/procedures/:id/doctors`).
   - Al pulsar "Ver Disponibilidad", empaqueta el contexto (`patient`, `procedure`, `doctor`) mediante `startBookingFlow()` y navega automáticamente a la pestaña del Calendario.
@@ -162,7 +165,7 @@ graph TD
     ```text
     Hola [Nombre], te contactamos del consultorio Dras. Botero para confirmar tu cita de [Procedimiento]. ¿Confirmas tu asistencia?
     ```
-  - **Acciones Directas:** Botones para Confirmar o Cancelar la cita al instante con actualización optimista de la tabla.
+  - **Acciones Directas e Integración con Historias Clínicas:** Botones para Confirmar (`CONFIRMED`) o Cancelar (`CANCELLED`) la cita al instante con actualización optimista de la tabla. Al confirmar una cita (`PATCH /api/appointments/:id/status`), el API Gateway emite automáticamente el evento `appointment.confirmed` hacia `patients_queue` para pre-crear de forma idempotente el borrador de la Historia Clínica (`PENDIENTE_ATENCION`) en la colección `historialMedico`.
 
 ---
 

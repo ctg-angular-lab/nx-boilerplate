@@ -1,8 +1,8 @@
 {
   "info": {
     "_postman_id": "c1f7a8b9-4d2e-4b6a-9e12-3a5f7c8d9e01",
-    "name": "agendador-citas",
-    "description": "Colección oficial de APIs para el flujo completo del Agendador de Citas (Frontend -> API Gateway -> Microservicios RabbitMQ).",
+    "name": "nx-boilerplate-api-gateway",
+    "description": "Colección oficial completa del API Gateway (:3000/api) hacia los microservicios RabbitMQ (Agendador de Citas, CRM de Confirmación, Historial de Pacientes e Historias Clínicas Resolución 1995, y Administración de Procedimientos y Especialistas).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -14,11 +14,11 @@
   ],
   "item": [
     {
-      "name": "Agendador de Citas",
-      "description": "Endpoints ordenados en secuencia cronológica según el flujo de usuario en el frontend.",
+      "name": "01 - Agendador de Citas y CRM de Confirmación",
+      "description": "Endpoints ordenados en secuencia cronológica según el flujo del MFE Agendador de Citas y el panel de confirmación diaria.",
       "item": [
         {
-          "name": "01 - Identificación de Paciente (Paso 1)",
+          "name": "01 - Identificación de Paciente e Hidratación Clínica (Paso 1)",
           "request": {
             "method": "GET",
             "header": [
@@ -40,16 +40,31 @@
               "variable": [
                 {
                   "key": "nationalId",
-                  "value": "1020304050",
+                  "value": "1017187698",
                   "description": "Cédula o documento de identidad del paciente"
                 }
               ]
             },
-            "description": "Paso 1: Consulta el historial y existencia de un paciente. Si no existe, retorna 404 permitiendo al frontend habilitar el registro de datos personales en el Paso 2."
-          }
+            "description": "Paso 1: Consulta la ficha de 20 campos del paciente en la colección 'patients' e hidrata en paralelo (Promise.all) sus últimos procedimientos y recomendaciones desde la colección 'historialMedico'. Si no existe, retorna 404."
+          },
+          "response": [
+            {
+              "name": "200 OK - Paciente Encontrado con Resumen Clínico Hidratado",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"Operación realizada exitosamente\",\n  \"data\": {\n    \"tipo_documento\": \"CC\",\n    \"cedula\": \"1017187698\",\n    \"nombre\": \"Laura Sofía\",\n    \"apellidos\": \"Gómez Restrepo\",\n    \"fecha_nacimiento\": \"1994-05-14\",\n    \"edad\": 32,\n    \"sexo\": \"F\",\n    \"estado_civil\": \"Soltera\",\n    \"ocupacion\": \"Arquitecta\",\n    \"correo\": \"laura.gomez@example.com\",\n    \"celular\": \"+573001234567\",\n    \"direccion_residencia\": \"Calle 10 # 43A-25, Medellín\",\n    \"aseguradora\": \"Sura EPS\",\n    \"tipo_vinculacion\": \"Contributivo\",\n    \"es_menor_de_edad\": false,\n    \"acompanante\": {\n      \"nombre\": null,\n      \"telefono\": null\n    },\n    \"persona_responsable\": {\n      \"nombre\": null,\n      \"telefono\": null,\n      \"parentesco\": null\n    },\n    \"ultimosProcedimientos\": [\n      \"Armonización y Perfilado Labial con Ácido Hialurónico\"\n    ],\n    \"recomendaciones\": \"Aplicar hielo local por 24 horas y evitar exposición solar directa.\"\n  }\n}"
+            }
+          ]
         },
         {
-          "name": "01B - Registro de Paciente Nuevo",
+          "name": "01B - Registro Rápido o Completo de Paciente Nuevo (Paso 2)",
           "request": {
             "method": "POST",
             "header": [
@@ -64,7 +79,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"cedula\": \"1020304050\",\n  \"nombre\": \"Laura Sofía\",\n  \"apellidos\": \"Gómez Restrepo\",\n  \"correo\": \"laura.gomez@example.com\",\n  \"celular\": \"+573001234567\",\n  \"recomendaciones\": \"Primera consulta estética - Paciente prefiere anestesia tópica\"\n}"
+              "raw": "{\n  \"cedula\": \"1020304050\",\n  \"nombre\": \"Laura Sofía\",\n  \"apellidos\": \"Gómez Restrepo\",\n  \"correo\": \"laura.gomez@example.com\",\n  \"celular\": \"+573001234567\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/patients",
@@ -76,38 +91,11 @@
                 "patients"
               ]
             },
-            "description": "Registro de nuevo paciente cuando la identificación previa retorna 404. Almacena los datos personales (cédula, nombres, correo, celular con código de área) en MongoDB Atlas."
+            "description": "Registra un paciente nuevo. Admite el registro rápido de 5 campos (cédula, nombre, apellidos, correo, celular) inicializando automáticamente los 15 campos demográficos restantes en null/defaults, o el registro completo de los 20 campos."
           },
           "response": [
             {
-              "name": "201 Created - Paciente Registrado con Éxito",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"cedula\": \"1020304050\",\n  \"nombre\": \"Laura Sofía\",\n  \"apellidos\": \"Gómez Restrepo\",\n  \"correo\": \"laura.gomez@example.com\",\n  \"celular\": \"+573001234567\",\n  \"recomendaciones\": \"Primera consulta estética - Paciente prefiere anestesia tópica\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/api/patients",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "patients"
-                  ]
-                }
-              },
+              "name": "201 Created - Paciente Registrado con Estructura de 20 Campos",
               "status": "Created",
               "code": 201,
               "_postman_previewlanguage": "json",
@@ -117,7 +105,7 @@
                   "value": "application/json; charset=utf-8"
                 }
               ],
-              "body": "{\n  \"success\": true,\n  \"statusCode\": 201,\n  \"message\": \"Operación realizada exitosamente\",\n  \"data\": {\n    \"cedula\": \"1020304050\",\n    \"nombre\": \"Laura Sofía\",\n    \"apellidos\": \"Gómez Restrepo\",\n    \"correo\": \"laura.gomez@example.com\",\n    \"celular\": \"+573001234567\",\n    \"ultimosProcedimientos\": [],\n    \"recomendaciones\": \"Primera consulta estética - Paciente prefiere anestesia tópica\"\n  }\n}"
+              "body": "{\n  \"success\": true,\n  \"statusCode\": 201,\n  \"message\": \"Operación realizada exitosamente\",\n  \"data\": {\n    \"tipo_documento\": \"CC\",\n    \"cedula\": \"1020304050\",\n    \"nombre\": \"Laura Sofía\",\n    \"apellidos\": \"Gómez Restrepo\",\n    \"fecha_nacimiento\": null,\n    \"edad\": null,\n    \"sexo\": null,\n    \"estado_civil\": null,\n    \"ocupacion\": null,\n    \"correo\": \"laura.gomez@example.com\",\n    \"celular\": \"+573001234567\",\n    \"direccion_residencia\": null,\n    \"aseguradora\": null,\n    \"tipo_vinculacion\": null,\n    \"es_menor_de_edad\": false,\n    \"acompanante\": {\n      \"nombre\": null,\n      \"telefono\": null\n    },\n    \"persona_responsable\": {\n      \"nombre\": null,\n      \"telefono\": null,\n      \"parentesco\": null\n    },\n    \"ultimosProcedimientos\": [],\n    \"recomendaciones\": \"\"\n  }\n}"
             }
           ]
         },
@@ -141,45 +129,11 @@
                 "area-codes"
               ]
             },
-            "description": "Obtiene la lista de países y prefijos telefónicos internacionales (colección codigosArea en MongoDB Atlas) ordenada alfabéticamente para popular el selector de indicativos telefónicos en el formulario de datos personales."
-          },
-          "response": [
-            {
-              "name": "200 OK - Catálogo de Códigos de Área",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/area-codes",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "area-codes"
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json; charset=utf-8"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"Operación realizada exitosamente\",\n  \"data\": [\n    {\n      \"code\": \"+57\",\n      \"country\": \"Colombia\",\n      \"flag\": \"🇨🇴\",\n      \"pattern\": \"^3\\\\d{9}$\",\n      \"errorMessage\": \"Debe empezar por 3 y tener 10 dígitos\"\n    },\n    {\n      \"code\": \"+593\",\n      \"country\": \"Ecuador\",\n      \"flag\": \"🇪🇨\",\n      \"pattern\": \"^9\\\\d{8}$\",\n      \"errorMessage\": \"Debe empezar por 9 y tener 9 dígitos\"\n    },\n    {\n      \"code\": \"+34\",\n      \"country\": \"España\",\n      \"flag\": \"🇪🇸\",\n      \"pattern\": \"^[67]\\\\d{8}$\",\n      \"errorMessage\": \"Debe empezar por 6 o 7 y tener 9 dígitos\"\n    },\n    {\n      \"code\": \"+507\",\n      \"country\": \"Panamá\",\n      \"flag\": \"🇵🇦\",\n      \"pattern\": \"^6\\\\d{7}$\",\n      \"errorMessage\": \"Debe empezar por 6 y tener 8 dígitos\"\n    },\n    {\n      \"code\": \"+1\",\n      \"country\": \"USA/Canadá\",\n      \"flag\": \"🇺🇸/🇨🇦\",\n      \"pattern\": \"^[2-9]\\\\d{9}$\",\n      \"errorMessage\": \"Debe tener 10 dígitos válidos\"\n    }\n  ]\n}"
-            }
-          ]
+            "description": "Obtiene el catálogo de países y prefijos telefónicos internacionales para validar el número celular en el frontend."
+          }
         },
         {
-          "name": "02 - Listar Procedimientos Disponibles (Paso 2)",
+          "name": "02 - Listar Procedimientos Activos (Paso 3)",
           "request": {
             "method": "GET",
             "header": [
@@ -198,7 +152,7 @@
                 "procedures"
               ]
             },
-            "description": "Paso 2: Obtiene el catálogo completo de procedimientos médicos estéticos con su valor estándar y duración."
+            "description": "Obtiene el catálogo de procedimientos médicos activos con su valor estándar, duración y laboratorios."
           }
         },
         {
@@ -261,11 +215,11 @@
                 }
               ]
             },
-            "description": "Paso 3: Retorna la lista enriquecida de médicos facultados para el procedimiento, incluyendo nombres, especialidad, correo y su horario laboral detallado."
+            "description": "Retorna la lista de médicos activos facultados para el procedimiento seleccionado."
           }
         },
         {
-          "name": "04b - Listar Todos los Especialistas Activos (Catálogo General)",
+          "name": "04B - Listar Todos los Especialistas Activos",
           "request": {
             "method": "GET",
             "header": [
@@ -284,42 +238,8 @@
                 "doctors"
               ]
             },
-            "description": "Obtiene el catálogo completo de profesionales activos registrados en la colección profesionalesActivos (MongoDB Atlas). Retorna el documento completo con cédula, nombres, email, profesión, procedimientos relacionados y horario laboral detallado."
-          },
-          "response": [
-            {
-              "name": "200 OK - Listado Completo de Especialistas",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/doctors",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "doctors"
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json; charset=utf-8"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"Operación realizada exitosamente\",\n  \"data\": [\n    {\n      \"cedula\": \"52890123\",\n      \"nombres\": \"Mariana\",\n      \"apellidos\": \"Botero Giraldo\",\n      \"fechaNacimiento\": \"1991-01-21\",\n      \"email\": \"marianabotero1991@gmail.com\",\n      \"profesion\": \"Médica Especialista en Medicina Estética y Rejuvenecimiento Facial\",\n      \"procedimientosRelacionados\": [\n        \"PROC-EST-001\",\n        \"PROC-EST-002\",\n        \"PROC-EST-005\"\n      ],\n      \"horarioTrabajo\": {\n        \"diasLaborales\": [\n          \"LUNES\",\n          \"MIERCOLES\",\n          \"VIERNES\"\n        ],\n        \"horaInicio\": \"08:00\",\n        \"horaFin\": \"17:00\",\n        \"recesoAlmuerzo\": {\n          \"inicio\": \"12:30\",\n          \"fin\": \"13:30\"\n        }\n      }\n    }\n  ]\n}"
-            }
-          ]
+            "description": "Obtiene el catálogo completo de profesionales activos con su horario laboral y excepciones."
+          }
         },
         {
           "name": "05 - Disponibilidad Semanal por Rango (Paso 4 - Rango)",
@@ -332,7 +252,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/appointments/available-dates?procedureId=PROC-EST-001&doctorEmail=camilotabares.portafolio@gmail.com&doctorCedula=1020304050&startDate=2026-09-28&endDate=2026-10-03",
+              "raw": "{{baseUrl}}/api/appointments/available-dates?procedureId=PROC-EST-001&doctorEmail=camilotabares.portafolio@gmail.com&doctorCedula=1020304050&startDate=2026-11-02&endDate=2026-11-07",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -344,32 +264,27 @@
               "query": [
                 {
                   "key": "procedureId",
-                  "value": "PROC-EST-001",
-                  "description": "ID del procedimiento (opcional)"
+                  "value": "PROC-EST-001"
                 },
                 {
                   "key": "doctorEmail",
-                  "value": "camilotabares.portafolio@gmail.com",
-                  "description": "Correo de Google Calendar del médico"
+                  "value": "camilotabares.portafolio@gmail.com"
                 },
                 {
                   "key": "doctorCedula",
-                  "value": "1020304050",
-                  "description": "Cédula del médico especialista para resolución exacta de horarioTrabajo dinámico en MongoDB Atlas"
+                  "value": "1020304050"
                 },
                 {
                   "key": "startDate",
-                  "value": "2026-09-28",
-                  "description": "Inicio de la ventana semanal (YYYY-MM-DD)"
+                  "value": "2026-11-02"
                 },
                 {
                   "key": "endDate",
-                  "value": "2026-10-03",
-                  "description": "Fin de la ventana semanal (YYYY-MM-DD)"
+                  "value": "2026-11-07"
                 }
               ]
             },
-            "description": "Paso 4 (Recomendado): Consulta semanal optimizada. Resuelve en tiempo real el horarioTrabajo dinámico del especialista (diasLaborales, horaInicio, horaFin, recesoAlmuerzo) en MongoDB Atlas y cruza con Google Calendar. Retorna los días organizados con sus slots disponibles y marca los días no laborables con lista vacía de slots."
+            "description": "Consulta semanal optimizada. Cruza horarioTrabajo, recesoAlmuerzo, excepciones (EXTRA_SHIFT / DAY_OFF), citas en MongoDB y eventos en Google Calendar."
           }
         },
         {
@@ -395,17 +310,15 @@
               "query": [
                 {
                   "key": "doctorEmail",
-                  "value": "camilotabares.portafolio@gmail.com",
-                  "description": "Correo del médico (calcula automáticamente la ventana laboral de la semana actual)"
+                  "value": "camilotabares.portafolio@gmail.com"
                 },
                 {
                   "key": "doctorCedula",
-                  "value": "1020304050",
-                  "description": "Cédula del médico (opcional, para resolución exacta de jornada laboral)"
+                  "value": "1020304050"
                 }
               ]
             },
-            "description": "Consulta de agenda general del médico sin procedimiento. Resuelve el horario laboral del especialista en MongoDB Atlas y calcula dinámicamente el rango semanal actual."
+            "description": "Si no se envían startDate y endDate, el API Gateway calcula automáticamente los límites de la semana actual con getWeekWindow(0)."
           }
         },
         {
@@ -419,7 +332,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/appointments/available-dates?procedureId=PROC-EST-001&doctorEmail=camilotabares.portafolio@gmail.com&targetDate=2026-09-28",
+              "raw": "{{baseUrl}}/api/appointments/available-dates?procedureId=PROC-EST-001&doctorEmail=camilotabares.portafolio@gmail.com&targetDate=2026-11-03",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -431,26 +344,23 @@
               "query": [
                 {
                   "key": "procedureId",
-                  "value": "PROC-EST-001",
-                  "description": "ID del procedimiento (requerido)"
+                  "value": "PROC-EST-001"
                 },
                 {
                   "key": "doctorEmail",
-                  "value": "camilotabares.portafolio@gmail.com",
-                  "description": "Correo del médico"
+                  "value": "camilotabares.portafolio@gmail.com"
                 },
                 {
                   "key": "targetDate",
-                  "value": "2026-09-28",
-                  "description": "Fecha específica (YYYY-MM-DD)"
+                  "value": "2026-11-03"
                 }
               ]
             },
-            "description": "Paso 4 (Alternativo): Consulta de disponibilidad plana para un único día (retrocompatibilidad)."
+            "description": "Consulta plana de disponibilidad para una fecha única."
           }
         },
         {
-          "name": "07 - Reservar y Confirmar Cita Médica (Paso 5 - Confirmar)",
+          "name": "07 - Reservar Cita Médica en Estado TENTATIVE (Paso 5)",
           "request": {
             "method": "POST",
             "header": [
@@ -465,7 +375,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"doctorEmail\": \"camilotabares.portafolio@gmail.com\",\n  \"doctorCedula\": \"1020304050\",\n  \"patientNationalId\": \"1020304050\",\n  \"patientFullName\": \"Laura Sofía Gómez Restrepo\",\n  \"patientEmail\": \"laura.gomez@example.com\",\n  \"procedureId\": \"PROC-EST-001\",\n  \"procedureName\": \"Armonización y Perfilado Labial con Ácido Hialurónico\",\n  \"startTime\": \"2026-09-28T09:00:00.000Z\",\n  \"endTime\": \"2026-09-28T09:45:00.000Z\",\n  \"notes\": \"Primera consulta estética - Paciente prefiere anestesia tópica\"\n}"
+              "raw": "{\n  \"doctorEmail\": \"camilotabares.portafolio@gmail.com\",\n  \"doctorCedula\": \"1020304050\",\n  \"patientNationalId\": \"1017187698\",\n  \"patientFullName\": \"Laura Sofía Gómez Restrepo\",\n  \"patientEmail\": \"laura.gomez@example.com\",\n  \"patientPhone\": \"+573001234567\",\n  \"procedureId\": \"PROC-EST-001\",\n  \"procedureName\": \"Armonización y Perfilado Labial con Ácido Hialurónico\",\n  \"startTime\": \"2026-11-04T09:00:00.000Z\",\n  \"endTime\": \"2026-11-04T09:45:00.000Z\",\n  \"notes\": \"Primera consulta estética - Paciente prefiere anestesia tópica\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/appointments",
@@ -477,11 +387,11 @@
                 "appointments"
               ]
             },
-            "description": "Paso 5: Reserva formal de la cita médica. Valida colisiones, crea el evento en Google Calendar y almacena el registro en MongoDB Atlas."
+            "description": "Reserva la cita en estado TENTATIVE (colorId '5' en Google Calendar) y la guarda en la colección 'appointments'. Nota: En este punto NO se crea registro en 'historialMedico' hasta que la cita sea confirmada."
           }
         },
         {
-          "name": "08 - Inscribir en Lista de Espera Reactiva (Alternativa)",
+          "name": "08 - Inscribir en Lista de Espera Reactiva",
           "request": {
             "method": "POST",
             "header": [
@@ -496,7 +406,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"patientNationalId\": \"1020304050\",\n  \"patientFullName\": \"Laura Sofía Gómez Restrepo\",\n  \"patientEmail\": \"laura.gomez@example.com\",\n  \"patientPhone\": \"+573001234567\",\n  \"procedureId\": \"PROC-EST-001\",\n  \"preferredDoctorEmail\": \"camilotabares.portafolio@gmail.com\"\n}"
+              "raw": "{\n  \"patientNationalId\": \"1017187698\",\n  \"patientFullName\": \"Laura Sofía Gómez Restrepo\",\n  \"patientEmail\": \"laura.gomez@example.com\",\n  \"patientPhone\": \"+573001234567\",\n  \"procedureId\": \"PROC-EST-001\",\n  \"preferredDoctorEmail\": \"camilotabares.portafolio@gmail.com\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/appointments/waitlist",
@@ -509,11 +419,11 @@
                 "waitlist"
               ]
             },
-            "description": "Alternativa de Paso 5: Si el paciente no encuentra un horario que se ajuste a su disponibilidad, se inscribe en la lista de espera reactiva para ser contactado ante cancelaciones."
+            "description": "Inscribe al paciente en la lista de espera cuando no hay cupos inmediatos."
           }
         },
         {
-          "name": "09 - Listar Citas Diarias (Dashboard de Confirmación)",
+          "name": "09 - Listar Citas Diarias (Dashboard CRM de Confirmación)",
           "request": {
             "method": "GET",
             "header": [
@@ -523,7 +433,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/appointments/daily?date=2026-10-15&doctorEmail=camilotabares.portafolio@gmail.com&status=TENTATIVE",
+              "raw": "{{baseUrl}}/api/appointments/daily?date=2026-11-04&doctorEmail=camilotabares.portafolio@gmail.com&status=TENTATIVE",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -535,75 +445,23 @@
               "query": [
                 {
                   "key": "date",
-                  "value": "2026-10-15",
-                  "description": "Fecha de la jornada en formato YYYY-MM-DD (Obligatorio)"
+                  "value": "2026-11-04"
                 },
                 {
                   "key": "doctorEmail",
-                  "value": "camilotabares.portafolio@gmail.com",
-                  "description": "Correo del profesional asignado (Opcional)"
+                  "value": "camilotabares.portafolio@gmail.com"
                 },
                 {
                   "key": "status",
-                  "value": "TENTATIVE",
-                  "description": "Estado de la cita: TENTATIVE | CONFIRMED | CANCELLED (Opcional)"
+                  "value": "TENTATIVE"
                 }
               ]
             },
-            "description": "Obtiene la lista consolidada de citas para una jornada clínica específica, alimentando el panel de confirmación diaria. Retorna información completa del paciente, procedimiento, respuesta de Google Calendar y contador de contactos."
-          },
-          "response": [
-            {
-              "name": "200 OK - Citas Diarias Consultadas",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/appointments/daily?date=2026-10-15&doctorEmail=camilotabares.portafolio@gmail.com&status=TENTATIVE",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "appointments",
-                    "daily"
-                  ],
-                  "query": [
-                    {
-                      "key": "date",
-                      "value": "2026-10-15"
-                    },
-                    {
-                      "key": "doctorEmail",
-                      "value": "camilotabares.portafolio@gmail.com"
-                    },
-                    {
-                      "key": "status",
-                      "value": "TENTATIVE"
-                    }
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json; charset=utf-8"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"Operación realizada exitosamente\",\n  \"data\": [\n    {\n      \"appointmentId\": \"APT-1791262275508-237\",\n      \"doctorEmail\": \"camilotabares.portafolio@gmail.com\",\n      \"doctorCedula\": \"1020304050\",\n      \"patientNationalId\": \"1020304050\",\n      \"patientFullName\": \"Laura Sofía Gómez Restrepo\",\n      \"patientEmail\": \"laura.gomez@example.com\",\n      \"patientPhone\": \"+573001234567\",\n      \"procedureId\": \"PROC-EST-001\",\n      \"procedureName\": \"Armonización y Perfilado Labial con Ácido Hialurónico\",\n      \"startTime\": \"2026-10-15T09:00:00.000Z\",\n      \"endTime\": \"2026-10-15T09:45:00.000Z\",\n      \"status\": \"TENTATIVE\",\n      \"patientResponseStatus\": \"needsAction\",\n      \"colorId\": \"5\",\n      \"googleCalendarEventId\": \"mock-google-id-1791262275508\",\n      \"notes\": \"Primera consulta estética\",\n      \"contactCount\": 0\n    }\n  ]\n}"
-            }
-          ]
+            "description": "Lista las citas programadas para una fecha específica en el panel CRM de recepción."
+          }
         },
         {
-          "name": "10 - Actualizar Estado de Cita (Confirmar o Cancelar)",
+          "name": "10 - Confirmar o Cancelar Cita (Dispara Borrador de Historia Clínica)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -635,65 +493,15 @@
                 {
                   "key": "id",
                   "value": "APT-1791262275508-237",
-                  "description": "ID o código único de la cita médica"
+                  "description": "ID único de la cita médica"
                 }
               ]
             },
-            "description": "Actualiza el estado de una cita médica a CONFIRMED o CANCELLED. Sincroniza bidireccionalmente el evento en Google Calendar cambiando el color tonal (colorId 10 para CONFIRMED, 11 para CANCELLED) y actualiza el documento en MongoDB Atlas."
-          },
-          "response": [
-            {
-              "name": "200 OK - Estado de Cita Actualizado",
-              "originalRequest": {
-                "method": "PATCH",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"status\": \"CONFIRMED\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/api/appointments/:id/status",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "appointments",
-                    ":id",
-                    "status"
-                  ],
-                  "variable": [
-                    {
-                      "key": "id",
-                      "value": "APT-1791262275508-237"
-                    }
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json; charset=utf-8"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"Operación realizada exitosamente\",\n  \"data\": {\n    \"appointmentId\": \"APT-1791262275508-237\",\n    \"doctorEmail\": \"camilotabares.portafolio@gmail.com\",\n    \"doctorCedula\": \"1020304050\",\n    \"patientNationalId\": \"1020304050\",\n    \"patientFullName\": \"Laura Sofía Gómez Restrepo\",\n    \"patientEmail\": \"laura.gomez@example.com\",\n    \"patientPhone\": \"+573001234567\",\n    \"procedureId\": \"PROC-EST-001\",\n    \"procedureName\": \"Armonización y Perfilado Labial con Ácido Hialurónico\",\n    \"startTime\": \"2026-10-15T09:00:00.000Z\",\n    \"endTime\": \"2026-10-15T09:45:00.000Z\",\n    \"status\": \"CONFIRMED\",\n    \"patientResponseStatus\": \"accepted\",\n    \"colorId\": \"10\",\n    \"googleCalendarEventId\": \"mock-google-id-1791262275508\",\n    \"notes\": \"Primera consulta estética\",\n    \"contactCount\": 1\n  }\n}"
-            }
-          ]
+            "description": "Actualiza la cita a CONFIRMED o CANCELLED en MongoDB y Google Calendar. Cuando status === 'CONFIRMED', el API Gateway emite automáticamente el evento asíncrono 'appointment.confirmed' hacia 'patients_queue', pre-creando de forma idempotente el borrador de historia clínica (PENDIENTE_ATENCION) en la colección 'historialMedico'."
+          }
         },
         {
-          "name": "11 - Registrar Contacto con Paciente (Track Contact)",
+          "name": "11 - Registrar Intento de Contacto por WhatsApp (Track Contact)",
           "request": {
             "method": "POST",
             "header": [
@@ -716,55 +524,537 @@
               "variable": [
                 {
                   "key": "id",
-                  "value": "APT-1791262275508-237",
-                  "description": "ID único de la cita médica"
+                  "value": "APT-1791262275508-237"
                 }
               ]
             },
-            "description": "Registra e incrementa de forma atómica el contador de contactos/intentos de notificación (llamada o mensaje de WhatsApp) realizados al paciente para una cita. Se dispara de forma asíncrona mediante eventos RabbitMQ sin bloquear el flujo."
-          },
-          "response": [
-            {
-              "name": "202 Accepted - Contacto Encolado Exitosamente",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/appointments/:id/track-contact",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "appointments",
-                    ":id",
-                    "track-contact"
-                  ],
-                  "variable": [
-                    {
-                      "key": "id",
-                      "value": "APT-1791262275508-237"
-                    }
-                  ]
-                }
-              },
-              "status": "Accepted",
-              "code": 202,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json; charset=utf-8"
-                }
+            "description": "Incrementa asíncronamente (202 Accepted) el contador contactCount de la cita."
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Historial de Pacientes e Historias Clínicas (Resolución 1995)",
+      "description": "Endpoints del dominio de Pacientes e Historias Clínicas (patients_queue) diseñados para el MFE Historial Pacientes.",
+      "item": [
+        {
+          "name": "01 - Listar Todos los Pacientes (Directorio General)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/patients",
+              "host": [
+                "{{baseUrl}}"
               ],
-              "body": "{\n  \"success\": true,\n  \"statusCode\": 202,\n  \"message\": \"Registro de contacto encolado exitosamente\",\n  \"data\": {\n    \"message\": \"Registro de contacto encolado exitosamente\"\n  }\n}"
-            }
-          ]
+              "path": [
+                "api",
+                "patients"
+              ]
+            },
+            "description": "Retorna todos los pacientes registrados en la colección 'patients' con sus 20 campos demográficos, ordenados por fecha de creación descendente."
+          }
+        },
+        {
+          "name": "02 - Actualizar Ficha Demográfica del Paciente (20 Campos)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo_documento\": \"CC\",\n  \"nombre\": \"Laura Sofía\",\n  \"apellidos\": \"Gómez Restrepo\",\n  \"fecha_nacimiento\": \"1994-05-14\",\n  \"edad\": 32,\n  \"sexo\": \"F\",\n  \"estado_civil\": \"Soltera\",\n  \"ocupacion\": \"Arquitecta\",\n  \"correo\": \"laura.gomez@example.com\",\n  \"celular\": \"+573001234567\",\n  \"direccion_residencia\": \"Calle 10 # 43A-25, Medellín\",\n  \"aseguradora\": \"Sura EPS\",\n  \"tipo_vinculacion\": \"Contributivo\",\n  \"es_menor_de_edad\": false,\n  \"acompanante\": {\n    \"nombre\": \"Carlos Gómez\",\n    \"telefono\": \"+573009876543\"\n  },\n  \"persona_responsable\": {\n    \"nombre\": \"Carlos Gómez\",\n    \"telefono\": \"+573009876543\",\n    \"parentesco\": \"Padre\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/patients/:nationalId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "patients",
+                ":nationalId"
+              ],
+              "variable": [
+                {
+                  "key": "nationalId",
+                  "value": "1017187698",
+                  "description": "Cédula del paciente a actualizar"
+                }
+              ]
+            },
+            "description": "Actualiza parcial o totalmente los 20 campos demográficos del paciente en la colección 'patients' (permite completar los 15 campos que quedaron en null durante el agendamiento rápido)."
+          }
+        },
+        {
+          "name": "03 - Consultar Historial Clínico de un Paciente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/patients/:nationalId/clinical-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "patients",
+                ":nationalId",
+                "clinical-records"
+              ],
+              "variable": [
+                {
+                  "key": "nationalId",
+                  "value": "1017187698",
+                  "description": "Cédula del paciente"
+                }
+              ]
+            },
+            "description": "Retorna todas las atenciones médicas e historias clínicas (ICitaMedica[]) del paciente en la colección 'historialMedico', ordenadas de la más reciente a la más antigua (incluye borradores PENDIENTE_ATENCION y cerradas COMPLETADA)."
+          }
+        },
+        {
+          "name": "04 - Consultar Detalle de Historia Clínica (por _id o appointmentId)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/clinical-records/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clinical-records",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "APT-1791262275508-237",
+                  "description": "ID de MongoDB (_id) o código de la cita origen (appointmentId)"
+                }
+              ]
+            },
+            "description": "Obtiene una historia clínica específica buscando tanto por su _id de MongoDB como por el appointmentId de la cita confirmada."
+          }
+        },
+        {
+          "name": "05 - Crear Historia Clínica Manual (Sin Cita Previa)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula_paciente\": \"1017187698\",\n  \"appointmentId\": null,\n  \"estado_registro\": \"PENDIENTE_ATENCION\",\n  \"medico_tratante\": [\n    {\n      \"cedula_profesional\": \"1020304050\",\n      \"nombre_profesional\": \"Dr. Camilo Tabares García\",\n      \"fecha_atencion\": \"2026-11-03T15:00:00.000Z\"\n    }\n  ],\n  \"registro_clinico\": {\n    \"motivo_consulta\": \"Valoración de control post-procedimiento\",\n    \"enfermedad_actual\": \"Paciente refiere adecuada evolución sin dolor ni edema\",\n    \"antecedentes_medicos\": {\n      \"patologicos\": \"Ninguno\",\n      \"alergicos\": \"Ninguno\",\n      \"farmacologicos\": \"Ninguno\",\n      \"procedimientos_previos\": \"Armonización labial\"\n    },\n    \"examen_fisico\": \"Mucosa labial hidratada, simétrica, sin nódulos\",\n    \"ultimosProcedimientos\": [\n      \"Armonización y Perfilado Labial con Ácido Hialurónico\"\n    ],\n    \"procedimiento_realizado\": \"Control de Armonización Facial\",\n    \"lote_producto\": \"LOT-AH-2026-998\",\n    \"recomendaciones\": \"Continuar hidratación labial y protector solar FPS 50+\"\n  },\n  \"soporte_documental\": {\n    \"consentimiento_informado\": true,\n    \"descargable_consentimiento\": \"https://storage.clinica.com/consentimientos/1017187698-control.pdf\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/clinical-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clinical-records"
+              ]
+            },
+            "description": "Crea directamente una atención médica en la colección 'historialMedico' bajo la estructura de la Resolución 1995 de 1999."
+          }
+        },
+        {
+          "name": "06 - Diligenciar y Cerrar Historia Clínica (COMPLETADA)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado_registro\": \"COMPLETADA\",\n  \"registro_clinico\": {\n    \"motivo_consulta\": \"Deseo de perfilado y volumen labial sutil\",\n    \"enfermedad_actual\": \"Paciente asintomática que acude a procedimiento programado\",\n    \"antecedentes_medicos\": {\n      \"patologicos\": \"Niega\",\n      \"alergicos\": \"Niega alergias medicamentosas\",\n      \"farmacologicos\": \"Niega\",\n      \"procedimientos_previos\": \"Limpieza facial profunda\"\n    },\n    \"examen_fisico\": \"Tejido labial eutrófico, sin lesiones activas de herpes labial\",\n    \"ultimosProcedimientos\": [\n      \"Limpieza facial profunda\"\n    ],\n    \"procedimiento_realizado\": \"Armonización y Perfilado Labial con Ácido Hialurónico\",\n    \"lote_producto\": \"JUV-ULTRA-2026-441\",\n    \"recomendaciones\": \"Aplicar hielo local intermitente por 24 horas, no masajear la zona y evitar calor extremo por 48 horas.\"\n  },\n  \"soporte_documental\": {\n    \"consentimiento_informado\": true,\n    \"descargable_consentimiento\": \"https://storage.clinica.com/consentimientos/APT-1791262275508-237.pdf\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/clinical-records/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clinical-records",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "APT-1791262275508-237",
+                  "description": "ID de MongoDB (_id) o código de la cita origen (appointmentId)"
+                }
+              ]
+            },
+            "description": "Permite al médico tratante diligenciar el borrador creado al confirmar la cita y cerrar formalmente la historia clínica pasando estado_registro a 'COMPLETADA'."
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Administración de Procedimientos, Especialistas y Salud",
+      "description": "Endpoints CRUD para los MFEs administrativos (procedimientos-medicos y lista-profesionales) y monitoreo.",
+      "item": [
+        {
+          "name": "01 - Listar Procedimientos (Incluyendo Inactivos)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/procedures?includeInactive=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "procedures"
+              ],
+              "query": [
+                {
+                  "key": "includeInactive",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Lista todos los procedimientos médicos incluyendo los inactivados lógicamente."
+          }
+        },
+        {
+          "name": "02 - Crear Procedimiento Médico y Laboratorios",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombreProcedimiento\": \"Bioestimulación con Hidroxiapatita de Calcio\",\n  \"valorStandar\": 1450000,\n  \"duracionStandar\": 45,\n  \"laboratorios\": [\n    {\n      \"nombre\": \"Merz Aesthetics (Radiesse)\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/procedures",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "procedures"
+              ]
+            },
+            "description": "Crea un nuevo procedimiento médico generando automáticamente su código secuencial PROC-XXX."
+          }
+        },
+        {
+          "name": "03 - Actualizar Procedimiento Médico",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"valorStandar\": 1550000,\n  \"duracionStandar\": 60,\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/procedures/:idProcedimiento",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "procedures",
+                ":idProcedimiento"
+              ],
+              "variable": [
+                {
+                  "key": "idProcedimiento",
+                  "value": "PROC-EST-001"
+                }
+              ]
+            },
+            "description": "Actualiza datos, precio, duración, laboratorios o estado activo/inactivo de un procedimiento."
+          }
+        },
+        {
+          "name": "04 - Inactivar Procedimiento (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/procedures/:idProcedimiento",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "procedures",
+                ":idProcedimiento"
+              ],
+              "variable": [
+                {
+                  "key": "idProcedimiento",
+                  "value": "PROC-EST-001"
+                }
+              ]
+            },
+            "description": "Inactiva lógicamente un procedimiento (isActive: false)."
+          }
+        },
+        {
+          "name": "05 - Listar Especialistas (Incluyendo Inactivos)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/doctors?includeInactive=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "doctors"
+              ],
+              "query": [
+                {
+                  "key": "includeInactive",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Obtiene todos los especialistas médicos incluyendo inactivos para el panel administrativo."
+          }
+        },
+        {
+          "name": "06 - Crear Especialista Médico",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"71789456\",\n  \"nombres\": \"Andrés Felipe\",\n  \"apellidos\": \"Morales Henao\",\n  \"fechaNacimiento\": \"1985-08-12\",\n  \"email\": \"drmoralesheano@gmail.com\",\n  \"profesion\": \"Médico Cirujano Plástico y Estético\",\n  \"procedimientosRelacionados\": [\n    \"PROC-EST-001\",\n    \"PROC-EST-002\"\n  ],\n  \"horarioTrabajo\": {\n    \"diasLaborales\": [\n      \"LUNES\",\n      \"MARTES\",\n      \"MIERCOLES\",\n      \"JUEVES\",\n      \"VIERNES\"\n    ],\n    \"horaInicio\": \"08:00\",\n    \"horaFin\": \"17:00\",\n    \"recesoAlmuerzo\": {\n      \"inicio\": \"12:00\",\n      \"fin\": \"13:00\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/doctors",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "doctors"
+              ]
+            },
+            "description": "Registra un nuevo especialista médico con su jornada laboral base y procedimientos habilitados."
+          }
+        },
+        {
+          "name": "07 - Actualizar Especialista Médico",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profesion\": \"Especialista Senior en Medicina Estética y Láser\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/doctors/:cedula",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "doctors",
+                ":cedula"
+              ],
+              "variable": [
+                {
+                  "key": "cedula",
+                  "value": "71789456"
+                }
+              ]
+            },
+            "description": "Actualiza datos personales, procedimientos asignados, horario base o estado activo/inactivo del especialista."
+          }
+        },
+        {
+          "name": "08 - Actualizar Excepciones de Agenda (EXTRA_SHIFT / DAY_OFF)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"horariosExcepcionales\": [\n    {\n      \"fecha\": \"2026-11-07\",\n      \"tipo\": \"EXTRA_SHIFT\",\n      \"horaInicio\": \"09:00\",\n      \"horaFin\": \"13:00\",\n      \"motivo\": \"Jornada especial de sábado\"\n    },\n    {\n      \"fecha\": \"2026-11-10\",\n      \"tipo\": \"DAY_OFF\",\n      \"diaCompleto\": true,\n      \"motivo\": \"Congreso Médico Internacional\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/doctors/:cedula/schedule",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "doctors",
+                ":cedula",
+                "schedule"
+              ],
+              "variable": [
+                {
+                  "key": "cedula",
+                  "value": "71789456"
+                }
+              ]
+            },
+            "description": "Configura turnos extra (EXTRA_SHIFT) o bloqueos/días libres (DAY_OFF) en la agenda del profesional."
+          }
+        },
+        {
+          "name": "09 - Inactivar Especialista (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/doctors/:cedula",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "doctors",
+                ":cedula"
+              ],
+              "variable": [
+                {
+                  "key": "cedula",
+                  "value": "71789456"
+                }
+              ]
+            },
+            "description": "Inactiva lógicamente al profesional médico (isActive: false)."
+          }
+        },
+        {
+          "name": "10 - Healthcheck del API Gateway",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "health"
+              ]
+            },
+            "description": "Verifica el estado de salud y tiempo de actividad (uptime) del API Gateway."
+          }
         }
       ]
     }

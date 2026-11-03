@@ -3,10 +3,11 @@
 
 > **Ficha Técnica del Documento**  
 > * **Ubicación:** `docs/documentacion-front/homologacion-navegacion.md`  
-> * **Módulos Involucrados:** `apps/agendador-citas`, `apps/lista-profesionales`, `libs/shared/layouts` (`TabsCollectionComponent`, `DataTableComponent`, steps), `libs/shared/api-interfaces`  
-> * **Tipo:** Especificación Técnica y Plan de Refactorización Frontend (Angular 21+ MFE Standalone / Zoneless)  
-> * **Versión:** 2.0 (revisada: fases libres de conflictos, `lib-data-table` intacto y diseño del stepper de alta)  
-> * **Estado:** Propuesta Técnica pendiente de confirmación (Fase 2 del protocolo)  
+> * **Módulos Involucrados:** `apps/agendador-citas`, `apps/lista-profesionales`, `apps/procedimientos-medicos`, `libs/shared/layouts` (`TabsCollectionComponent`, `DataTableComponent`, `AsideModalComponent`, `ConfirmationModalComponent`, steps), `libs/shared/api-interfaces`  
+> * **Tipo:** Estándar Arquitectónico de Navegación y Componentes Transversales Frontend (Angular 21+ MFE Standalone / Zoneless)  
+> * **Versión:** 2.1 (Consolidado con implementación final de Tab Host, Stepper y Aside Modal)  
+> * **Estado:** Implementado y Activo  
+> * **Nexo Padre:** [Volver a `app-shell.md`](./app-shell.md)  
 
 ---
 

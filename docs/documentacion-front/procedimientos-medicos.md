@@ -7,6 +7,7 @@
 > * **Puertos de Desarrollo:** `4204` (`serve`) y `4214` (`serve-static`)  
 > * **Host Principal:** `app-shell` (`http://localhost:4200/procedimientos-medicos`)  
 > * **Estado:** Activo / Implementado (Fases B1-B5 Backend + F1-F6 Frontend)  
+> * **Nexo Padre:** [Volver a `app-shell.md`](./app-shell.md) | **Backend Relacionado:** [`03-procedures-doctors-service.md`](../documentacion-back/03-procedures-doctors-service.md)  
 
 ---
 
