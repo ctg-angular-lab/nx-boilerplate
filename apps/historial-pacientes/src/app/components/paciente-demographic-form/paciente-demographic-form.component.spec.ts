@@ -173,3 +173,4 @@ describe('PacienteDemographicFormComponent', () => {
     expect(mockDialogRef.close).toHaveBeenCalledWith(null);
   });
 });
+

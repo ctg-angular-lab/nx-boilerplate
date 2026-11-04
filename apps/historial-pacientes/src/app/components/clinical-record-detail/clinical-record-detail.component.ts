@@ -57,3 +57,4 @@ export class ClinicalRecordDetailComponent {
     this.dialogRef?.close(null);
   }
 }
+

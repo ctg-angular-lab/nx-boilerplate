@@ -145,3 +145,4 @@ describe('PacientesDirectoryComponent', () => {
     expect(mockAsideModalService.open).not.toHaveBeenCalled();
   });
 });
+

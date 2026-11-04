@@ -220,3 +220,4 @@ export function normalizePatientForForm(patient: IPatientHistory | null | undefi
     },
   };
 }
+
