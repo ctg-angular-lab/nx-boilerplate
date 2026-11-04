@@ -6,16 +6,7 @@
   box-sizing: border-box;
 }
 
-.historial-pacientes-title {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: var(--sys-color-on-surface, #1e1e1e);
+.tab-pane-wrapper {
+  padding-top: 1.5rem;
+  width: 100%;
 }
-
-.historial-pacientes-subtitle {
-  margin: 0;
-  font-size: 1rem;
-  color: var(--sys-color-on-surface-variant, #666666);
-}
-

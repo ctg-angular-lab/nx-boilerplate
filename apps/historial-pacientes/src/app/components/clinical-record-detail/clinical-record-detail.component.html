@@ -41,7 +41,7 @@
 
       <div class="metadata-item">
         <span class="metadata-label">Lote del Producto</span>
-        <span class="metadata-value">{{ record().registro_clinico?.lote_producto || 'N/A' }}</span>
+        <span class="metadata-value">{{ record().registro_clinico.lote_producto || 'N/A' }}</span>
       </div>
     </div>
   </header>
@@ -56,28 +56,28 @@
     <div class="info-block highlight">
       <span class="info-label">Procedimiento Realizado</span>
       <p class="info-text font-bold">
-        {{ record().registro_clinico?.procedimiento_realizado || 'No registrado' }}
+        {{ record().registro_clinico.procedimiento_realizado || 'No registrado' }}
       </p>
     </div>
 
     <div class="info-block">
       <span class="info-label">Motivo de Consulta</span>
       <p class="info-text">
-        {{ record().registro_clinico?.motivo_consulta || 'Sin información registrada' }}
+        {{ record().registro_clinico.motivo_consulta || 'Sin información registrada' }}
       </p>
     </div>
 
     <div class="info-block">
       <span class="info-label">Enfermedad Actual</span>
       <p class="info-text">
-        {{ record().registro_clinico?.enfermedad_actual || 'Sin información registrada' }}
+        {{ record().registro_clinico.enfermedad_actual || 'Sin información registrada' }}
       </p>
     </div>
 
     <div class="info-block">
       <span class="info-label">Examen Físico</span>
       <p class="info-text">
-        {{ record().registro_clinico?.examen_fisico || 'Sin información registrada' }}
+        {{ record().registro_clinico.examen_fisico || 'Sin información registrada' }}
       </p>
     </div>
   </section>
@@ -93,28 +93,28 @@
       <div class="antecedente-item">
         <span class="info-label">Patológicos</span>
         <p class="info-text">
-          {{ record().registro_clinico?.antecedentes_medicos?.patologicos || 'Ninguno' }}
+          {{ record().registro_clinico.antecedentes_medicos.patologicos || 'Ninguno' }}
         </p>
       </div>
 
       <div class="antecedente-item">
         <span class="info-label">Alérgicos</span>
         <p class="info-text">
-          {{ record().registro_clinico?.antecedentes_medicos?.alergicos || 'Ninguno' }}
+          {{ record().registro_clinico.antecedentes_medicos.alergicos || 'Ninguno' }}
         </p>
       </div>
 
       <div class="antecedente-item">
         <span class="info-label">Farmacológicos</span>
         <p class="info-text">
-          {{ record().registro_clinico?.antecedentes_medicos?.farmacologicos || 'Ninguno' }}
+          {{ record().registro_clinico.antecedentes_medicos.farmacologicos || 'Ninguno' }}
         </p>
       </div>
 
       <div class="antecedente-item">
         <span class="info-label">Procedimientos Previos</span>
         <p class="info-text">
-          {{ record().registro_clinico?.antecedentes_medicos?.procedimientos_previos || 'Ninguno' }}
+          {{ record().registro_clinico.antecedentes_medicos.procedimientos_previos || 'Ninguno' }}
         </p>
       </div>
     </div>
@@ -129,7 +129,7 @@
 
     <div class="info-block">
       <p class="info-text">
-        {{ record().registro_clinico?.recomendaciones || 'Sin recomendaciones registradas' }}
+        {{ record().registro_clinico.recomendaciones || 'Sin recomendaciones registradas' }}
       </p>
     </div>
   </section>
@@ -143,18 +143,18 @@
 
     <div class="support-row">
       <div class="support-status">
-        <span class="material-symbols-outlined support-icon" [class.signed]="record().soporte_documental?.consentimiento_informado">
-          {{ record().soporte_documental?.consentimiento_informado ? 'check_circle' : 'cancel' }}
+        <span class="material-symbols-outlined support-icon" [class.signed]="record().soporte_documental.consentimiento_informado">
+          {{ record().soporte_documental.consentimiento_informado ? 'check_circle' : 'cancel' }}
         </span>
         <span class="support-text">
           Consentimiento Informado:
           <strong>
-            {{ record().soporte_documental?.consentimiento_informado ? 'Firmado' : 'No Registrado' }}
+            {{ record().soporte_documental.consentimiento_informado ? 'Firmado' : 'No Registrado' }}
           </strong>
         </span>
       </div>
 
-      @if (record().soporte_documental?.descargable_consentimiento; as url) {
+      @if (record().soporte_documental.descargable_consentimiento; as url) {
         <span class="support-doc">
           Referencia / Documento: <code>{{ url }}</code>
         </span>

@@ -1,5 +1,20 @@
 <div class="historial-pacientes-container">
-  <h1 class="historial-pacientes-title">Historial de Pacientes</h1>
-  <p class="historial-pacientes-subtitle">Módulo de Historias Clínicas Electrónicas y Gestión de Pacientes</p>
-</div>
+  <lib-tabs-collection
+    [tabs]="tabs()"
+    [preserveContent]="true"
+    [activeTabId]="service.activeTab()"
+    (activeTabIdChange)="onActiveTabChange($event)"
+  />
 
+  <ng-template #directoryTab>
+    <div class="tab-pane-wrapper">
+      <app-pacientes-directory />
+    </div>
+  </ng-template>
+
+  <ng-template #expedienteTab>
+    <div class="tab-pane-wrapper">
+      <app-paciente-expediente />
+    </div>
+  </ng-template>
+</div>
