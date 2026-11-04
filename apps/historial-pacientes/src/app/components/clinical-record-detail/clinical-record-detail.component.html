@@ -1,0 +1,171 @@
+<div class="record-detail-container">
+  <!-- Resumen de Identificación y Estado -->
+  <header class="record-header-card">
+    <div class="record-header-card__top">
+      <div class="patient-summary">
+        <span class="patient-name">{{ patient().nombre }} {{ patient().apellidos }}</span>
+        <span class="patient-id">Doc: {{ patient().tipo_documento || 'CC' }} {{ patient().cedula }}</span>
+      </div>
+
+      <span
+        class="chip-status"
+        [class.chip-status--success]="isCompletada()"
+        [class.chip-status--warning]="!isCompletada()"
+      >
+        <span class="material-symbols-outlined chip-icon">
+          {{ isCompletada() ? 'check_circle' : 'schedule' }}
+        </span>
+        {{ isCompletada() ? 'Completada' : 'Pendiente de Atención' }}
+      </span>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <div class="metadata-grid">
+      <div class="metadata-item">
+        <span class="metadata-label">Fecha de Atención</span>
+        <span class="metadata-value">{{ fechaAtencion() }}</span>
+      </div>
+
+      <div class="metadata-item">
+        <span class="metadata-label">Código de Cita</span>
+        <span class="metadata-value">{{ record().appointmentId || 'Atención Manual' }}</span>
+      </div>
+
+      <div class="metadata-item">
+        <span class="metadata-label">Médico Tratante</span>
+        <span class="metadata-value">
+          {{ doctorName() || firstDoctor()?.nombre_profesional || firstDoctor()?.cedula_profesional || 'No asignado' }}
+        </span>
+      </div>
+
+      <div class="metadata-item">
+        <span class="metadata-label">Lote del Producto</span>
+        <span class="metadata-value">{{ record().registro_clinico?.lote_producto || 'N/A' }}</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Procedimiento y Motivo de Consulta -->
+  <section class="detail-section">
+    <h3 class="section-title">
+      <span class="material-symbols-outlined">medical_information</span>
+      Procedimiento y Motivo de Consulta
+    </h3>
+
+    <div class="info-block highlight">
+      <span class="info-label">Procedimiento Realizado</span>
+      <p class="info-text font-bold">
+        {{ record().registro_clinico?.procedimiento_realizado || 'No registrado' }}
+      </p>
+    </div>
+
+    <div class="info-block">
+      <span class="info-label">Motivo de Consulta</span>
+      <p class="info-text">
+        {{ record().registro_clinico?.motivo_consulta || 'Sin información registrada' }}
+      </p>
+    </div>
+
+    <div class="info-block">
+      <span class="info-label">Enfermedad Actual</span>
+      <p class="info-text">
+        {{ record().registro_clinico?.enfermedad_actual || 'Sin información registrada' }}
+      </p>
+    </div>
+
+    <div class="info-block">
+      <span class="info-label">Examen Físico</span>
+      <p class="info-text">
+        {{ record().registro_clinico?.examen_fisico || 'Sin información registrada' }}
+      </p>
+    </div>
+  </section>
+
+  <!-- Antecedentes Médicos (Resolución 1995/1999) -->
+  <section class="detail-section">
+    <h3 class="section-title">
+      <span class="material-symbols-outlined">history_edu</span>
+      Antecedentes Médicos
+    </h3>
+
+    <div class="antecedentes-grid">
+      <div class="antecedente-item">
+        <span class="info-label">Patológicos</span>
+        <p class="info-text">
+          {{ record().registro_clinico?.antecedentes_medicos?.patologicos || 'Ninguno' }}
+        </p>
+      </div>
+
+      <div class="antecedente-item">
+        <span class="info-label">Alérgicos</span>
+        <p class="info-text">
+          {{ record().registro_clinico?.antecedentes_medicos?.alergicos || 'Ninguno' }}
+        </p>
+      </div>
+
+      <div class="antecedente-item">
+        <span class="info-label">Farmacológicos</span>
+        <p class="info-text">
+          {{ record().registro_clinico?.antecedentes_medicos?.farmacologicos || 'Ninguno' }}
+        </p>
+      </div>
+
+      <div class="antecedente-item">
+        <span class="info-label">Procedimientos Previos</span>
+        <p class="info-text">
+          {{ record().registro_clinico?.antecedentes_medicos?.procedimientos_previos || 'Ninguno' }}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recomendaciones -->
+  <section class="detail-section">
+    <h3 class="section-title">
+      <span class="material-symbols-outlined">assignment</span>
+      Recomendaciones y Plan de Manejo
+    </h3>
+
+    <div class="info-block">
+      <p class="info-text">
+        {{ record().registro_clinico?.recomendaciones || 'Sin recomendaciones registradas' }}
+      </p>
+    </div>
+  </section>
+
+  <!-- Soporte Documental / Consentimiento -->
+  <section class="detail-section">
+    <h3 class="section-title">
+      <span class="material-symbols-outlined">verified</span>
+      Soporte Documental
+    </h3>
+
+    <div class="support-row">
+      <div class="support-status">
+        <span class="material-symbols-outlined support-icon" [class.signed]="record().soporte_documental?.consentimiento_informado">
+          {{ record().soporte_documental?.consentimiento_informado ? 'check_circle' : 'cancel' }}
+        </span>
+        <span class="support-text">
+          Consentimiento Informado:
+          <strong>
+            {{ record().soporte_documental?.consentimiento_informado ? 'Firmado' : 'No Registrado' }}
+          </strong>
+        </span>
+      </div>
+
+      @if (record().soporte_documental?.descargable_consentimiento; as url) {
+        <span class="support-doc">
+          Referencia / Documento: <code>{{ url }}</code>
+        </span>
+      }
+    </div>
+  </section>
+
+  <!-- Footer con Acción Cerrar -->
+  <footer class="record-footer">
+    <button mat-stroked-button type="button" (click)="onClose()">
+      Cerrar
+    </button>
+  </footer>
+</div>

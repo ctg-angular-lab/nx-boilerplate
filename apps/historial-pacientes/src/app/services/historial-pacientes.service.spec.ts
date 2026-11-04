@@ -75,7 +75,8 @@ describe('HistorialPacientesService', () => {
       },
     ],
     registro_clinico: {
-      anamnesis: { motivo_consulta: 'Revisión anual', enfermedad_actual: 'Ninguna' },
+      motivo_consulta: 'Revisión anual',
+      enfermedad_actual: 'Ninguna',
       antecedentes_medicos: {
         patologicos: 'Ninguno',
         alergicos: 'Ninguno',
