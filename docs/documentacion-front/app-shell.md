@@ -21,7 +21,7 @@ El ecosistema Frontend está compuesto por el Host (`app-shell`), los Microfront
 | **[`lista-profesionales.md`](./lista-profesionales.md)** | `apps/lista-profesionales` | `4203` | `/profesionales` | **Activo:** Gestión CRUD de especialistas (Tab Host, tabla Activos/Inactivos, `AsideModal` de detalle y Stepper de 4 pasos para alta/edición). |
 | **[`procedimientos-medicos.md`](./procedimientos-medicos.md)** | `apps/procedimientos-medicos` | `4204` | `/procedimientos-medicos` | **Activo:** Gestión CRUD de procedimientos y laboratorios (Tab Host, auto-recuperación de inactivos, bloqueo de baja si tiene médicos asignados). |
 | **[`homologacion-navegacion.md`](./homologacion-navegacion.md)** | `libs/shared/layouts` & `apps/*` | *Transversal* | *N/A* | **Estándar Implementado:** Patrón canónico de navegación por pestañas (`lib-tabs-collection`), tablas (`lib-data-table`), modales y steppers. |
-| **[`historial-pacientes`](../../apps/historial-pacientes)** | `apps/historial-pacientes` | `4205` | `/historial-pacientes` | **En Desarrollo (Fase 1 completada):** Expediente demográfico de 20 campos e Historias Clínicas (Resolución 1995 de 1999). Integrado en Host con manifest dinámico. |
+| **[`historial-pacientes.md`](./historial-pacientes.md)** | `apps/historial-pacientes` | `4205` | `/historial-pacientes` | **Activo:** Directorio de pacientes, ficha demográfica de 20 campos (Resolución 1995 de 1999), expediente clínico y modales laterales (`AsideModal`) de lectura y diligenciamiento médico. |
 
 > **Conexión con la Documentación Backend:**  
 > Todos los Microfrontends se comunican exclusivamente con el API Gateway (`:3000/api`). Consulta el nexo de backend en [`docs/documentacion-back/00-api-gateway.md`](../documentacion-back/00-api-gateway.md).
@@ -59,21 +59,21 @@ graph TD
         R_AG["agendador-citas (:4201)\n/agendador-citas"]
         R_LP["lista-profesionales (:4203)\n/profesionales"]
         R_PM["procedimientos-medicos (:4204)\n/procedimientos-medicos"]
+        R_HP["historial-pacientes (:4205)\n/historial-pacientes"]
         R_LG["Login (:4202)\n/login"]
-        R_HP["Futuro MFE Pacientes\n/mfe-pacientes"]
     end
 
-    Workspace --> R_AG & R_LP & R_PM & R_LG
-    Sidenav -.->|Enlace preparado| R_HP
+    Workspace --> R_AG & R_LP & R_PM & R_HP & R_LG
 
     subgraph SharedLibs ["Librerías Compartidas (libs/shared/*)"]
         L_LAY["@nx-boilerplate/layouts\n(Tabs, DataTable, AsideModal, ConfirmationModal, Steps)"]
         L_THM["@nx-boilerplate/theme\n(Tokens MD3, Tipografía, Módulos SCSS)"]
         L_DA["@nx-boilerplate/data-access\n(ApiClientService, loaderInterceptor, LoaderStateService)"]
         L_INT["@nx-boilerplate/api-interfaces\n(Contratos TypeScript Puros)"]
+        L_UTL["@nx-boilerplate/utils\n(calculateAgeFromBirthDate, getNextWorkingDays)"]
     end
 
-    R_AG & R_LP & R_PM --> L_LAY & L_THM & L_DA & L_INT
+    R_AG & R_LP & R_PM & R_HP --> L_LAY & L_THM & L_DA & L_INT & L_UTL
 ```
 
 ---
@@ -88,7 +88,8 @@ Archivo leído en el arranque (`main.ts`) para registrar las URLs de cada remote
   "agendador-citas": "http://localhost:4201/mf-manifest.json",
   "Login": "http://localhost:4202/mf-manifest.json",
   "lista-profesionales": "http://localhost:4203/mf-manifest.json",
-  "procedimientos-medicos": "http://localhost:4204/mf-manifest.json"
+  "procedimientos-medicos": "http://localhost:4204/mf-manifest.json",
+  "historial-pacientes": "http://localhost:4205/mf-manifest.json"
 }
 ```
 
@@ -120,6 +121,8 @@ export default config;
 | `'profesionales'` | Carga perezosa | `lista-profesionales/Routes` (`remoteRoutes`) |
 | `'lista-profesionales'` | `redirectTo: 'profesionales'` | — |
 | `'procedimientos-medicos'` | Carga perezosa | `procedimientos-medicos/Routes` (`remoteRoutes`) |
+| `'historial-pacientes'` | Carga perezosa | `historial-pacientes/Routes` (`remoteRoutes`) |
+| `'mfe-pacientes'` | `redirectTo: 'historial-pacientes'` | — |
 
 ### 4.4 Estado Reactivo del Menú Lateral ([`app-shell/src/app/app.ts`](file:///Users/usuario/Desktop/nx-boilerplate/app-shell/src/app/app.ts))
 El componente raíz `App` gestiona el menú lateral mediante Signals y cierra automáticamente el cajón de navegación tras cada transición exitosa del router:
@@ -131,7 +134,7 @@ readonly mfeRoutes = signal<MfeRoute[]>([
   { path: '/agendador-citas', label: 'Agendar Cita', icon: 'calendar_add_on' },
   { path: '/profesionales', label: 'Profesionales', icon: 'badge' },
   { path: '/procedimientos-medicos', label: 'Procedimientos Médicos', icon: 'medical_services' },
-  { path: '/mfe-pacientes', label: 'Pacientes', icon: 'person' }
+  { path: '/historial-pacientes', label: 'Historial de Pacientes', icon: 'clinical_notes' },
 ]);
 ```
 
@@ -139,12 +142,12 @@ readonly mfeRoutes = signal<MfeRoute[]>([
 
 ## 5. Ecosistema de Librerías Compartidas de Frontend (`libs/shared/*`)
 
-Todos los Microfrontends orquestados por el `app-shell` se apoyan en cuatro librerías transversales:
+Todos los Microfrontends orquestados por el `app-shell` se apoyan en cinco librerías transversales:
 
 1. **`@nx-boilerplate/layouts` ([`libs/shared/layouts/src/index.ts`](file:///Users/usuario/Desktop/nx-boilerplate/libs/shared/layouts/src/index.ts)):**
    * **Navegación y Tablas:** `TabsCollectionComponent` (`lib-tabs-collection`), `DataTableComponent` (`lib-data-table`), `MetricCardComponent`.
    * **Modales Transversales:**
-     * `AsideModalComponent` y `AsideModalService`: Panel lateral deslizante reutilizable para visualizar detalles o formularios contextuales (usado en `lista-profesionales` y disponible para `historial-pacientes`).
+     * `AsideModalComponent` y `AsideModalService`: Panel lateral deslizante reutilizable para visualizar detalles o formularios contextuales (usado en `lista-profesionales` e `historial-pacientes`).
      * `ConfirmationModalComponent`: Diálogo estándar de confirmación y alertas de bloqueo.
      * `AgendarModalComponent`: Modal de reserva de turno en calendario.
    * **Pasos de Formularios Dumb (`forms/`):**
@@ -156,7 +159,9 @@ Todos los Microfrontends orquestados por el `app-shell` se apoyan en cuatro libr
    * `loaderInterceptor` y `LoaderStateService`: Interceptor funcional y estado global con Signals para indicadores de carga.
 3. **`@nx-boilerplate/theme` ([`libs/shared/theme/src/lib/_theme.scss`](file:///Users/usuario/Desktop/nx-boilerplate/libs/shared/theme/src/lib/_theme.scss)):**
    * Sistema de diseño Material Design 3 con módulos SCSS dedicados (`_buttons.scss`, `_forms.scss`, `_modals.scss`, `_navigation.scss`, `_stepper.scss`, `_tabs.scss`).
-4. **`@nx-boilerplate/ui-charts` ([`libs/shared/ui-charts/src/index.ts`](file:///Users/usuario/Desktop/nx-boilerplate/libs/shared/ui-charts/src/index.ts)):**
+4. **`@nx-boilerplate/utils` ([`libs/shared/utils/src/index.ts`](file:///Users/usuario/Desktop/nx-boilerplate/libs/shared/utils/src/index.ts)):**
+   * Utilidades puras de fecha y negocio: `getNextWorkingDays` (cálculo de días hábiles del calendario) y `calculateAgeFromBirthDate` (cálculo exacto de edad para la ficha demográfica).
+5. **`@nx-boilerplate/ui-charts` ([`libs/shared/ui-charts/src/index.ts`](file:///Users/usuario/Desktop/nx-boilerplate/libs/shared/ui-charts/src/index.ts)):**
    * Componente envoltorio de Chart.js reactivo con Signals.
 
 ---
@@ -168,7 +173,7 @@ Todos los Microfrontends orquestados por el `app-shell` se apoyan en cuatro libr
 npx nx serve app-shell
 
 # Compilar el Host y todos los MFEs activos
-npx nx run-many -t build -p app-shell agendador-citas lista-profesionales procedimientos-medicos
+npx nx run-many -t build -p app-shell agendador-citas lista-profesionales procedimientos-medicos historial-pacientes
 
 # Ejecutar pruebas unitarias del Host
 ./node_modules/.bin/vitest run --config app-shell/vite.config.mts
