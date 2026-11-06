@@ -5,6 +5,7 @@ import {
   OnInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { provideNativeDateAdapter } from '@angular/material/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDatepickerModule } from '@angular/material/datepicker';
@@ -30,6 +31,7 @@ import { IDashboardDoctorCell } from '../models/dashboard.models';
     OtherCalendarsCardComponent,
     DailyCascadeCalendarComponent,
   ],
+  providers: [provideNativeDateAdapter()],
   templateUrl: './remote-entry.component.html',
   styleUrl: './remote-entry.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -21,3 +21,4 @@ declare module 'historial-pacientes/Routes' {
 declare module 'dashboard/Routes' {
   export const remoteRoutes: any;
 }
+

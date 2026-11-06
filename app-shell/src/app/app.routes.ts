@@ -4,7 +4,7 @@ import { loadRemote } from '@module-federation/enhanced/runtime';
 export const appRoutes: Route[] = [
   {
     path: '',
-    redirectTo: 'agendador-citas',
+    redirectTo: 'dashboard',
     pathMatch: 'full',
   },
   {
