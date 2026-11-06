@@ -216,13 +216,104 @@
         }
 
         &__body {
-          padding: 12px;
-          display: flex;
-          justify-content: center;
+          padding: 16px;
 
-          ::ng-deep .mat-calendar {
+          .mini-calendar {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
             width: 100%;
-            max-width: 296px;
+
+            &__nav {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              padding: 0 4px;
+            }
+
+            &__month-label {
+              font-size: 0.9375rem;
+              font-weight: 600;
+              color: var(--sys-color-on-surface, #191c20);
+            }
+
+            &__nav-btn {
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              width: 32px;
+              height: 32px;
+              border-radius: 50%;
+              border: none;
+              background: transparent;
+              color: var(--sys-color-on-surface-variant, #41474e);
+              cursor: pointer;
+              transition: background-color 0.15s ease;
+
+              &:hover {
+                background-color: var(--sys-color-surface-container, #e7e8ee);
+              }
+            }
+
+            &__weekdays {
+              display: grid;
+              grid-template-columns: repeat(7, 1fr);
+              text-align: center;
+            }
+
+            &__weekday {
+              font-size: 0.75rem;
+              font-weight: 600;
+              color: var(--sys-color-on-surface-variant, #41474e);
+              padding: 4px 0;
+            }
+
+            &__grid {
+              display: grid;
+              grid-template-columns: repeat(7, 1fr);
+              gap: 4px;
+            }
+
+            &__day {
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              height: 36px;
+              border-radius: 50%;
+              border: 1px solid transparent;
+              background: transparent;
+              color: var(--sys-color-on-surface, #191c20);
+              font-family: inherit;
+              font-size: 0.8125rem;
+              font-weight: 500;
+              cursor: pointer;
+              transition: all 0.15s ease;
+
+              &:hover {
+                background-color: var(--sys-color-surface-container, #e7e8ee);
+              }
+
+              &--other-month {
+                color: var(--sys-color-outline, #71787e);
+                opacity: 0.55;
+              }
+
+              &--today {
+                border-color: var(--sys-color-primary, #1e4ba8);
+                color: var(--sys-color-primary, #1e4ba8);
+                font-weight: 700;
+              }
+
+              &--selected {
+                background-color: var(--sys-color-primary, #1e4ba8);
+                color: var(--sys-color-on-primary, #ffffff);
+                font-weight: 700;
+
+                &:hover {
+                  background-color: var(--sys-color-primary, #1e4ba8);
+                }
+              }
+            }
           }
         }
       }

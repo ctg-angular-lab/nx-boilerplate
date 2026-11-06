@@ -1,5 +1,5 @@
 import { IDayAvailability, ISlotDisplay } from '@nx-boilerplate/api-interfaces';
-import { formatDateYMD } from '@nx-boilerplate/utils';
+import { formatDateYMD, removeDiacritics } from '@nx-boilerplate/utils';
 import {
   DashboardSlotStatus,
   DOCTOR_COLOR_THEMES,
@@ -11,6 +11,23 @@ import {
 } from '../models/dashboard.models';
 
 export const CASCADE_WIDTHS: readonly number[] = [100, 65, 50, 35];
+
+const DIAS_SEMANA_MAP: Record<number, string> = {
+  0: 'DOMINGO',
+  1: 'LUNES',
+  2: 'MARTES',
+  3: 'MIERCOLES',
+  4: 'JUEVES',
+  5: 'VIERNES',
+  6: 'SABADO',
+};
+
+const SLOT_STATUS_PRIORITY: Record<string, number> = {
+  CONFIRMED: 4,
+  TENTATIVE: 3,
+  BLOCKED_PERSONAL: 2,
+  AVAILABLE: 1,
+};
 
 /**
  * Calcula la geometría de cascada (anchos, left y z-index) para hasta 4 capas
@@ -44,15 +61,48 @@ export function timeStringToMinutes(timeStr: string): number {
 }
 
 /**
- * Extrae minutos desde las 00:00 a partir de una fecha ISO o string 'HH:mm'
+ * Extrae minutos desde las 00:00 (en hora local de Colombia UTC-5) a partir de una fecha ISO UTC, ISO local o string 'HH:mm'
  */
 export function isoOrTimeToMinutes(value: string): number {
   if (!value) return 0;
   if (value.includes('T')) {
-    const timePart = value.split('T')[1];
+    const timePart = value.split('T')[1] || '';
+    const hasExplicitTz =
+      timePart.endsWith('Z') ||
+      timePart.endsWith('z') ||
+      /[+-]\d{2}:?\d{2}$/.test(timePart);
+
+    if (hasExplicitTz) {
+      const parsed = new Date(value);
+      if (!Number.isNaN(parsed.getTime())) {
+        // Convertir instante UTC a hora oficial de Colombia (UTC-5)
+        const cotMs = parsed.getTime() - 5 * 60 * 60 * 1000;
+        const cotTimeStr = new Date(cotMs).toISOString().substring(11, 16);
+        return timeStringToMinutes(cotTimeStr);
+      }
+    }
     return timeStringToMinutes(timePart);
   }
   return timeStringToMinutes(value);
+}
+
+/**
+ * Determina si una fecha corresponde a un día laborable del profesional
+ */
+export function isDoctorWorkingOnDate(
+  targetDate: Date,
+  diasLaborales?: readonly string[],
+  dayAvailability?: IDayAvailability
+): boolean {
+  if (dayAvailability && typeof dayAvailability.isWorkingDay === 'boolean') {
+    return dayAvailability.isWorkingDay;
+  }
+  if (!diasLaborales || diasLaborales.length === 0) {
+    return true;
+  }
+  const dayEnumName = DIAS_SEMANA_MAP[targetDate.getDay()];
+  const normalized = diasLaborales.map((d) => removeDiacritics(d).toUpperCase().trim());
+  return normalized.includes(dayEnumName);
 }
 
 /**
@@ -114,8 +164,13 @@ export function buildTimeGridRows(
         ? timeStringToMinutes(horario.recesoAlmuerzo.fin)
         : null;
 
-      // Evaluar horario laboral general
-      const isWorkingHour = rowStart >= docWorkStart && rowEnd <= docWorkEnd;
+      // Evaluar si el día y la hora están dentro de la jornada laboral del profesional
+      const isWorkingDay = isDoctorWorkingOnDate(
+        selectedDate,
+        horario?.diasLaborales,
+        currentDayAvailability
+      );
+      const isWorkingHour = isWorkingDay && rowStart >= docWorkStart && rowEnd <= docWorkEnd;
 
       // Evaluar si cae en receso de almuerzo
       const isLunch =
@@ -132,25 +187,35 @@ export function buildTimeGridRows(
       } else if (isLunch) {
         status = 'LUNCH';
       } else if (currentDayAvailability?.slots && currentDayAvailability.slots.length > 0) {
-        // Buscar si algún slot se intersecta con la franja [rowStart, rowEnd]
-        const matchedSlot = currentDayAvailability.slots.find((slot: ISlotDisplay) => {
+        // Filtrar todos los slots que se intersectan con [rowStart, rowEnd] y priorizar citas ocupadas sobre disponibles
+        const overlappingSlots = currentDayAvailability.slots.filter((slot: ISlotDisplay) => {
           const slotStart = isoOrTimeToMinutes(slot.startTime);
           const slotEnd = isoOrTimeToMinutes(slot.endTime);
           return Math.max(rowStart, slotStart) < Math.min(rowEnd, slotEnd);
         });
 
+        const matchedSlot = overlappingSlots.sort(
+          (a, b) => (SLOT_STATUS_PRIORITY[b.status] || 0) - (SLOT_STATUS_PRIORITY[a.status] || 0)
+        )[0];
+
         if (matchedSlot) {
-          procedureTitle = matchedSlot.title;
           if (matchedSlot.patient) {
             patientName = `${matchedSlot.patient.nombre} ${matchedSlot.patient.apellidos}`.trim();
           }
 
           if (matchedSlot.status === 'CONFIRMED') {
             status = 'CONFIRMED';
+            procedureTitle = matchedSlot.title;
           } else if (matchedSlot.status === 'TENTATIVE') {
             status = 'SCHEDULED';
+            procedureTitle = matchedSlot.title;
           } else if (matchedSlot.status === 'BLOCKED_PERSONAL') {
-            status = 'BLOCKED';
+            if (matchedSlot.title?.toLowerCase() === 'almuerzo') {
+              status = 'LUNCH';
+            } else {
+              status = 'BLOCKED';
+              procedureTitle = matchedSlot.title;
+            }
           } else {
             status = 'AVAILABLE';
           }

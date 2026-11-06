@@ -124,8 +124,8 @@ describe('DashboardStateService', () => {
   describe('loadDoctors', () => {
     it('debe cargar los médicos, seleccionar el primero y pedir la disponibilidad de la semana', () => {
       apiClientMock.get.mockImplementation((url: string) => {
-        if (url === '/doctors') return of({ data: mockDoctors });
-        if (url === '/appointments/available-dates') return of({ data: mockAvailability });
+        if (url === '/api/doctors') return of({ data: mockDoctors });
+        if (url === '/api/appointments/available-dates') return of({ data: mockAvailability });
         return of({ data: [] });
       });
 

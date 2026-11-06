@@ -59,9 +59,10 @@ describe('dashboard-calendar.mapper', () => {
       expect(timeStringToMinutes('')).toBe(0);
     });
 
-    it('debe extraer minutos desde un string ISO o formato HH:mm', () => {
+    it('debe extraer minutos desde un string ISO local, ISO UTC (Z -> UTC-5 Colombia) o formato HH:mm', () => {
       expect(isoOrTimeToMinutes('09:15')).toBe(555);
       expect(isoOrTimeToMinutes('2026-11-06T09:45:00')).toBe(585); // 9 * 60 + 45 = 585
+      expect(isoOrTimeToMinutes('2026-11-06T14:00:00.000Z')).toBe(540); // 14:00 UTC -> 09:00 COT = 540
     });
   });
 
@@ -177,6 +178,56 @@ describe('dashboard-calendar.mapper', () => {
 
       const row1730 = rows.find((r) => r.timeLabel === '17:30');
       expect(row1730?.layers[0].status).toBe('OUT_OF_HOURS');
+    });
+
+    it('debe marcar todo el día como OUT_OF_HOURS si la fecha seleccionada no es día laborable del médico (ej. Domingo)', () => {
+      const sundayDate = new Date('2026-11-08T10:00:00'); // Domingo
+      const rows = buildTimeGridRows(sundayDate, [mockDoctor], {});
+
+      expect(rows.every((r) => r.layers[0].status === 'OUT_OF_HOURS')).toBe(true);
+    });
+
+    it('debe priorizar CONFIRMED sobre AVAILABLE cuando dos slots de 45 min solapan un mismo bloque de 30 min', () => {
+      const testDate = new Date('2026-11-06T10:00:00');
+      const availabilityWithOverlap: Record<string, IDayAvailability[]> = {
+        '1001': [
+          {
+            date: '2026-11-06',
+            dayName: 'Viernes',
+            isCalendarSynced: true,
+            isWorkingDay: true,
+            slots: [
+              {
+                startTime: '2026-11-06T13:00:00.000Z', // 08:00 COT
+                endTime: '2026-11-06T13:45:00.000Z',   // 08:45 COT
+                display: '08:00 - 08:45',
+                colorId: null,
+                isBookable: true,
+                status: 'AVAILABLE',
+                title: 'Espacio disponible',
+              },
+              {
+                startTime: '2026-11-06T13:45:00.000Z', // 08:45 COT
+                endTime: '2026-11-06T14:30:00.000Z',   // 09:30 COT
+                display: '08:45 - 09:30',
+                colorId: '2',
+                isBookable: false,
+                status: 'CONFIRMED',
+                title: 'Control Dermatológico',
+              },
+            ],
+          },
+        ],
+      };
+
+      const rows = buildTimeGridRows(testDate, [mockDoctor], availabilityWithOverlap);
+      const row0800 = rows.find((r) => r.timeLabel === '08:00');
+      const row0830 = rows.find((r) => r.timeLabel === '08:30');
+
+      expect(row0800?.layers[0].status).toBe('AVAILABLE');
+      expect(row0800?.layers[0].procedureTitle).toBeUndefined();
+      expect(row0830?.layers[0].status).toBe('CONFIRMED');
+      expect(row0830?.layers[0].procedureTitle).toBe('Control Dermatológico');
     });
   });
 

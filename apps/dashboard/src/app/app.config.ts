@@ -6,7 +6,6 @@ import {
 } from '@angular/core';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
-import { provideNativeDateAdapter } from '@angular/material/core';
 import { registerLocaleData } from '@angular/common';
 import localeEsCo from '@angular/common/locales/es-CO';
 import { loaderInterceptor } from '@nx-boilerplate/data-access';
@@ -20,8 +19,6 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideRouter(appRoutes),
     provideHttpClient(withFetch(), withInterceptors([loaderInterceptor])),
-    provideNativeDateAdapter(),
     { provide: LOCALE_ID, useValue: 'es-CO' },
   ],
 };
-

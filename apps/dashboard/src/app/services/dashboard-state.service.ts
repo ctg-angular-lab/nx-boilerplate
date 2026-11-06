@@ -133,14 +133,14 @@ export class DashboardStateService {
   // --- Acciones de Estado ---
 
   /**
-   * Carga la lista de profesionales desde /doctors
+   * Carga la lista de profesionales desde /api/doctors
    */
   loadDoctors(): void {
     this.#loadingDoctors.set(true);
     this.#error.set(null);
 
     this.#api
-      .get<IActiveProfessional[]>('/doctors')
+      .get<IActiveProfessional[]>('/api/doctors')
       .pipe(
         map((res) => res.data ?? []),
         catchError(() => {
@@ -311,7 +311,7 @@ export class DashboardStateService {
 
     const requests = missingDocs.map((doc) => {
       return this.#api
-        .get<IDayAvailability[]>('/appointments/available-dates', {
+        .get<IDayAvailability[]>('/api/appointments/available-dates', {
           params: {
             doctorEmail: doc.email,
             doctorCedula: doc.cedula,

@@ -78,7 +78,7 @@
 
   <!-- FILA 3: Panel Inferior a Dos Columnas -->
   <section class="dashboard-main-grid" aria-label="Panel de calendarios">
-    <!-- Columna Izquierda (320px): Otros calendarios + MatCalendar mensual -->
+    <!-- Columna Izquierda (320px): Otros calendarios + Mini-Calendario Mensual MD3 -->
     <aside class="sidebar-calendars-col">
       <!-- Card 1: Otros Calendarios -->
       <app-other-calendars-card
@@ -88,7 +88,7 @@
         (clearAll)="onClearComparedDoctors()"
       />
 
-      <!-- Card 2: Calendario Mensual Compacto -->
+      <!-- Card 2: Calendario Mensual Compacto (Signals + MD3 nativo) -->
       <section class="month-calendar-card" aria-label="Calendario mensual">
         <header class="month-calendar-card__header">
           <div class="header-title-group">
@@ -97,10 +97,50 @@
           </div>
         </header>
         <div class="month-calendar-card__body">
-          <mat-calendar
-            [selected]="state.selectedDate()"
-            (selectedChange)="onDateChange($event)"
-          />
+          <div class="mini-calendar">
+            <div class="mini-calendar__nav">
+              <button
+                type="button"
+                class="mini-calendar__nav-btn"
+                (click)="onChangeCalendarMonth(-1)"
+                aria-label="Mes anterior"
+              >
+                <mat-icon class="material-symbols-outlined">chevron_left</mat-icon>
+              </button>
+              <span class="mini-calendar__month-label">{{ calendarMonthLabel() }}</span>
+              <button
+                type="button"
+                class="mini-calendar__nav-btn"
+                (click)="onChangeCalendarMonth(1)"
+                aria-label="Mes siguiente"
+              >
+                <mat-icon class="material-symbols-outlined">chevron_right</mat-icon>
+              </button>
+            </div>
+
+            <div class="mini-calendar__weekdays" role="row">
+              @for (dayLabel of weekdayLabels; track $index) {
+                <span class="mini-calendar__weekday" role="columnheader">{{ dayLabel }}</span>
+              }
+            </div>
+
+            <div class="mini-calendar__grid" role="grid">
+              @for (cell of calendarDays(); track cell.dateKey) {
+                <button
+                  type="button"
+                  class="mini-calendar__day"
+                  [class.mini-calendar__day--other-month]="!cell.isCurrentMonth"
+                  [class.mini-calendar__day--today]="cell.isToday"
+                  [class.mini-calendar__day--selected]="cell.isSelected"
+                  (click)="onDateChange(cell.date)"
+                  [attr.aria-label]="cell.dateKey"
+                  [attr.aria-selected]="cell.isSelected"
+                >
+                  {{ cell.dayNumber }}
+                </button>
+              }
+            </div>
+          </div>
         </div>
       </section>
     </aside>

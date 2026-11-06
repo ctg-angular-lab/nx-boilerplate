@@ -18,25 +18,26 @@
         </button>
       }
 
-      <!-- Datepicker con botón activador -->
+      <!-- Selector de Fecha Nativo con botón activador (sin colisión de DateAdapter en MFE) -->
       <div class="custom-datepicker-wrapper">
         <input
+          #nativeDateInput
+          type="date"
           class="custom-datepicker-input"
-          [matDatepicker]="picker"
           [value]="selectedDate()"
-          (dateChange)="onCustomDateSelect($event.value)"
+          (change)="onNativeDateChange($event)"
+          aria-label="Seleccionar fecha personalizada"
         />
         <button
           type="button"
           mat-icon-button
           class="custom-datepicker-btn"
           [class.custom-datepicker-btn--active]="!isQuickDateSelected()"
-          (click)="picker.open()"
+          (click)="openNativeDatePicker(nativeDateInput)"
           title="Elegir otra fecha en calendario"
         >
           <span class="material-symbols-outlined">calendar_month</span>
         </button>
-        <mat-datepicker #picker />
       </div>
     </div>
 

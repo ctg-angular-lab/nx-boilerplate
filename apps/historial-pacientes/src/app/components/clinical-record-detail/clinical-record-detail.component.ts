@@ -11,7 +11,11 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
-import { ICitaMedica, IPatientHistory } from '@nx-boilerplate/api-interfaces';
+import {
+  ICitaMedica,
+  IMedicoTratante,
+  IPatientHistory,
+} from '@nx-boilerplate/api-interfaces';
 
 @Component({
   selector: 'app-clinical-record-detail',
@@ -38,7 +42,9 @@ export class ClinicalRecordDetailComponent {
   readonly closed = output<void>();
 
   // --- Computeds de formato ---
-  readonly firstDoctor = computed(() => this.record().medico_tratante?.[0]);
+  readonly firstDoctor = computed<IMedicoTratante | undefined>(
+    () => this.record().medico_tratante?.[0]
+  );
 
   readonly fechaAtencion = computed(() => {
     const raw = this.firstDoctor()?.fecha_atencion;

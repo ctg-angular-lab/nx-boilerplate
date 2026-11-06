@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideNativeDateAdapter } from '@angular/material/core';
 import { of } from 'rxjs';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ApiClientService } from '@nx-boilerplate/data-access';
@@ -66,8 +65,8 @@ describe('RemoteEntryComponent', () => {
   beforeEach(async () => {
     apiClientMock = {
       get: vi.fn().mockImplementation((url: string) => {
-        if (url === '/doctors') return of({ data: mockDoctors });
-        if (url === '/appointments/available-dates') return of({ data: mockAvailability });
+        if (url === '/api/doctors') return of({ data: mockDoctors });
+        if (url === '/api/appointments/available-dates') return of({ data: mockAvailability });
         return of({ data: [] });
       }),
     };
@@ -76,7 +75,6 @@ describe('RemoteEntryComponent', () => {
       imports: [RemoteEntryComponent],
       providers: [
         DashboardStateService,
-        provideNativeDateAdapter(),
         { provide: ApiClientService, useValue: apiClientMock },
       ],
     }).compileComponents();
@@ -86,9 +84,9 @@ describe('RemoteEntryComponent', () => {
     fixture.detectChanges();
   });
 
-  it('debe crearse, disparar loadDoctors y renderizar el header y los 2 KPIs', () => {
+  it('debe crearse, disparar loadDoctors y renderizar el header, los 2 KPIs y el mini-calendario', () => {
     expect(component).toBeTruthy();
-    expect(apiClientMock.get).toHaveBeenCalledWith('/doctors');
+    expect(apiClientMock.get).toHaveBeenCalledWith('/api/doctors');
 
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('Dr(a). Alejandro Gómez');
@@ -96,6 +94,7 @@ describe('RemoteEntryComponent', () => {
     expect(compiled.textContent).toContain('Citas de la Semana Agendadas');
     expect(compiled.textContent).toContain('Otros calendarios');
     expect(compiled.textContent).toContain('Calendario fecha actual');
+    expect(component.calendarDays().length).toBe(42);
   });
 
   it('debe permitir seleccionar un profesional diferente al hacer clic en un pill', () => {
@@ -110,12 +109,16 @@ describe('RemoteEntryComponent', () => {
     expect(compiled.textContent).toContain('Dr(a). Beatriz Pinzón');
   });
 
-  it('debe delegar la navegación de días y retorno a hoy al state service', () => {
+  it('debe delegar la navegación de días, meses y retorno a hoy al state service', () => {
     const state = component.state;
     const initialDay = state.selectedDate().getDate();
 
     component.onNavigateDay(1);
     expect(state.selectedDate().getDate()).toBe(initialDay + 1);
+
+    const prevMonthLabel = component.calendarMonthLabel();
+    component.onChangeCalendarMonth(1);
+    expect(component.calendarMonthLabel()).not.toBe(prevMonthLabel);
 
     component.onGoToToday();
     const today = new Date();

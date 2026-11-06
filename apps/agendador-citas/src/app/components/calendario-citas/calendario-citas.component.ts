@@ -21,6 +21,7 @@ import {
 } from '@nx-boilerplate/layouts';
 import { isTimeSlotInPast } from '@nx-boilerplate/utils';
 import { AppointmentLogicService } from '../../services/appointment-logic.service';
+import { ConfirmacionCitasService } from '../../services/confirmacion-citas.service';
 import { AGENDADOR_TABS } from '../../models/booking.models';
 
 @Component({
@@ -39,6 +40,7 @@ import { AGENDADOR_TABS } from '../../models/booking.models';
 })
 export class CalendarioCitasComponent {
   private readonly appointmentLogic = inject(AppointmentLogicService);
+  private readonly confirmacionService = inject(ConfirmacionCitasService);
   private readonly dialog = inject(MatDialog);
 
   readonly baseTitle = signal<string>('Calendario');
@@ -255,6 +257,7 @@ export class CalendarioCitasComponent {
 
       dialogRef.afterClosed().subscribe((result) => {
         if (result?.goToConfirmationTab) {
+          this.confirmacionService.setSelectedDate(day.date);
           this.appointmentLogic.setActiveTab(AGENDADOR_TABS.CONFIRMATION);
         }
       });
@@ -293,6 +296,7 @@ export class CalendarioCitasComponent {
         this.appointmentLogic.bookSlot(slot, result.notes).subscribe({
           next: (response) => {
             console.log('Cita agendada exitosamente', response);
+            this.confirmacionService.setSelectedDate(day.date);
             this.openSuccessModal();
             this.selectedSlot.set(null);
           },

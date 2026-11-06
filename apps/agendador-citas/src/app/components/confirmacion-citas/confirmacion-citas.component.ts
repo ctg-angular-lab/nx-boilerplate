@@ -95,12 +95,12 @@ export class ConfirmacionCitasComponent {
   ];
 
   constructor() {
-    // Sincronizar el retorno a la pestaña para reiniciar la fecha al día de hoy
+    // Al entrar a la pestaña de confirmación, recargar las citas para la fecha seleccionada
     effect(() => {
       const activeTab = this.appointmentLogic.activeTab();
       if (activeTab === AGENDADOR_TABS.CONFIRMATION) {
         untracked(() => {
-          this.confirmacionService.resetToToday();
+          this.confirmacionService.fetchDailyAppointments();
         });
       }
     });

@@ -22,6 +22,10 @@ export const appRoutes: Route[] = [
       ).then((m) => m!.remoteRoutes),
   },
   {
+    path: 'Dashboard',
+    redirectTo: 'dashboard',
+  },
+  {
     path: 'login',
     loadChildren: () =>
       loadRemote<typeof import('Login/Routes')>('Login/Routes').then(
