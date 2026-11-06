@@ -1,0 +1,125 @@
+<section class="daily-cascade-calendar" aria-label="Calendario diario con superposición en cascada">
+  <!-- Cabecera de la Card -->
+  <header class="daily-cascade-calendar__header">
+    <div class="title-and-date">
+      <div class="title-group">
+        <mat-icon class="material-symbols-outlined title-icon">calendar_month</mat-icon>
+        <h3 class="title-text">Calendario fecha actual</h3>
+      </div>
+      <span class="formatted-date">
+        {{ selectedDate() | date: "EEEE, d 'de' MMMM 'de' yyyy" : '' : 'es-CO' }}
+      </span>
+    </div>
+
+    <!-- Controles Rápidos de Navegación Diaria -->
+    <nav class="calendar-controls" aria-label="Navegación de días">
+      <button
+        mat-icon-button
+        type="button"
+        (click)="onPrevDay()"
+        matTooltip="Día anterior"
+        aria-label="Ir al día anterior"
+      >
+        <mat-icon class="material-symbols-outlined">chevron_left</mat-icon>
+      </button>
+
+      <button
+        mat-stroked-button
+        type="button"
+        class="today-btn"
+        (click)="onToday()"
+        matTooltip="Ir al día de hoy"
+      >
+        Hoy
+      </button>
+
+      <button
+        mat-icon-button
+        type="button"
+        (click)="onNextDay()"
+        matTooltip="Día siguiente"
+        aria-label="Ir al día siguiente"
+      >
+        <mat-icon class="material-symbols-outlined">chevron_right</mat-icon>
+      </button>
+    </nav>
+  </header>
+
+  <!-- Leyenda Cromática de Capas Superpuestas -->
+  <div class="cascade-legend" role="list" aria-label="Leyenda de médicos superpuestos">
+    @for (doc of overlayDoctors(); track doc.cedula; let idx = $index) {
+      <div class="legend-chip" role="listitem">
+        <span
+          class="legend-chip__indicator"
+          [style.background-color]="doc.colorTheme.cssVar"
+        ></span>
+        <span class="legend-chip__label">
+          <span class="badge-layer">Capa {{ idx + 1 }}:</span>
+          {{ doc.fullName }}
+        </span>
+      </div>
+    }
+  </div>
+
+  <!-- Grilla Horaria de 30 minutos con Superposición en Cascada -->
+  <div class="calendar-grid-container" role="table" aria-label="Grilla de citas por horas">
+    <div class="grid-body">
+      @for (row of timeGridRows(); track row.timeLabel) {
+        <div class="grid-row" role="row">
+          <!-- Columna Izquierda: Hora (08:00 a 17:30) -->
+          <div class="time-col" role="rowheader">
+            <span class="time-label">{{ row.timeLabel }}</span>
+          </div>
+
+          <!-- Pista Derecha: Capas Superpuestas en Cascada -->
+          <div class="slots-track" role="cell">
+            @for (cell of row.layers; track cell.doctorCedula) {
+              <div
+                class="slot-layer"
+                [class.slot-layer--primary]="cell.isPrimary"
+                [class.slot-layer--confirmed]="cell.status === 'CONFIRMED'"
+                [class.slot-layer--scheduled]="cell.status === 'SCHEDULED'"
+                [class.slot-layer--blocked]="cell.status === 'BLOCKED'"
+                [class.slot-layer--lunch]="cell.status === 'LUNCH'"
+                [class.slot-layer--available]="cell.status === 'AVAILABLE'"
+                [class.slot-layer--out]="cell.status === 'OUT_OF_HOURS'"
+                [style.width.%]="cell.geometry.widthPercent"
+                [style.left.%]="cell.geometry.leftPercent"
+                [style.z-index]="cell.geometry.zIndex"
+                [style.border-left-color]="cell.colorCssVar"
+                (click)="onSlotSelect(cell)"
+                tabindex="0"
+                role="button"
+                [attr.aria-label]="cell.doctorName + ' - ' + cell.statusLabel + (cell.procedureTitle ? ' - ' + cell.procedureTitle : '')"
+              >
+                <div class="slot-layer__content">
+                  <!-- Header del bloque: Médico + Estado -->
+                  <div class="slot-meta">
+                    <span
+                      class="doc-badge"
+                      [style.background-color]="cell.colorCssVar"
+                    >
+                      {{ cell.doctorInitials }}
+                    </span>
+                    <span class="status-tag">{{ cell.statusLabel }}</span>
+                  </div>
+
+                  <!-- Detalle de cita si está confirmada o agendada -->
+                  @if (cell.procedureTitle) {
+                    <div class="appointment-info">
+                      <span class="proc-title">{{ cell.procedureTitle }}</span>
+                      @if (cell.patientName) {
+                        <span class="patient-name">{{ cell.patientName }}</span>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
