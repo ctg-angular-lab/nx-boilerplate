@@ -16,7 +16,10 @@ export const appRoutes: Route[] = [
   },
   {
     path: 'dashboard',
-    redirectTo: 'agendador-citas',
+    loadChildren: () =>
+      loadRemote<typeof import('dashboard/Routes')>(
+        'dashboard/Routes'
+      ).then((m) => m!.remoteRoutes),
   },
   {
     path: 'login',

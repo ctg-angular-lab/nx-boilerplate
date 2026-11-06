@@ -22,9 +22,10 @@ describe('App (Host Component)', () => {
     expect(component).toBeTruthy();
   });
 
-  it('debe contener las 4 rutas federadas en mfeRoutes, incluyendo historial-pacientes', () => {
+  it('debe contener las 5 rutas federadas en mfeRoutes, incluyendo dashboard e historial-pacientes', () => {
     const routes = component.mfeRoutes();
-    expect(routes.length).toBe(4);
+    expect(routes.length).toBe(5);
+    expect(routes.some((r) => r.path === '/dashboard')).toBe(true);
     expect(routes.some((r) => r.path === '/historial-pacientes')).toBe(true);
     expect(routes.some((r) => r.path === '/agendador-citas')).toBe(true);
     expect(routes.some((r) => r.path === '/profesionales')).toBe(true);
