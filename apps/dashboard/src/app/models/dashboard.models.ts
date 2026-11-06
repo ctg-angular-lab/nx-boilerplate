@@ -96,10 +96,17 @@ export interface IDashboardTimeRow {
   readonly layers: readonly IDashboardDoctorCell[];
 }
 
-/** Resumen de KPIs de citas de la semana activa */
-export interface IDashboardWeeklyKpis {
+/** Resumen de KPIs de citas del mes activo con títulos dinámicos */
+export interface IDashboardMonthlyKpis {
   readonly confirmedCount: number;
   readonly scheduledCount: number;
-  readonly weekRangeLabel: string;
+  readonly monthName: string;
+  readonly monthYearLabel: string;
+  readonly confirmedTitle: string;
+  readonly scheduledTitle: string;
+  readonly weekRangeLabel?: string;
 }
+
+/** Alias de retrocompatibilidad */
+export type IDashboardWeeklyKpis = IDashboardMonthlyKpis;
 

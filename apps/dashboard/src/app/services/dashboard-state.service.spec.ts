@@ -224,4 +224,22 @@ describe('DashboardStateService', () => {
       expect(service.selectedDate().toDateString()).toBe(today.toDateString());
     });
   });
+
+  describe('monthlyKpis', () => {
+    it('debe exponer monthlyKpis con títulos del mes activo', () => {
+      apiClientMock.get.mockImplementation((url: string) => {
+        if (url === '/api/doctors') return of({ data: mockDoctors });
+        if (url === '/api/appointments/available-dates') return of({ data: mockAvailability });
+        return of({ data: [] });
+      });
+
+      service.loadDoctors();
+
+      const kpis = service.monthlyKpis();
+      expect(kpis.confirmedTitle).toContain('Confirmadas');
+      expect(kpis.scheduledTitle).toContain('Agendadas');
+      expect(kpis.monthName.length).toBeGreaterThan(0);
+      expect(kpis.monthYearLabel.length).toBeGreaterThan(0);
+    });
+  });
 });

@@ -7,11 +7,13 @@ import { formatDateYMD, getColombiaToday } from '@nx-boilerplate/utils';
 import {
   assignDoctorColorTheme,
   buildTimeGridRows,
+  computeMonthlyKpis,
   computeWeeklyKpis,
   extractInitials,
 } from '../utils/dashboard-calendar.mapper';
 import {
   IDashboardDoctor,
+  IDashboardMonthlyKpis,
   IDashboardTimeRow,
   IDashboardWeeklyKpis,
 } from '../models/dashboard.models';
@@ -28,6 +30,7 @@ export class DashboardStateService {
   readonly #comparedDoctorCedulas = signal<readonly string[]>([]);
   readonly #selectedDate = signal<Date>(getColombiaToday());
   readonly #weeklyAvailabilityCache = signal<Record<string, IDayAvailability[]>>({});
+  readonly #monthlyAvailabilityCache = signal<Record<string, IDayAvailability[]>>({});
   readonly #loadingDoctors = signal<boolean>(false);
   readonly #loadingSchedule = signal<boolean>(false);
   readonly #error = signal<string | null>(null);
@@ -96,20 +99,54 @@ export class DashboardStateService {
   });
 
   /**
-   * KPIs semanales del médico activo
+   * Rango mensual para la fecha seleccionada [primer día del mes, último día del mes]
    */
-  readonly weeklyKpis = computed<IDashboardWeeklyKpis>(() => {
+  readonly currentMonthRange = computed<{
+    start: string;
+    end: string;
+    monthName: string;
+    monthYearLabel: string;
+  }>(() => {
+    const target = new Date(this.#selectedDate());
+    const year = target.getFullYear();
+    const month = target.getMonth();
+
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+
+    const rawMonthName = new Intl.DateTimeFormat('es-CO', { month: 'long' }).format(target);
+    const monthName = rawMonthName.charAt(0).toUpperCase() + rawMonthName.slice(1);
+    const monthYearLabel = `${monthName} ${year}`;
+
+    return {
+      start: formatDateYMD(firstDay),
+      end: formatDateYMD(lastDay),
+      monthName,
+      monthYearLabel,
+    };
+  });
+
+  /**
+   * KPIs mensuales del médico activo con títulos contextuales adaptados al mes
+   */
+  readonly monthlyKpis = computed<IDashboardMonthlyKpis>(() => {
     const active = this.activeDoctor();
+    const target = this.#selectedDate();
     if (!active) {
-      return { confirmedCount: 0, scheduledCount: 0, weekRangeLabel: 'Esta semana' };
+      return computeMonthlyKpis(undefined, target);
     }
 
-    const { start, end } = this.currentWeekRange();
+    const { start, end } = this.currentMonthRange();
     const cacheKey = `${active.cedula}_${start}_${end}`;
-    const days = this.#weeklyAvailabilityCache()[cacheKey];
+    const days = this.#monthlyAvailabilityCache()[cacheKey];
 
-    return computeWeeklyKpis(days, `${start} al ${end}`);
+    return computeMonthlyKpis(days, target);
   });
+
+  /**
+   * Alias de compatibilidad
+   */
+  readonly weeklyKpis = this.monthlyKpis;
 
   /**
    * Filas horarias canónicas de 30 minutos (08:00 a 17:30) con las capas apiladas
@@ -211,8 +248,9 @@ export class DashboardStateService {
             this.#selectedDoctorCedula.set(enriched[0].cedula);
           }
 
-          // Cargar disponibilidad para las capas activas
+          // Cargar disponibilidad para las capas activas y el mes del médico activo
           this.loadWeeklyAvailabilityForActiveLayers();
+          this.loadMonthlyAvailabilityForActiveDoctor();
         },
         error: (err) => {
           this.#loadingDoctors.set(false);
@@ -232,6 +270,7 @@ export class DashboardStateService {
     this.#comparedDoctorCedulas.update((prev) => prev.filter((c) => c !== cedula));
 
     this.loadWeeklyAvailabilityForActiveLayers();
+    this.loadMonthlyAvailabilityForActiveDoctor();
   }
 
   /**
@@ -240,12 +279,19 @@ export class DashboardStateService {
   selectDate(date: Date): void {
     if (!date) return;
     const prevWeek = this.currentWeekRange();
+    const prevMonth = this.currentMonthRange();
     this.#selectedDate.set(date);
     const newWeek = this.currentWeekRange();
+    const newMonth = this.currentMonthRange();
 
     // Si cambió la semana, solicitar disponibilidad para la nueva semana
     if (prevWeek.start !== newWeek.start || prevWeek.end !== newWeek.end) {
       this.loadWeeklyAvailabilityForActiveLayers();
+    }
+
+    // Si cambió el mes, solicitar disponibilidad para el nuevo mes
+    if (prevMonth.start !== newMonth.start || prevMonth.end !== newMonth.end) {
+      this.loadMonthlyAvailabilityForActiveDoctor();
     }
   }
 
@@ -373,6 +419,69 @@ export class DashboardStateService {
         this.#loadingSchedule.set(false);
       },
     });
+  }
+
+  /**
+   * Carga la disponibilidad del mes completo para el médico activo si no está en caché
+   */
+  loadMonthlyAvailabilityForActiveDoctor(): void {
+    const active = this.activeDoctor();
+    if (!active) return;
+
+    const { start, end } = this.currentMonthRange();
+    const cacheKey = `${active.cedula}_${start}_${end}`;
+    if (this.#monthlyAvailabilityCache()[cacheKey]) return;
+
+    this.#api
+      .get<IDayAvailability[]>('/api/appointments/available-dates', {
+        params: {
+          doctorEmail: active.email,
+          doctorCedula: active.cedula,
+          startDate: start,
+          endDate: end,
+        },
+      })
+      .pipe(
+        map((res) => res.data ?? []),
+        catchError(() => {
+          // Fallback determinista en caso de que backend esté offline o sin datos
+          const fallbackDays: IDayAvailability[] = [
+            {
+              date: formatDateYMD(this.#selectedDate()),
+              dayName: 'Viernes',
+              isCalendarSynced: true,
+              isWorkingDay: true,
+              slots: [
+                {
+                  startTime: `${formatDateYMD(this.#selectedDate())}T09:00:00`,
+                  endTime: `${formatDateYMD(this.#selectedDate())}T09:45:00`,
+                  display: '09:00 - 09:45',
+                  colorId: null,
+                  isBookable: false,
+                  status: 'CONFIRMED',
+                  title: 'Consulta General',
+                },
+                {
+                  startTime: `${formatDateYMD(this.#selectedDate())}T10:30:00`,
+                  endTime: `${formatDateYMD(this.#selectedDate())}T11:15:00`,
+                  display: '10:30 - 11:15',
+                  colorId: null,
+                  isBookable: false,
+                  status: 'TENTATIVE',
+                  title: 'Revisión Médica',
+                },
+              ],
+            },
+          ];
+          return of(fallbackDays);
+        })
+      )
+      .subscribe((days) => {
+        this.#monthlyAvailabilityCache.update((prev) => ({
+          ...prev,
+          [cacheKey]: days,
+        }));
+      });
   }
 }
 

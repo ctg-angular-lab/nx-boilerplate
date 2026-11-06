@@ -5,6 +5,7 @@ import {
   isoOrTimeToMinutes,
   getStatusLabel,
   buildTimeGridRows,
+  computeMonthlyKpis,
   computeWeeklyKpis,
   extractInitials,
   assignDoctorColorTheme,
@@ -228,6 +229,55 @@ describe('dashboard-calendar.mapper', () => {
       expect(row0800?.layers[0].procedureTitle).toBeUndefined();
       expect(row0830?.layers[0].status).toBe('CONFIRMED');
       expect(row0830?.layers[0].procedureTitle).toBe('Control Dermatológico');
+    });
+  });
+
+  describe('computeMonthlyKpis', () => {
+    it('debe calcular los KPIs del mes y generar los títulos dinámicos con el mes capitalizado', () => {
+      const mockDays: IDayAvailability[] = [
+        {
+          date: '2026-11-05',
+          dayName: 'Jueves',
+          isCalendarSynced: true,
+          isWorkingDay: true,
+          slots: [
+            { startTime: '09:00', endTime: '09:45', display: '09:00 - 09:45', title: 'Cita 1', colorId: null, isBookable: false, status: 'CONFIRMED' },
+            { startTime: '10:00', endTime: '10:45', display: '10:00 - 10:45', title: 'Cita 2', colorId: null, isBookable: false, status: 'TENTATIVE' },
+          ],
+        },
+        {
+          date: '2026-11-20',
+          dayName: 'Viernes',
+          isCalendarSynced: true,
+          isWorkingDay: true,
+          slots: [
+            { startTime: '11:00', endTime: '11:45', display: '11:00 - 11:45', title: 'Cita 3', colorId: null, isBookable: false, status: 'CONFIRMED' },
+            { startTime: '14:00', endTime: '14:45', display: '14:00 - 14:45', title: 'Cita 4', colorId: null, isBookable: false, status: 'TENTATIVE' },
+            { startTime: '15:00', endTime: '15:45', display: '15:00 - 15:45', title: 'Cita 5', colorId: null, isBookable: false, status: 'TENTATIVE' },
+          ],
+        },
+      ];
+
+      const testDate = new Date('2026-11-06T10:00:00');
+      const kpis = computeMonthlyKpis(mockDays, testDate);
+
+      expect(kpis.confirmedCount).toBe(2);
+      expect(kpis.scheduledCount).toBe(3);
+      expect(kpis.monthName).toBe('Noviembre');
+      expect(kpis.monthYearLabel).toBe('Noviembre 2026');
+      expect(kpis.confirmedTitle).toBe('Citas de Noviembre Confirmadas');
+      expect(kpis.scheduledTitle).toBe('Citas de Noviembre Agendadas');
+    });
+
+    it('debe adaptar dinámicamente el título si la fecha activa es en otro mes (ej: Diciembre)', () => {
+      const decDate = new Date('2026-12-15T10:00:00');
+      const kpis = computeMonthlyKpis([], decDate);
+
+      expect(kpis.monthName).toBe('Diciembre');
+      expect(kpis.confirmedTitle).toBe('Citas de Diciembre Confirmadas');
+      expect(kpis.scheduledTitle).toBe('Citas de Diciembre Agendadas');
+      expect(kpis.confirmedCount).toBe(0);
+      expect(kpis.scheduledCount).toBe(0);
     });
   });
 

@@ -55,21 +55,21 @@
     }
   </header>
 
-  <!-- FILA 2: Fila de 2 Tarjetas KPI Semanales -->
-  <section class="kpi-metrics-row" aria-label="Indicadores semanales de citas">
-    <!-- KPI 1: Citas de la Semana Confirmadas -->
+  <!-- FILA 2: Fila de 2 Tarjetas KPI Mensuales con Títulos Contextuales -->
+  <section class="kpi-metrics-row" aria-label="Indicadores mensuales de citas">
+    <!-- KPI 1: Citas del Mes Confirmadas (ej: "Citas de Noviembre Confirmadas") -->
     <lib-metric-card
-      title="Citas de la Semana Confirmadas"
-      [value]="state.weeklyKpis().confirmedCount"
-      [subtitle]="'Semana del ' + state.weeklyKpis().weekRangeLabel"
+      [title]="state.monthlyKpis().confirmedTitle"
+      [value]="state.monthlyKpis().confirmedCount"
+      [subtitle]="'Total acumulado de ' + state.monthlyKpis().monthYearLabel"
       icon="check_circle"
       variant="primary"
     />
 
-    <!-- KPI 2: Citas de la Semana Agendadas -->
+    <!-- KPI 2: Citas del Mes Agendadas (ej: "Citas de Noviembre Agendadas") -->
     <lib-metric-card
-      title="Citas de la Semana Agendadas"
-      [value]="state.weeklyKpis().scheduledCount"
+      [title]="state.monthlyKpis().scheduledTitle"
+      [value]="state.monthlyKpis().scheduledCount"
       [subtitle]="'Pendientes de confirmación'"
       icon="event_available"
       variant="secondary"

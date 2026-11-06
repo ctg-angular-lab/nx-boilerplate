@@ -5,6 +5,7 @@ import {
   DOCTOR_COLOR_THEMES,
   IDashboardDoctor,
   IDashboardDoctorCell,
+  IDashboardMonthlyKpis,
   IDashboardTimeRow,
   IDashboardWeeklyKpis,
   IOverlayGeometry,
@@ -249,7 +250,47 @@ export function buildTimeGridRows(
 }
 
 /**
- * Computa la sumatoria de citas confirmadas y agendadas para la semana del médico activo
+ * Computa la sumatoria de citas confirmadas y agendadas para el mes completo de la fecha activa
+ * con títulos contextuales adaptados al mes.
+ */
+export function computeMonthlyKpis(
+  monthlyAvailability: readonly IDayAvailability[] | undefined,
+  activeDate: Date
+): IDashboardMonthlyKpis {
+  const d = activeDate || new Date();
+  const rawMonthName = new Intl.DateTimeFormat('es-CO', { month: 'long' }).format(d);
+  const monthName = rawMonthName.charAt(0).toUpperCase() + rawMonthName.slice(1);
+  const monthYearLabel = `${monthName} ${d.getFullYear()}`;
+
+  let confirmedCount = 0;
+  let scheduledCount = 0;
+
+  if (monthlyAvailability && monthlyAvailability.length > 0) {
+    for (const day of monthlyAvailability) {
+      if (!day.slots) continue;
+      for (const slot of day.slots) {
+        if (slot.status === 'CONFIRMED') {
+          confirmedCount++;
+        } else if (slot.status === 'TENTATIVE') {
+          scheduledCount++;
+        }
+      }
+    }
+  }
+
+  return {
+    confirmedCount,
+    scheduledCount,
+    monthName,
+    monthYearLabel,
+    confirmedTitle: `Citas de ${monthName} Confirmadas`,
+    scheduledTitle: `Citas de ${monthName} Agendadas`,
+    weekRangeLabel: monthYearLabel,
+  };
+}
+
+/**
+ * Computa la sumatoria de citas confirmadas y agendadas para la semana del médico activo (retrocompatibilidad)
  */
 export function computeWeeklyKpis(
   weeklyAvailability: readonly IDayAvailability[] | undefined,
@@ -274,6 +315,10 @@ export function computeWeeklyKpis(
   return {
     confirmedCount,
     scheduledCount,
+    monthName: 'Mes',
+    monthYearLabel: weekRangeLabel,
+    confirmedTitle: 'Citas Confirmadas',
+    scheduledTitle: 'Citas Agendadas',
     weekRangeLabel,
   };
 }

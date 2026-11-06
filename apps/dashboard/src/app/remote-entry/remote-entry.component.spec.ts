@@ -90,8 +90,8 @@ describe('RemoteEntryComponent', () => {
 
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('Dr(a). Alejandro Gómez');
-    expect(compiled.textContent).toContain('Citas de la Semana Confirmadas');
-    expect(compiled.textContent).toContain('Citas de la Semana Agendadas');
+    expect(compiled.textContent).toContain(component.state.monthlyKpis().confirmedTitle);
+    expect(compiled.textContent).toContain(component.state.monthlyKpis().scheduledTitle);
     expect(compiled.textContent).toContain('Otros calendarios');
     expect(compiled.textContent).toContain('Calendario fecha actual');
     expect(component.calendarDays().length).toBe(42);
