@@ -208,7 +208,6 @@
 
           .patient-name {
             font-size: 0.75rem;
-            opacity: 0.85;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -229,7 +228,6 @@
         &--blocked {
           background-color: var(--sys-color-surface-container-highest, #d9dae0);
           color: var(--sys-color-on-surface-variant, #41474e);
-          opacity: 0.75;
         }
 
         &--lunch {
@@ -240,13 +238,11 @@
         &--available {
           background-color: var(--sys-color-surface-container-low, #f0f0f7);
           color: var(--sys-color-on-surface-variant, #41474e);
-          opacity: 0.85;
         }
 
         &--out {
           background-color: var(--sys-color-surface-container, #e7e8ee);
           color: var(--sys-color-outline, #71777f);
-          opacity: 0.5;
         }
       }
     }
