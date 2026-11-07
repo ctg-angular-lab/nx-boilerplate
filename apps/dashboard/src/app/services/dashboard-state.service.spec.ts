@@ -240,6 +240,7 @@ describe('DashboardStateService', () => {
       expect(kpis.scheduledTitle).toContain('Agendadas');
       expect(kpis.monthName.length).toBeGreaterThan(0);
       expect(kpis.monthYearLabel.length).toBeGreaterThan(0);
+      expect(kpis.nextAvailableDate).toBeDefined();
     });
   });
 });

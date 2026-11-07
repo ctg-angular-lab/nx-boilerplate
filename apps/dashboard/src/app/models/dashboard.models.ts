@@ -104,6 +104,7 @@ export interface IDashboardMonthlyKpis {
   readonly monthYearLabel: string;
   readonly confirmedTitle: string;
   readonly scheduledTitle: string;
+  readonly nextAvailableDate: string;
   readonly weekRangeLabel?: string;
 }
 

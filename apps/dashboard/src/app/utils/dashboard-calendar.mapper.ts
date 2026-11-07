@@ -1,5 +1,5 @@
 import { IDayAvailability, ISlotDisplay } from '@nx-boilerplate/api-interfaces';
-import { formatDateYMD, removeDiacritics } from '@nx-boilerplate/utils';
+import { formatDateYMD, getColombiaToday, removeDiacritics } from '@nx-boilerplate/utils';
 import {
   DashboardSlotStatus,
   DOCTOR_COLOR_THEMES,
@@ -250,6 +250,45 @@ export function buildTimeGridRows(
 }
 
 /**
+ * Busca la fecha del próximo turno disponible en el mes y la formatea en DD/MM/YYYY
+ */
+export function findNextAvailableDate(
+  monthlyAvailability: readonly IDayAvailability[] | undefined,
+  referenceDate: Date = getColombiaToday()
+): string {
+  if (!monthlyAvailability || monthlyAvailability.length === 0) {
+    return 'Sin Cupos este mes';
+  }
+
+  const todayStr = formatDateYMD(referenceDate);
+  const currentMinutes = referenceDate.getHours() * 60 + referenceDate.getMinutes();
+
+  // Ordenar días cronológicamente
+  const sortedDays = [...monthlyAvailability].sort((a, b) => a.date.localeCompare(b.date));
+
+  for (const day of sortedDays) {
+    if (day.date < todayStr || !day.slots || day.slots.length === 0) continue;
+
+    const isToday = day.date === todayStr;
+    const availableSlot = day.slots.find((slot) => {
+      if (slot.status !== 'AVAILABLE' || slot.isBookable !== true) return false;
+      if (isToday) {
+        const slotMinutes = isoOrTimeToMinutes(slot.startTime);
+        return slotMinutes >= currentMinutes;
+      }
+      return true;
+    });
+
+    if (availableSlot) {
+      const [year, month, d] = day.date.split('-');
+      return `${d}/${month}/${year}`;
+    }
+  }
+
+  return 'Sin Cupos este mes';
+}
+
+/**
  * Computa la sumatoria de citas confirmadas y agendadas para el mes completo de la fecha activa
  * con títulos contextuales adaptados al mes.
  */
@@ -278,6 +317,8 @@ export function computeMonthlyKpis(
     }
   }
 
+  const nextAvailableDate = findNextAvailableDate(monthlyAvailability, d);
+
   return {
     confirmedCount,
     scheduledCount,
@@ -285,6 +326,7 @@ export function computeMonthlyKpis(
     monthYearLabel,
     confirmedTitle: `Citas de ${monthName} Confirmadas`,
     scheduledTitle: `Citas de ${monthName} Agendadas`,
+    nextAvailableDate,
     weekRangeLabel: monthYearLabel,
   };
 }
@@ -319,6 +361,7 @@ export function computeWeeklyKpis(
     monthYearLabel: weekRangeLabel,
     confirmedTitle: 'Citas Confirmadas',
     scheduledTitle: 'Citas Agendadas',
+    nextAvailableDate: 'Sin Cupos este mes',
     weekRangeLabel,
   };
 }

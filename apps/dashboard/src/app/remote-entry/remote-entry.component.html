@@ -55,7 +55,7 @@
     }
   </header>
 
-  <!-- FILA 2: Fila de 2 Tarjetas KPI Mensuales con Títulos Contextuales -->
+  <!-- FILA 2: Fila de 3 Tarjetas KPI Mensuales con Títulos Contextuales -->
   <section class="kpi-metrics-row" aria-label="Indicadores mensuales de citas">
     <!-- KPI 1: Citas del Mes Confirmadas (ej: "Citas de Noviembre Confirmadas") -->
     <lib-metric-card
@@ -73,6 +73,14 @@
       [subtitle]="'Pendientes de confirmación'"
       icon="event_available"
       variant="secondary"
+    />
+
+    <!-- KPI 3: Próximo Espacio Disponible -->
+    <lib-metric-card
+      title="Proximo espacio disponible"
+      [value]="state.monthlyKpis().nextAvailableDate"
+      icon="calendar_add_on"
+      variant="tertiary"
     />
   </section>
 

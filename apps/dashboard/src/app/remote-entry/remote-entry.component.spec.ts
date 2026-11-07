@@ -92,6 +92,7 @@ describe('RemoteEntryComponent', () => {
     expect(compiled.textContent).toContain('Dr(a). Alejandro Gómez');
     expect(compiled.textContent).toContain(component.state.monthlyKpis().confirmedTitle);
     expect(compiled.textContent).toContain(component.state.monthlyKpis().scheduledTitle);
+    expect(compiled.textContent).toContain('Proximo espacio disponible');
     expect(compiled.textContent).toContain('Otros calendarios');
     expect(compiled.textContent).toContain('Calendario — ');
     expect(component.calendarDays().length).toBe(42);

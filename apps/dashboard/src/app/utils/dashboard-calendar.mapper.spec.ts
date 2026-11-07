@@ -8,6 +8,7 @@ import {
   computeMonthlyKpis,
   computeWeeklyKpis,
   extractInitials,
+  findNextAvailableDate,
   assignDoctorColorTheme,
 } from './dashboard-calendar.mapper';
 import { IDashboardDoctor } from '../models/dashboard.models';
@@ -278,6 +279,40 @@ describe('dashboard-calendar.mapper', () => {
       expect(kpis.scheduledTitle).toBe('Citas de Diciembre Agendadas');
       expect(kpis.confirmedCount).toBe(0);
       expect(kpis.scheduledCount).toBe(0);
+    });
+  });
+
+  describe('findNextAvailableDate', () => {
+    it('debe encontrar el primer día con turno disponible posterior a la fecha de referencia y formatearlo en DD/MM/YYYY', () => {
+      const mockDays: IDayAvailability[] = [
+        {
+          date: '2026-11-05',
+          dayName: 'Jueves',
+          isCalendarSynced: true,
+          isWorkingDay: true,
+          slots: [
+            { startTime: '09:00', endTime: '09:45', display: '09:00 - 09:45', title: 'Cita', colorId: null, isBookable: false, status: 'CONFIRMED' },
+          ],
+        },
+        {
+          date: '2026-11-10',
+          dayName: 'Martes',
+          isCalendarSynced: true,
+          isWorkingDay: true,
+          slots: [
+            { startTime: '08:00', endTime: '08:45', display: '08:00 - 08:45', title: 'Libre', colorId: null, isBookable: true, status: 'AVAILABLE' },
+          ],
+        },
+      ];
+
+      const refDate = new Date('2026-11-06T08:00:00');
+      const nextDate = findNextAvailableDate(mockDays, refDate);
+      expect(nextDate).toBe('10/11/2026');
+    });
+
+    it('debe retornar "Sin Cupos este mes" si no hay slots disponibles o el arreglo es vacío', () => {
+      expect(findNextAvailableDate([])).toBe('Sin Cupos este mes');
+      expect(findNextAvailableDate(undefined)).toBe('Sin Cupos este mes');
     });
   });
 
