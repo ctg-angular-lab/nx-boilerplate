@@ -19,6 +19,7 @@ describe('RemoteEntryComponent', () => {
     loadPatients: ReturnType<typeof vi.fn>;
     loadDoctors: ReturnType<typeof vi.fn>;
     loadProcedures: ReturnType<typeof vi.fn>;
+    clearSelectedPatient: ReturnType<typeof vi.fn>;
     setActiveTab: ReturnType<typeof vi.fn>;
     directoryRows: ReturnType<typeof signal<unknown[]>>;
     clinicalRecordRows: ReturnType<typeof signal<unknown[]>>;
@@ -34,6 +35,7 @@ describe('RemoteEntryComponent', () => {
       loadPatients: vi.fn(),
       loadDoctors: vi.fn(),
       loadProcedures: vi.fn(),
+      clearSelectedPatient: vi.fn(),
       setActiveTab: vi.fn(),
       directoryRows: signal([]),
       clinicalRecordRows: signal([]),
@@ -54,11 +56,18 @@ describe('RemoteEntryComponent', () => {
     fixture.detectChanges();
   });
 
-  it('debe crearse e inicializar la carga de pacientes, doctores y procedimientos', () => {
+  it('debe crearse e inicializar la carga de pacientes, doctores y procedimientos, reseteando paciente previo', () => {
     expect(component).toBeTruthy();
+    expect(mockHistorialService.clearSelectedPatient).toHaveBeenCalled();
     expect(mockHistorialService.loadPatients).toHaveBeenCalled();
     expect(mockHistorialService.loadDoctors).toHaveBeenCalled();
     expect(mockHistorialService.loadProcedures).toHaveBeenCalled();
+  });
+
+  it('debe invocar clearSelectedPatient al destruirse el componente', () => {
+    mockHistorialService.clearSelectedPatient.mockClear();
+    component.ngOnDestroy();
+    expect(mockHistorialService.clearSelectedPatient).toHaveBeenCalledTimes(1);
   });
 
   it('debe configurar 2 pestañas y actualizar el label del expediente dinámicamente', () => {

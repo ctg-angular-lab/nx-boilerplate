@@ -6,6 +6,8 @@ import {
   viewChild,
   TemplateRef,
   computed,
+  OnInit,
+  OnDestroy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -32,8 +34,21 @@ import { AppointmentLogicService } from '../services/appointment-logic.service';
   styleUrl: './remote-entry.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class RemoteEntryComponent {
+export class RemoteEntryComponent implements OnInit, OnDestroy {
   protected readonly appointmentLogic = inject(AppointmentLogicService);
+
+  ngOnInit(): void {
+    this.resetBookingFlow();
+  }
+
+  ngOnDestroy(): void {
+    this.resetBookingFlow();
+  }
+
+  private resetBookingFlow(): void {
+    this.appointmentLogic.setActiveTab(AGENDADOR_TABS.FORM);
+    this.appointmentLogic.clearBookingContext();
+  }
 
   // Query Signals de los ng-template proyectados en la vista
   private readonly appointmentTpl =

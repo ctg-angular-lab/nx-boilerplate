@@ -142,7 +142,14 @@ describe('RemoteEntryComponent (Procedimientos Tab Host)', () => {
   });
 
   it('no debe actualizar activeTab si el tabId recibido es inválido o no reconocido', () => {
+    mockService.setActiveTab.mockClear();
     component.onActiveTabChange('invalid-tab-id' as unknown as ProcedimientosTabId);
     expect(mockService.setActiveTab).not.toHaveBeenCalled();
+  });
+
+  it('debe resetear a la pestaña LIST al destruirse el componente', () => {
+    mockService.setActiveTab.mockClear();
+    component.ngOnDestroy();
+    expect(mockService.setActiveTab).toHaveBeenCalledWith(PROCEDIMIENTOS_TABS.LIST);
   });
 });

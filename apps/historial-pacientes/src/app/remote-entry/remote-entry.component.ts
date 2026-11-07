@@ -4,6 +4,8 @@ import {
   TemplateRef,
   computed,
   inject,
+  OnInit,
+  OnDestroy,
   viewChild,
 } from '@angular/core';
 import {
@@ -30,7 +32,7 @@ import { HistorialPacientesService } from '../services/historial-pacientes.servi
   styleUrl: './remote-entry.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class RemoteEntryComponent {
+export class RemoteEntryComponent implements OnInit, OnDestroy {
   readonly service = inject(HistorialPacientesService);
 
   readonly directoryTabTpl = viewChild<TemplateRef<unknown>>('directoryTab');
@@ -58,10 +60,15 @@ export class RemoteEntryComponent {
     ];
   });
 
-  constructor() {
+  ngOnInit(): void {
+    this.service.clearSelectedPatient();
     this.service.loadPatients();
     this.service.loadDoctors();
     this.service.loadProcedures();
+  }
+
+  ngOnDestroy(): void {
+    this.service.clearSelectedPatient();
   }
 
   onActiveTabChange(tabId: string | number | undefined): void {
