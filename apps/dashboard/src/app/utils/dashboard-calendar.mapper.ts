@@ -88,6 +88,20 @@ export function isoOrTimeToMinutes(value: string): number {
 }
 
 /**
+ * Convierte una hora (string 'HH:mm' o ISO) a formato 12 horas con sufijo am/pm (ej: '9:00 am', '2:30 pm')
+ */
+export function formatTime12h(timeStr: string): string {
+  if (!timeStr) return '';
+  const totalMinutes = isoOrTimeToMinutes(timeStr);
+  const hours24 = Math.floor(totalMinutes / 60) % 24;
+  const minutes = totalMinutes % 60;
+  const period = hours24 >= 12 ? 'pm' : 'am';
+  const hours12 = hours24 % 12 || 12;
+  const minutesPadded = minutes.toString().padStart(2, '0');
+  return `${hours12}:${minutesPadded} ${period}`;
+}
+
+/**
  * Determina si una fecha corresponde a un día laborable del profesional
  */
 export function isDoctorWorkingOnDate(
@@ -281,7 +295,8 @@ export function findNextAvailableDate(
 
     if (availableSlot) {
       const [year, month, d] = day.date.split('-');
-      return `${d}/${month}/${year}`;
+      const timeStr = formatTime12h(availableSlot.startTime);
+      return timeStr ? `${d}/${month}/${year} - ${timeStr}` : `${d}/${month}/${year}`;
     }
   }
 

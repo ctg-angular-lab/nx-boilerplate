@@ -149,8 +149,8 @@ describe('RemoteEntryComponent', () => {
   });
 
   it('debe computar correctamente nextAvailableSubtitle y renderizar el subtitulo en <p class="metric-subtitle"> al haber cupos disponibles', () => {
-    // Inicialmente con mockAvailability, hay cupo el 20/11/2026
-    expect(component.state.monthlyKpis().nextAvailableDate).toBe('20/11/2026');
+    // Inicialmente con mockAvailability, hay cupo el 20/11/2026 a las 10:00 am
+    expect(component.state.monthlyKpis().nextAvailableDate).toBe('20/11/2026 - 10:00 am');
     expect(component.nextAvailableSubtitle()).toBe('Agendar en este espacio');
 
     fixture.detectChanges();

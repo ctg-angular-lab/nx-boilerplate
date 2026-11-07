@@ -9,6 +9,7 @@ import {
   computeWeeklyKpis,
   extractInitials,
   findNextAvailableDate,
+  formatTime12h,
   assignDoctorColorTheme,
 } from './dashboard-calendar.mapper';
 import { IDashboardDoctor } from '../models/dashboard.models';
@@ -282,8 +283,20 @@ describe('dashboard-calendar.mapper', () => {
     });
   });
 
+  describe('formatTime12h', () => {
+    it('debe formatear correctamente horas en formato 12 horas con am y pm', () => {
+      expect(formatTime12h('09:00')).toBe('9:00 am');
+      expect(formatTime12h('08:30')).toBe('8:30 am');
+      expect(formatTime12h('12:00')).toBe('12:00 pm');
+      expect(formatTime12h('14:45')).toBe('2:45 pm');
+      expect(formatTime12h('23:59')).toBe('11:59 pm');
+      expect(formatTime12h('00:00')).toBe('12:00 am');
+      expect(formatTime12h('')).toBe('');
+    });
+  });
+
   describe('findNextAvailableDate', () => {
-    it('debe encontrar el primer día con turno disponible posterior a la fecha de referencia y formatearlo en DD/MM/YYYY', () => {
+    it('debe encontrar el primer día con turno disponible posterior a la fecha de referencia y formatearlo en DD/MM/YYYY - h:mm a', () => {
       const mockDays: IDayAvailability[] = [
         {
           date: '2026-11-05',
@@ -307,7 +320,7 @@ describe('dashboard-calendar.mapper', () => {
 
       const refDate = new Date('2026-11-06T08:00:00');
       const nextDate = findNextAvailableDate(mockDays, refDate);
-      expect(nextDate).toBe('10/11/2026');
+      expect(nextDate).toBe('10/11/2026 - 8:00 am');
     });
 
     it('debe retornar "Sin Cupos este mes" si no hay slots disponibles o el arreglo es vacío', () => {
