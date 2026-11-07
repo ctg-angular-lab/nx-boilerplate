@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { of } from 'rxjs';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ApiClientService } from '@nx-boilerplate/data-access';
@@ -11,6 +12,9 @@ describe('RemoteEntryComponent', () => {
   let fixture: ComponentFixture<RemoteEntryComponent>;
   let apiClientMock: {
     get: ReturnType<typeof vi.fn>;
+  };
+  let routerMock: {
+    navigate: ReturnType<typeof vi.fn>;
   };
 
   const mockDoctors: IActiveProfessional[] = [
@@ -60,15 +64,41 @@ describe('RemoteEntryComponent', () => {
         },
       ],
     },
+    {
+      date: '2026-11-20',
+      dayName: 'Viernes',
+      isCalendarSynced: true,
+      isWorkingDay: true,
+      slots: [
+        {
+          startTime: '10:00',
+          endTime: '10:45',
+          display: '10:00 - 10:45',
+          colorId: null,
+          isBookable: true,
+          status: 'AVAILABLE',
+          title: 'Espacio Libre',
+        },
+      ],
+    },
   ];
 
   beforeEach(async () => {
     apiClientMock = {
-      get: vi.fn().mockImplementation((url: string) => {
+      get: vi.fn().mockImplementation((url: string, options?: { params?: { doctorCedula?: string } }) => {
         if (url === '/api/doctors') return of({ data: mockDoctors });
-        if (url === '/api/appointments/available-dates') return of({ data: mockAvailability });
+        if (url === '/api/appointments/available-dates') {
+          if (options?.params?.doctorCedula === '1002') {
+            return of({ data: [] });
+          }
+          return of({ data: mockAvailability });
+        }
         return of({ data: [] });
       }),
+    };
+
+    routerMock = {
+      navigate: vi.fn(),
     };
 
     await TestBed.configureTestingModule({
@@ -76,6 +106,7 @@ describe('RemoteEntryComponent', () => {
       providers: [
         DashboardStateService,
         { provide: ApiClientService, useValue: apiClientMock },
+        { provide: Router, useValue: routerMock },
       ],
     }).compileComponents();
 
@@ -124,5 +155,38 @@ describe('RemoteEntryComponent', () => {
     component.onGoToToday();
     const today = new Date();
     expect(state.selectedDate().toDateString()).toBe(today.toDateString());
+  });
+
+  it('debe navegar a /agendador-citas al invocar onScheduleNextAvailableSlot', () => {
+    component.onScheduleNextAvailableSlot();
+    expect(routerMock.navigate).toHaveBeenCalledWith(['/agendador-citas']);
+  });
+
+  it('debe computar correctamente nextAvailableSubtitle y su estado interactivo al haber cupos disponibles', () => {
+    // Inicialmente con mockAvailability, hay cupo el 20/11/2026
+    expect(component.state.monthlyKpis().nextAvailableDate).toBe('20/11/2026');
+    expect(component.nextAvailableSubtitle()).toBe('Agendar en este espacio');
+    expect(component.isNextAvailableClickable()).toBe(true);
+
+    fixture.detectChanges();
+    const subtitleBtn = fixture.nativeElement.querySelector('.metric-subtitle-btn');
+    expect(subtitleBtn).toBeTruthy();
+    expect(subtitleBtn.textContent).toContain('Agendar en este espacio');
+
+    subtitleBtn.click();
+    expect(routerMock.navigate).toHaveBeenCalledWith(['/agendador-citas']);
+  });
+
+  it('debe mantener nextAvailableSubtitle vacío y ocultar el botón cuando no hay cupos disponibles', () => {
+    // Al seleccionar el doctor 1002 que no tiene cupos disponibles
+    component.onDoctorSelect('1002');
+    fixture.detectChanges();
+
+    expect(component.state.monthlyKpis().nextAvailableDate).toBe('Sin Cupos este mes');
+    expect(component.nextAvailableSubtitle()).toBe('');
+    expect(component.isNextAvailableClickable()).toBe(false);
+
+    const subtitleBtn = fixture.nativeElement.querySelector('.metric-subtitle-btn');
+    expect(subtitleBtn).toBeNull();
   });
 });

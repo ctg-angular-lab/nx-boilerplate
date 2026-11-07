@@ -79,6 +79,9 @@
     <lib-metric-card
       title="Proximo espacio disponible"
       [value]="state.monthlyKpis().nextAvailableDate"
+      [subtitle]="nextAvailableSubtitle()"
+      [subtitleClickable]="isNextAvailableClickable()"
+      (subtitleClick)="onScheduleNextAvailableSlot()"
       icon="calendar_add_on"
       variant="tertiary"
     />

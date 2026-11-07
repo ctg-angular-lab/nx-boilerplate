@@ -99,6 +99,38 @@
       color: var(--sys-color-on-surface-variant);
     }
 
+    .metric-subtitle-btn {
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--sys-color-primary);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      transition: color 0.15s ease, gap 0.15s ease;
+
+      &:hover {
+        color: var(--sys-color-primary-container, var(--sys-color-primary));
+        gap: 6px;
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--sys-color-primary);
+        outline-offset: 2px;
+        border-radius: 2px;
+      }
+
+      .subtitle-arrow {
+        font-size: 14px;
+      }
+    }
+
     .card-chart-slot {
       margin-top: 8px;
     }

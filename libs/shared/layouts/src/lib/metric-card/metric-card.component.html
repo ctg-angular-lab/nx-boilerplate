@@ -39,7 +39,18 @@
     </div>
 
     @if (subtitle()) {
-      <p class="metric-subtitle">{{ subtitle() }}</p>
+      @if (subtitleClickable()) {
+        <button
+          type="button"
+          class="metric-subtitle-btn"
+          (click)="subtitleClick.emit()"
+        >
+          <span>{{ subtitle() }}</span>
+          <span class="material-symbols-outlined subtitle-arrow">arrow_forward</span>
+        </button>
+      } @else {
+        <p class="metric-subtitle">{{ subtitle() }}</p>
+      }
     }
 
     <!-- Slot para inyectar micro-gráficas o contenido adicional -->
