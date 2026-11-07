@@ -7,7 +7,6 @@ import {
   signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -47,16 +46,11 @@ export interface IMiniCalendarDay {
 })
 export class RemoteEntryComponent implements OnInit {
   readonly state = inject(DashboardStateService);
-  readonly #router = inject(Router, { optional: true });
 
   readonly nextAvailableSubtitle = computed<string>(() => {
     return this.state.monthlyKpis().nextAvailableDate !== 'Sin Cupos este mes'
       ? 'Agendar en este espacio'
       : '';
-  });
-
-  readonly isNextAvailableClickable = computed<boolean>(() => {
-    return this.state.monthlyKpis().nextAvailableDate !== 'Sin Cupos este mes';
   });
 
   readonly weekdayLabels = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as const;
@@ -160,11 +154,5 @@ export class RemoteEntryComponent implements OnInit {
   onSlotClick(cell: IDashboardDoctorCell): void {
     // Hook preparado para la Etapa 2 (Acciones granulares de agendamiento/edición/modal)
     console.debug('Slot clickeado en etapa 1:', cell);
-  }
-
-  onScheduleNextAvailableSlot(): void {
-    if (this.#router) {
-      this.#router.navigate(['/agendador-citas']);
-    }
   }
 }

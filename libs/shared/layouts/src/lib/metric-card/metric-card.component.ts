@@ -17,12 +17,10 @@ export class MetricCardComponent {
   readonly title = input.required<string>();
   readonly value = input.required<string | number>();
   readonly subtitle = input<string>('');
-  readonly subtitleClickable = input<boolean>(false);
   readonly icon = input<string>('');
   readonly variant = input<'surface' | 'primary' | 'secondary' | 'tertiary'>('surface');
   readonly trend = input<{ value: string; direction: 'up' | 'down' | 'flat' } | null>(null);
   readonly actions = input<MetricCardAction[]>([]);
 
   readonly actionClick = output<string>();
-  readonly subtitleClick = output<void>();
 }
