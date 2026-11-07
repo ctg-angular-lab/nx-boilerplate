@@ -65,7 +65,7 @@ describe('DailyCascadeCalendarComponent', () => {
     expect(component).toBeTruthy();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('Calendario fecha actual');
+    expect(compiled.textContent).toContain('Calendario — Viernes, 6 de noviembre');
     expect(compiled.textContent).toContain('08:00');
     expect(compiled.textContent).toContain('Consulta General');
     expect(compiled.textContent).toContain('María Pérez');

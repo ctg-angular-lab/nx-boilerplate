@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   input,
   output,
 } from '@angular/core';
@@ -25,6 +26,17 @@ import {
 export class DailyCascadeCalendarComponent {
   /** Fecha activa en visualización */
   readonly selectedDate = input.required<Date>();
+
+  /** Título dinámico que integra el día activo (ej. "Calendario — Viernes, 6 de noviembre") */
+  readonly calendarTitle = computed<string>(() => {
+    const date = this.selectedDate();
+    if (!date) return 'Calendario';
+    const weekday = new Intl.DateTimeFormat('es-CO', { weekday: 'long' }).format(date);
+    const capitalizedWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+    const day = date.getDate();
+    const month = new Intl.DateTimeFormat('es-CO', { month: 'long' }).format(date);
+    return `Calendario — ${capitalizedWeekday}, ${day} de ${month}`;
+  });
 
   /** Filas de la grilla horaria proyectadas a 30 min con las capas apiladas */
   readonly timeGridRows = input.required<readonly IDashboardTimeRow[]>();

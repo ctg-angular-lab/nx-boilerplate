@@ -4,11 +4,8 @@
     <div class="title-and-date">
       <div class="title-group">
         <mat-icon class="material-symbols-outlined title-icon">calendar_month</mat-icon>
-        <h3 class="title-text">Calendario fecha actual</h3>
+        <h3 class="title-text">{{ calendarTitle() }}</h3>
       </div>
-      <span class="formatted-date">
-        {{ selectedDate() | date: "EEEE, d 'de' MMMM 'de' yyyy" : '' : 'es-CO' }}
-      </span>
     </div>
 
     <!-- Controles Rápidos de Navegación Diaria -->

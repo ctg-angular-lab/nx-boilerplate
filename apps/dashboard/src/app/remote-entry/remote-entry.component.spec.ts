@@ -93,7 +93,7 @@ describe('RemoteEntryComponent', () => {
     expect(compiled.textContent).toContain(component.state.monthlyKpis().confirmedTitle);
     expect(compiled.textContent).toContain(component.state.monthlyKpis().scheduledTitle);
     expect(compiled.textContent).toContain('Otros calendarios');
-    expect(compiled.textContent).toContain('Calendario fecha actual');
+    expect(compiled.textContent).toContain('Calendario — ');
     expect(component.calendarDays().length).toBe(42);
   });
 

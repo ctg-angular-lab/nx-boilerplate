@@ -40,13 +40,6 @@
           color: var(--sys-color-on-surface, #191c20);
         }
       }
-
-      .formatted-date {
-        font-size: 0.875rem;
-        color: var(--sys-color-on-surface-variant, #41474e);
-        text-transform: capitalize;
-        padding-left: 34px;
-      }
     }
 
     .calendar-controls {
