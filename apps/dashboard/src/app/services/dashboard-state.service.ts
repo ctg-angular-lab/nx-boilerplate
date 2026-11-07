@@ -260,6 +260,23 @@ export class DashboardStateService {
   }
 
   /**
+   * Restablece las selecciones del dashboard a sus valores iniciales por defecto:
+   * - Fecha activa al día de hoy (Colombia)
+   * - Sin médicos adicionales comparados (limpieza de capas)
+   * - Médico activo seleccionado al primero del catálogo
+   */
+  resetToDefaults(): void {
+    this.#selectedDate.set(getColombiaToday());
+    this.#comparedDoctorCedulas.set([]);
+    const docs = this.#doctors();
+    if (docs.length > 0) {
+      this.#selectedDoctorCedula.set(docs[0].cedula);
+    }
+    this.loadWeeklyAvailabilityForActiveLayers();
+    this.loadMonthlyAvailabilityForActiveDoctor();
+  }
+
+  /**
    * Cambia el médico principal. Si el médico estaba marcado para comparar, lo desmarca.
    */
   selectDoctor(cedula: string): void {

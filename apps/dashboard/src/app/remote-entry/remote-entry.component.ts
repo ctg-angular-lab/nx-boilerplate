@@ -4,6 +4,7 @@ import {
   computed,
   inject,
   OnInit,
+  OnDestroy,
   signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -44,7 +45,7 @@ export interface IMiniCalendarDay {
   styleUrl: './remote-entry.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class RemoteEntryComponent implements OnInit {
+export class RemoteEntryComponent implements OnInit, OnDestroy {
   readonly state = inject(DashboardStateService);
 
   readonly nextAvailableSubtitle = computed<string>(() => {
@@ -107,6 +108,17 @@ export class RemoteEntryComponent implements OnInit {
 
   ngOnInit(): void {
     this.state.loadDoctors();
+    this.resetDashboardView();
+  }
+
+  ngOnDestroy(): void {
+    this.resetDashboardView();
+  }
+
+  private resetDashboardView(): void {
+    this.state.resetToDefaults();
+    const today = getColombiaToday();
+    this.#displayedMonth.set(new Date(today.getFullYear(), today.getMonth(), 1));
   }
 
   onDoctorSelect(cedula: string): void {

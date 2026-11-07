@@ -178,4 +178,10 @@ describe('RemoteEntryComponent', () => {
     const subtitleEl = thirdCard.querySelector('.metric-subtitle');
     expect(subtitleEl).toBeNull();
   });
+
+  it('debe invocar resetToDefaults en el state al destruirse el componente', () => {
+    const resetSpy = vi.spyOn(component.state, 'resetToDefaults');
+    component.ngOnDestroy();
+    expect(resetSpy).toHaveBeenCalledTimes(1);
+  });
 });

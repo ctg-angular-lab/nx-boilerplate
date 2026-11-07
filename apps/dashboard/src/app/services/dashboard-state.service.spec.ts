@@ -243,4 +243,28 @@ describe('DashboardStateService', () => {
       expect(kpis.nextAvailableDate).toBeDefined();
     });
   });
+
+  describe('resetToDefaults', () => {
+    it('debe restablecer la fecha a hoy, limpiar médicos comparados y seleccionar el primer médico', () => {
+      apiClientMock.get.mockImplementation((url: string) => {
+        if (url === '/api/doctors') return of({ data: mockDoctors });
+        if (url === '/api/appointments/available-dates') return of({ data: mockAvailability });
+        return of({ data: [] });
+      });
+
+      service.loadDoctors();
+      service.selectDoctor('1002');
+      service.toggleComparedDoctor('1003');
+      service.navigateRelativeDays(5);
+
+      expect(service.activeDoctor()?.cedula).toBe('1002');
+      expect(service.comparedDoctorCedulas().length).toBe(1);
+
+      service.resetToDefaults();
+
+      expect(service.activeDoctor()?.cedula).toBe('1001');
+      expect(service.comparedDoctorCedulas()).toEqual([]);
+      expect(service.selectedDate().toDateString()).toBe(new Date().toDateString());
+    });
+  });
 });
