@@ -314,8 +314,31 @@
   box-sizing: border-box;
   transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.2s ease, border-color 0.2s ease;
 
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    width: 100%;
+
+    &--simple {
+      justify-content: space-between;
+    }
+  }
+
+  &__duration-badge {
+    font-size: 0.62rem;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 6px;
+    background-color: var(--sys-color-surface-container, #eceef4);
+    color: var(--sys-color-on-surface-variant, #44474e);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
   &__time {
-    font-size: 0.60rem;
+    font-size: 0.65rem;
     font-weight: 600;
   }
 

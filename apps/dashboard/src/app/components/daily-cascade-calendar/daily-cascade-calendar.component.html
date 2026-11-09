@@ -71,47 +71,60 @@
           <!-- Pista Derecha: Capas Superpuestas en Cascada -->
           <div class="slots-track" role="cell">
             @for (cell of row.layers; track cell.doctorCedula) {
-              <div
-                class="slot-layer"
-                [class.slot-layer--primary]="cell.isPrimary"
-                [class.slot-layer--confirmed]="cell.status === 'CONFIRMED'"
-                [class.slot-layer--scheduled]="cell.status === 'SCHEDULED'"
-                [class.slot-layer--blocked]="cell.status === 'BLOCKED'"
-                [class.slot-layer--lunch]="cell.status === 'LUNCH'"
-                [class.slot-layer--available]="cell.status === 'AVAILABLE'"
-                [class.slot-layer--out]="cell.status === 'OUT_OF_HOURS'"
-                [style.width.%]="cell.geometry.widthPercent"
-                [style.left.%]="cell.geometry.leftPercent"
-                [style.z-index]="cell.geometry.zIndex"
-                [style.border-left-color]="cell.colorCssVar"
-                (click)="onSlotSelect(cell)"
-                tabindex="0"
-                role="button"
-                [attr.aria-label]="cell.doctorName + ' - ' + cell.statusLabel + (cell.procedureTitle ? ' - ' + cell.procedureTitle : '')"
-              >
-                <div class="slot-layer__content">
-                  <!-- Header del bloque: Médico + Estado -->
-                  <div class="slot-meta">
-                    <span
-                      class="doc-badge"
-                      [style.background-color]="cell.colorCssVar"
-                    >
-                      {{ cell.doctorInitials }}
-                    </span>
-                    <span class="status-tag">{{ cell.statusLabel }}</span>
-                  </div>
-
-                  <!-- Detalle de cita si está confirmada o agendada -->
-                  @if (cell.procedureTitle) {
-                    <div class="appointment-info">
-                      <span class="proc-title">{{ cell.procedureTitle }}</span>
-                      @if (cell.patientName) {
-                        <span class="patient-name">{{ cell.patientName }}</span>
+              @if (!cell.isContinuation) {
+                <div
+                  class="slot-layer"
+                  [class.slot-layer--primary]="cell.isPrimary"
+                  [class.slot-layer--confirmed]="cell.status === 'CONFIRMED'"
+                  [class.slot-layer--scheduled]="cell.status === 'SCHEDULED'"
+                  [class.slot-layer--blocked]="cell.status === 'BLOCKED'"
+                  [class.slot-layer--lunch]="cell.status === 'LUNCH'"
+                  [class.slot-layer--available]="cell.status === 'AVAILABLE'"
+                  [class.slot-layer--out]="cell.status === 'OUT_OF_HOURS'"
+                  [class.slot-layer--spanned]="(cell.spanRatio ?? 1) > 1"
+                  [style.width.%]="cell.geometry.widthPercent"
+                  [style.left.%]="cell.geometry.leftPercent"
+                  [style.height]="getCellHeightStyle(cell)"
+                  [style.bottom]="getCellHeightStyle(cell) ? 'auto' : '2px'"
+                  [style.z-index]="getCellZIndex(cell)"
+                  [style.border-left-color]="cell.colorCssVar"
+                  (click)="onSlotSelect(cell)"
+                  tabindex="0"
+                  role="button"
+                  [attr.aria-label]="cell.doctorName + ' - ' + cell.statusLabel + (cell.procedureTitle ? ' - ' + cell.procedureTitle : '') + (cell.durationMinutes ? ' (' + cell.durationMinutes + ' min)' : '')"
+                >
+                  <div class="slot-layer__content">
+                    <!-- Header del bloque: Médico + Estado -->
+                    <div class="slot-meta">
+                      <span
+                        class="doc-badge"
+                        [style.background-color]="cell.colorCssVar"
+                      >
+                        {{ cell.doctorInitials }}
+                      </span>
+                      <span class="status-tag">{{ cell.statusLabel }}</span>
+                      @if (cell.durationMinutes && (cell.status === 'CONFIRMED' || cell.status === 'SCHEDULED')) {
+                        <span class="duration-pill">
+                          @if (cell.timeRangeLabel) {
+                            {{ cell.timeRangeLabel }} ·
+                          }
+                          {{ cell.durationMinutes }} min
+                        </span>
                       }
                     </div>
-                  }
+
+                    <!-- Detalle de cita si está confirmada o agendada -->
+                    @if (cell.procedureTitle) {
+                      <div class="appointment-info">
+                        <span class="proc-title">{{ cell.procedureTitle }}</span>
+                        @if (cell.patientName) {
+                          <span class="patient-name">{{ cell.patientName }}</span>
+                        }
+                      </div>
+                    }
+                  </div>
                 </div>
-              </div>
+              }
             }
           </div>
         </div>

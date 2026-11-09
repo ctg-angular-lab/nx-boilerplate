@@ -62,7 +62,11 @@ export class RemoteEntryComponent implements OnInit, OnDestroy {
    */
   onActiveTabChange(id: string | number | undefined): void {
     if (typeof id === 'number') {
-      this.appointmentLogic.setActiveTab(id as AgendadorTabId);
+      const targetTab = id as AgendadorTabId;
+      if (targetTab !== AGENDADOR_TABS.CALENDAR && this.appointmentLogic.isBookingMode()) {
+        this.appointmentLogic.clearBookingContext();
+      }
+      this.appointmentLogic.setActiveTab(targetTab);
     }
   }
 

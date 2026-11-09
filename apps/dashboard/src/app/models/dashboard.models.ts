@@ -85,6 +85,10 @@ export interface IDashboardDoctorCell {
   readonly statusLabel: string;
   readonly procedureTitle?: string;
   readonly patientName?: string;
+  readonly durationMinutes?: number;
+  readonly timeRangeLabel?: string;
+  readonly spanRatio?: number;
+  readonly isContinuation?: boolean;
   readonly geometry: IOverlayGeometry;
 }
 

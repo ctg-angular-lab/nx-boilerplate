@@ -76,6 +76,49 @@ describe('AvailabilityService', () => {
     expect(result[0]).toHaveProperty('isWorkingDay');
     if (result[0].slots.length > 0) {
       expect(result[0].slots[0].display).toMatch(REGEX_TIME_SLOT_DISPLAY);
+      expect(result[0].slots[0].durationMinutes).toBe(45);
+    }
+  });
+
+  it('debe respetar duracionStandar variable y mantener intacta la duración real de citas agendadas sin fragmentarlas', async () => {
+    const startDate = new Date('2026-11-10T12:00:00.000Z');
+    const endDate = new Date('2026-11-10T12:00:00.000Z');
+
+    vi.spyOn(mockCalendarAdapter, 'getEventsInRange').mockResolvedValue([]);
+    vi.spyOn(mockAppointmentRepository, 'findByDoctorAndDateRange').mockResolvedValue([
+      {
+        doctorEmail: 'dr@example.com',
+        doctorCedula: '12345',
+        patientNationalId: '999',
+        patientFullName: 'Carlos Ruiz',
+        patientEmail: 'c@r.com',
+        procedureId: 'PROC-90',
+        procedureName: 'Rejuvenecimiento Facial',
+        startTime: new Date('2026-11-10T08:00:00-05:00'),
+        endTime: new Date('2026-11-10T09:30:00-05:00'),
+        status: 'CONFIRMED',
+        colorId: '10',
+      } as never,
+    ]);
+
+    const result = await service.getAvailableSlotsForRange(
+      'dr@example.com',
+      startDate,
+      endDate,
+      60
+    );
+
+    const day = result.find((d) => d.date === '2026-11-10');
+    expect(day).toBeDefined();
+
+    const confirmedSlots = day?.slots.filter((s) => s.status === 'CONFIRMED') ?? [];
+    expect(confirmedSlots.length).toBe(1);
+    expect(confirmedSlots[0].display).toBe('08:00 - 09:30');
+    expect(confirmedSlots[0].durationMinutes).toBe(90);
+
+    const availableSlots = day?.slots.filter((s) => s.status === 'AVAILABLE') ?? [];
+    for (const slot of availableSlots) {
+      expect(slot.durationMinutes).toBe(60);
     }
   });
 });

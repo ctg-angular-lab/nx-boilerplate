@@ -125,94 +125,235 @@ export class AvailabilityService {
         const { workStart, workEnd } = buildWorkWindow(dateStr, schedule);
         const lunch = buildLunchWindow(dateStr, schedule);
 
-        let currentSlotStart = new Date(workStart);
-        while (currentSlotStart.getTime() + slotDurationMs <= workEnd.getTime()) {
-          const currentSlotEnd = new Date(currentSlotStart.getTime() + slotDurationMs);
-          const sH = getCotTimeString(currentSlotStart);
-          const eH = getCotTimeString(currentSlotEnd);
-          const display = `${sH} - ${eH}`;
+        const fixedBlocks: Array<{ start: Date; end: Date; slot: ISlotDisplay }> = [];
+        const matchedGoogleIds = new Set<string>();
 
-          const matchingGoogle = googleEvents.find((evt) =>
-            currentSlotStart.getTime() < evt.end.getTime() && currentSlotEnd.getTime() > evt.start.getTime()
+        // 1. Citas registradas en MongoDB (conservando su duración y límites exactos)
+        const dayMongoAppointments = mongoAppointments.filter((apt) => {
+          const aptStart = new Date(apt.startTime).getTime();
+          const aptEnd = new Date(apt.endTime).getTime();
+          return aptStart < workEnd.getTime() && aptEnd > workStart.getTime();
+        });
+
+        for (const apt of dayMongoAppointments) {
+          const rawStart = new Date(apt.startTime);
+          const rawEnd = new Date(apt.endTime);
+          const blockStart = new Date(Math.max(rawStart.getTime(), workStart.getTime()));
+          const blockEnd = new Date(Math.min(rawEnd.getTime(), workEnd.getTime()));
+          if (blockEnd.getTime() <= blockStart.getTime()) continue;
+
+          const matchingGoogle = googleEvents.find(
+            (evt) =>
+              (apt.googleCalendarEventId && evt.id === apt.googleCalendarEventId) ||
+              (evt.isCreatedByApp &&
+                evt.start.getTime() < blockEnd.getTime() &&
+                evt.end.getTime() > blockStart.getTime())
           );
 
-          const matchingMongo = mongoAppointments.find((apt) => {
-            const aptStart = new Date(apt.startTime).getTime();
-            const aptEnd = new Date(apt.endTime).getTime();
-            return currentSlotStart.getTime() < aptEnd && currentSlotEnd.getTime() > aptStart;
-          });
-
-          const isLunch = lunch
-            ? currentSlotStart.getTime() < lunch.lunchEnd.getTime() && currentSlotStart.getTime() > lunch.lunchStart.getTime()
-            : false;
-
-          const matchedPatient = matchingMongo
-            ? {
-                cedula: matchingMongo.patientNationalId,
-                nombre: matchingMongo.patientFullName,
-                apellidos: '',
-                correo: matchingMongo.patientEmail,
-                celular: matchingMongo.patientPhone || '',
-              }
-            : undefined;
-
-          if (matchingGoogle) {
-            daySlots.push({
-              startTime: currentSlotStart.toISOString(),
-              endTime: currentSlotEnd.toISOString(),
-              display,
-              title: matchingGoogle.isCreatedByApp ? (matchingGoogle.summary || 'Cita Médica') : 'Espacio Cerrado',
-              status: matchingGoogle.isCreatedByApp ? matchingGoogle.derivedStatus : 'BLOCKED_PERSONAL',
-              colorId: matchingGoogle.isCreatedByApp ? matchingGoogle.colorId : null,
-              isBookable: false,
-              googleEventId: matchingGoogle.id,
-              ...(matchingGoogle.isCreatedByApp && matchedPatient ? { patient: matchedPatient } : {}),
-            });
-          } else if (matchingMongo) {
-            daySlots.push({
-              startTime: currentSlotStart.toISOString(),
-              endTime: currentSlotEnd.toISOString(),
-              display,
-              title: matchingMongo.procedureName || 'Cita Reservada',
-              status: (matchingMongo.status as SlotStatusType) || 'CONFIRMED',
-              colorId: matchingMongo.colorId || '5',
-              isBookable: false,
-              googleEventId: matchingMongo.googleCalendarEventId,
-              ...(matchedPatient ? { patient: matchedPatient } : {}),
-            });
-          } else if (isLunch) {
-            daySlots.push({
-              startTime: currentSlotStart.toISOString(),
-              endTime: currentSlotEnd.toISOString(),
-              display,
-              title: 'Almuerzo',
-              status: 'BLOCKED_PERSONAL',
-              colorId: null,
-              isBookable: false,
-            });
-          } else if (currentSlotStart.getTime() < Date.now()) {
-            daySlots.push({
-              startTime: currentSlotStart.toISOString(),
-              endTime: currentSlotEnd.toISOString(),
-              display,
-              title: 'Horario transcurrido',
-              status: 'BLOCKED_PERSONAL',
-              colorId: null,
-              isBookable: false,
-            });
-          } else {
-            daySlots.push({
-              startTime: currentSlotStart.toISOString(),
-              endTime: currentSlotEnd.toISOString(),
-              display,
-              title: 'Espacio disponible',
-              status: 'AVAILABLE',
-              colorId: null,
-              isBookable: true,
-            });
+          if (matchingGoogle?.id) {
+            matchedGoogleIds.add(matchingGoogle.id);
           }
 
-          currentSlotStart = new Date(currentSlotStart.getTime() + slotDurationMs);
+          const sH = getCotTimeString(blockStart);
+          const eH = getCotTimeString(blockEnd);
+          const durationMinutes = Math.max(
+            5,
+            Math.round((blockEnd.getTime() - blockStart.getTime()) / 60000)
+          );
+
+          const matchedPatient = {
+            cedula: apt.patientNationalId,
+            nombre: apt.patientFullName,
+            apellidos: '',
+            correo: apt.patientEmail,
+            celular: apt.patientPhone || '',
+          };
+
+          const resolvedStatus: SlotStatusType = matchingGoogle?.isCreatedByApp
+            ? matchingGoogle.derivedStatus
+            : (apt.status as SlotStatusType) || 'CONFIRMED';
+
+          const resolvedColorId = matchingGoogle?.isCreatedByApp
+            ? matchingGoogle.colorId
+            : apt.colorId || (resolvedStatus === 'CONFIRMED' ? '10' : '5');
+
+          const resolvedTitle = matchingGoogle?.isCreatedByApp
+            ? matchingGoogle.summary || apt.procedureName || 'Cita Médica'
+            : apt.procedureName || 'Cita Reservada';
+
+          fixedBlocks.push({
+            start: blockStart,
+            end: blockEnd,
+            slot: {
+              startTime: blockStart.toISOString(),
+              endTime: blockEnd.toISOString(),
+              display: `${sH} - ${eH}`,
+              durationMinutes,
+              title: resolvedTitle,
+              status: resolvedStatus,
+              colorId: resolvedColorId,
+              isBookable: false,
+              googleEventId: matchingGoogle?.id || apt.googleCalendarEventId,
+              patient: matchedPatient,
+            },
+          });
+        }
+
+        // 2. Eventos de Google Calendar no emparejados previamente con Mongo
+        const dayGoogleEvents = googleEvents.filter(
+          (evt) =>
+            !matchedGoogleIds.has(evt.id) &&
+            evt.start.getTime() < workEnd.getTime() &&
+            evt.end.getTime() > workStart.getTime()
+        );
+
+        for (const evt of dayGoogleEvents) {
+          const blockStart = new Date(Math.max(evt.start.getTime(), workStart.getTime()));
+          const blockEnd = new Date(Math.min(evt.end.getTime(), workEnd.getTime()));
+          if (blockEnd.getTime() <= blockStart.getTime()) continue;
+
+          // Evitar duplicar si ya colisiona completamente con una cita de Mongo
+          const overlapsExisting = fixedBlocks.some(
+            (b) =>
+              blockStart.getTime() < b.end.getTime() &&
+              blockEnd.getTime() > b.start.getTime()
+          );
+          if (overlapsExisting) continue;
+
+          const sH = getCotTimeString(blockStart);
+          const eH = getCotTimeString(blockEnd);
+          const durationMinutes = Math.max(
+            5,
+            Math.round((blockEnd.getTime() - blockStart.getTime()) / 60000)
+          );
+
+          fixedBlocks.push({
+            start: blockStart,
+            end: blockEnd,
+            slot: {
+              startTime: blockStart.toISOString(),
+              endTime: blockEnd.toISOString(),
+              display: `${sH} - ${eH}`,
+              durationMinutes,
+              title: evt.isCreatedByApp ? evt.summary || 'Cita Médica' : 'Espacio Cerrado',
+              status: evt.isCreatedByApp ? evt.derivedStatus : 'BLOCKED_PERSONAL',
+              colorId: evt.isCreatedByApp ? evt.colorId : null,
+              isBookable: false,
+              googleEventId: evt.id,
+            },
+          });
+        }
+
+        // 3. Ventana de almuerzo (si no colisiona con una cita ya agendada)
+        if (
+          lunch &&
+          lunch.lunchStart.getTime() < workEnd.getTime() &&
+          lunch.lunchEnd.getTime() > workStart.getTime()
+        ) {
+          const lunchStart = new Date(Math.max(lunch.lunchStart.getTime(), workStart.getTime()));
+          const lunchEnd = new Date(Math.min(lunch.lunchEnd.getTime(), workEnd.getTime()));
+          const overlapsAppointment = fixedBlocks.some(
+            (b) =>
+              lunchStart.getTime() < b.end.getTime() &&
+              lunchEnd.getTime() > b.start.getTime()
+          );
+
+          if (!overlapsAppointment && lunchEnd.getTime() > lunchStart.getTime()) {
+            const sH = getCotTimeString(lunchStart);
+            const eH = getCotTimeString(lunchEnd);
+            const durationMinutes = Math.max(
+              5,
+              Math.round((lunchEnd.getTime() - lunchStart.getTime()) / 60000)
+            );
+            fixedBlocks.push({
+              start: lunchStart,
+              end: lunchEnd,
+              slot: {
+                startTime: lunchStart.toISOString(),
+                endTime: lunchEnd.toISOString(),
+                display: `${sH} - ${eH}`,
+                durationMinutes,
+                title: 'Almuerzo',
+                status: 'BLOCKED_PERSONAL',
+                colorId: null,
+                isBookable: false,
+              },
+            });
+          }
+        }
+
+        // Ordenar bloques fijos cronológicamente
+        fixedBlocks.sort((a, b) => a.start.getTime() - b.start.getTime());
+
+        // 4. Rellenar las ventanas libres entre workStart, bloques fijos y workEnd con slots de procedureDurationMinutes
+        const fillFreeWindow = (gapStart: Date, gapEnd: Date): void => {
+          let currentSlotStart = new Date(gapStart);
+          while (currentSlotStart.getTime() + slotDurationMs <= gapEnd.getTime()) {
+            const currentSlotEnd = new Date(currentSlotStart.getTime() + slotDurationMs);
+            const sH = getCotTimeString(currentSlotStart);
+            const eH = getCotTimeString(currentSlotEnd);
+            const display = `${sH} - ${eH}`;
+
+            if (currentSlotStart.getTime() < Date.now()) {
+              daySlots.push({
+                startTime: currentSlotStart.toISOString(),
+                endTime: currentSlotEnd.toISOString(),
+                display,
+                durationMinutes: procedureDurationMinutes,
+                title: 'Horario transcurrido',
+                status: 'BLOCKED_PERSONAL',
+                colorId: null,
+                isBookable: false,
+              });
+            } else {
+              daySlots.push({
+                startTime: currentSlotStart.toISOString(),
+                endTime: currentSlotEnd.toISOString(),
+                display,
+                durationMinutes: procedureDurationMinutes,
+                title: 'Espacio disponible',
+                status: 'AVAILABLE',
+                colorId: null,
+                isBookable: true,
+              });
+            }
+
+            currentSlotStart = currentSlotEnd;
+          }
+
+          // Si queda un remanente >= 5 min donde no cabe el procedimiento completo, marcarlo como cerrado/transcurrido
+          const remnantMs = gapEnd.getTime() - currentSlotStart.getTime();
+          if (remnantMs >= 5 * 60 * 1000) {
+            const sH = getCotTimeString(currentSlotStart);
+            const eH = getCotTimeString(gapEnd);
+            const remnantMinutes = Math.round(remnantMs / 60000);
+            const isPastRemnant = currentSlotStart.getTime() < Date.now();
+            daySlots.push({
+              startTime: currentSlotStart.toISOString(),
+              endTime: gapEnd.toISOString(),
+              display: `${sH} - ${eH}`,
+              durationMinutes: remnantMinutes,
+              title: isPastRemnant ? 'Horario transcurrido' : 'Espacio Cerrado',
+              status: 'BLOCKED_PERSONAL',
+              colorId: null,
+              isBookable: false,
+            });
+          }
+        };
+
+        let cursor = new Date(workStart);
+        for (const block of fixedBlocks) {
+          if (block.start.getTime() > cursor.getTime()) {
+            fillFreeWindow(cursor, block.start);
+          }
+          daySlots.push(block.slot);
+          if (block.end.getTime() > cursor.getTime()) {
+            cursor = new Date(block.end);
+          }
+        }
+
+        if (workEnd.getTime() > cursor.getTime()) {
+          fillFreeWindow(cursor, workEnd);
         }
       }
 

@@ -196,6 +196,10 @@ export function buildTimeGridRows(
       let status: DashboardSlotStatus = 'AVAILABLE';
       let procedureTitle: string | undefined = undefined;
       let patientName: string | undefined = undefined;
+      let durationMinutes: number | undefined = undefined;
+      let timeRangeLabel: string | undefined = undefined;
+      let spanRatio = 1;
+      let isContinuation = false;
 
       if (!isWorkingHour) {
         status = 'OUT_OF_HOURS';
@@ -214,6 +218,13 @@ export function buildTimeGridRows(
         )[0];
 
         if (matchedSlot) {
+          const slotStart = isoOrTimeToMinutes(matchedSlot.startTime);
+          const slotEnd = isoOrTimeToMinutes(matchedSlot.endTime);
+          const computedDuration =
+            typeof matchedSlot.durationMinutes === 'number' && matchedSlot.durationMinutes > 0
+              ? matchedSlot.durationMinutes
+              : Math.max(5, slotEnd - slotStart);
+
           if (matchedSlot.patient) {
             patientName = `${matchedSlot.patient.nombre} ${matchedSlot.patient.apellidos}`.trim();
           }
@@ -221,18 +232,30 @@ export function buildTimeGridRows(
           if (matchedSlot.status === 'CONFIRMED') {
             status = 'CONFIRMED';
             procedureTitle = matchedSlot.title;
+            durationMinutes = computedDuration;
+            timeRangeLabel = matchedSlot.display;
+            isContinuation = slotStart < rowStart && rowStart > 8 * 60;
+            spanRatio = isContinuation ? 1 : Math.max(0.5, computedDuration / 30);
           } else if (matchedSlot.status === 'TENTATIVE') {
             status = 'SCHEDULED';
             procedureTitle = matchedSlot.title;
+            durationMinutes = computedDuration;
+            timeRangeLabel = matchedSlot.display;
+            isContinuation = slotStart < rowStart && rowStart > 8 * 60;
+            spanRatio = isContinuation ? 1 : Math.max(0.5, computedDuration / 30);
           } else if (matchedSlot.status === 'BLOCKED_PERSONAL') {
             if (matchedSlot.title?.toLowerCase() === 'almuerzo') {
               status = 'LUNCH';
             } else {
               status = 'BLOCKED';
               procedureTitle = matchedSlot.title;
+              durationMinutes = computedDuration;
+              timeRangeLabel = matchedSlot.display;
             }
           } else {
             status = 'AVAILABLE';
+            durationMinutes = computedDuration;
+            timeRangeLabel = matchedSlot.display;
           }
         }
       }
@@ -248,6 +271,10 @@ export function buildTimeGridRows(
         statusLabel: getStatusLabel(status),
         procedureTitle,
         patientName,
+        durationMinutes,
+        timeRangeLabel,
+        spanRatio,
+        isContinuation,
         geometry,
       });
     });

@@ -68,5 +68,28 @@ export class DailyCascadeCalendarComponent {
   onSlotSelect(cell: IDashboardDoctorCell): void {
     this.slotClick.emit(cell);
   }
+
+  /**
+   * Calcula la altura proporcional en CSS según el spanRatio del procedimiento respecto a la fila base de 30 min
+   */
+  getCellHeightStyle(cell: IDashboardDoctorCell): string | null {
+    const ratio = cell.spanRatio ?? 1;
+    if (ratio === 1) {
+      return null;
+    }
+    const percent = Math.round(ratio * 100);
+    return `calc(${percent}% - 4px)`;
+  }
+
+  /**
+   * Eleva el z-index de las citas confirmadas/agendadas que abarcan múltiples filas para que se superpongan limpiamente
+   */
+  getCellZIndex(cell: IDashboardDoctorCell): number {
+    const baseZ = cell.geometry.zIndex;
+    if ((cell.status === 'CONFIRMED' || cell.status === 'SCHEDULED') && !cell.isContinuation) {
+      return baseZ + 5;
+    }
+    return baseZ;
+  }
 }
 

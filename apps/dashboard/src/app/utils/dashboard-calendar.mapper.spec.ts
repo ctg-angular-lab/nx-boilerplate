@@ -159,8 +159,12 @@ describe('dashboard-calendar.mapper', () => {
       expect(row0900?.layers[0].status).toBe('CONFIRMED');
       expect(row0900?.layers[0].procedureTitle).toBe('Consulta General');
       expect(row0900?.layers[0].patientName).toBe('María Pérez');
+      expect(row0900?.layers[0].durationMinutes).toBe(45);
+      expect(row0900?.layers[0].spanRatio).toBe(1.5);
+      expect(row0900?.layers[0].isContinuation).toBe(false);
 
       expect(row0930?.layers[0].status).toBe('CONFIRMED');
+      expect(row0930?.layers[0].isContinuation).toBe(true);
       expect(row1000?.layers[0].status).toBe('AVAILABLE');
     });
 

@@ -189,6 +189,18 @@
             font-size: 0.75rem;
             font-weight: 500;
           }
+
+          .duration-pill {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            padding: 1px 6px;
+            border-radius: 6px;
+            background-color: var(--sys-color-surface-container-lowest, #ffffff);
+            color: var(--sys-color-on-surface, #191c20);
+            border: 1px solid var(--sys-color-outline-variant, #c1c7cf);
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+          }
         }
 
         .appointment-info {

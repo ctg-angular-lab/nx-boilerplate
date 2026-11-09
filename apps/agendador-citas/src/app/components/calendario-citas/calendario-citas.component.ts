@@ -340,4 +340,37 @@ export class CalendarioCitasComponent {
   isSlotPast(slot: TimeSlot, day: CalendarDay): boolean {
     return isTimeSlotInPast(slot, day.date);
   }
+
+  /**
+   * Resuelve la duración en minutos de un slot a partir de su propiedad, rango horario o contexto activo
+   */
+  getSlotDurationMinutes(slot: TimeSlot): number {
+    if (typeof slot.durationMinutes === 'number' && slot.durationMinutes > 0) {
+      return slot.durationMinutes;
+    }
+    if (slot.startTime && slot.endTime) {
+      const diffMs = new Date(slot.endTime).getTime() - new Date(slot.startTime).getTime();
+      if (diffMs > 0) {
+        return Math.round(diffMs / 60000);
+      }
+    }
+    if (slot.time && slot.time.includes(' - ')) {
+      const [startPart, endPart] = slot.time.split(' - ');
+      const [sh, sm] = startPart.trim().split(':').map(Number);
+      const [eh, em] = endPart.trim().split(':').map(Number);
+      const diff = eh * 60 + em - (sh * 60 + sm);
+      if (diff > 0) {
+        return diff;
+      }
+    }
+    return this.bookingContext()?.procedure?.duracionStandar ?? 45;
+  }
+
+  /**
+   * Calcula la altura mínima proporcional en píxeles de la tarjeta según su duración en minutos
+   */
+  getSlotHeightPx(slot: TimeSlot): number {
+    const duration = this.getSlotDurationMinutes(slot);
+    return Math.min(200, Math.max(44, Math.round(duration * 1.25)));
+  }
 }

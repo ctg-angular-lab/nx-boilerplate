@@ -3,12 +3,16 @@ import {
   IsDateString,
   IsEmail,
   IsEnum,
+  IsInt,
   IsISO8601,
   IsNotEmpty,
   IsOptional,
   IsString,
   Matches,
+  Max,
+  Min,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import {
   ICreateAppointmentBody,
   ICreateAppointmentRequest,
@@ -258,6 +262,13 @@ export class GetAvailableDatesQueryDto implements IGetAvailableDatesRequest {
   @IsDateString({}, { message: 'La fecha de fin debe tener formato YYYY-MM-DD' })
   @IsOptional()
   endDate?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'La duración debe ser un número entero en minutos' })
+  @Min(5, { message: 'La duración mínima permitida es de 5 minutos' })
+  @Max(480, { message: 'La duración máxima permitida es de 480 minutos' })
+  durationMinutes?: number;
 }
 
 export class GetDailyAppointmentsDto implements IGetDailyAppointmentsRequest {
