@@ -4,7 +4,7 @@ import { loadRemote } from '@module-federation/enhanced/runtime';
 export const appRoutes: Route[] = [
   {
     path: '',
-    redirectTo: 'agendador-citas',
+    redirectTo: 'dashboard',
     pathMatch: 'full',
   },
   {
@@ -16,7 +16,14 @@ export const appRoutes: Route[] = [
   },
   {
     path: 'dashboard',
-    redirectTo: 'agendador-citas',
+    loadChildren: () =>
+      loadRemote<typeof import('dashboard/Routes')>(
+        'dashboard/Routes'
+      ).then((m) => m!.remoteRoutes),
+  },
+  {
+    path: 'Dashboard',
+    redirectTo: 'dashboard',
   },
   {
     path: 'login',
@@ -46,6 +53,17 @@ export const appRoutes: Route[] = [
       loadRemote<typeof import('procedimientos-medicos/Routes')>(
         'procedimientos-medicos/Routes'
       ).then((m) => m!.remoteRoutes),
+  },
+  {
+    path: 'historial-pacientes',
+    loadChildren: () =>
+      loadRemote<typeof import('historial-pacientes/Routes')>(
+        'historial-pacientes/Routes'
+      ).then((m) => m!.remoteRoutes),
+  },
+  {
+    path: 'mfe-pacientes',
+    redirectTo: 'historial-pacientes',
   },
 ];
 

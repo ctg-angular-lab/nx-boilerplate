@@ -275,3 +275,44 @@ export function getNextWorkingDays(count: number, referenceDate?: Date): Date[] 
 
   return days;
 }
+
+/**
+ * Calcula la edad exacta en años cumplidos a partir de la fecha de nacimiento.
+ * Acepta string ('YYYY-MM-DD' o ISO) o Date.
+ * Retorna null si birthDate es nulo, indefinido, vacío, inválido o una fecha futura.
+ */
+export function calculateAgeFromBirthDate(
+  birthDate: string | Date | null | undefined,
+  referenceDate?: Date
+): number | null {
+  if (!birthDate) return null;
+
+  let birth: Date;
+  if (typeof birthDate === 'string') {
+    const trimmed = birthDate.trim();
+    if (!trimmed) return null;
+    const parts = trimmed.split('T')[0].split('-').map(Number);
+    if (parts.length === 3 && !parts.some(isNaN)) {
+      birth = new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0, 0);
+    } else {
+      birth = new Date(trimmed);
+    }
+  } else {
+    birth = new Date(birthDate);
+  }
+
+  if (isNaN(birth.getTime())) return null;
+
+  const now = referenceDate ? new Date(referenceDate) : new Date();
+  if (birth.getTime() > now.getTime()) return null;
+
+  let age = now.getFullYear() - birth.getFullYear();
+  const monthDiff = now.getMonth() - birth.getMonth();
+
+  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) {
+    age--;
+  }
+
+  return Math.max(0, age);
+}
+

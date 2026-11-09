@@ -2,9 +2,20 @@
   <p class="procedimientos-error" role="alert">{{ errorMessage }}</p>
 }
 
+<ng-template #nombreCellTpl let-row>
+  <button
+    type="button"
+    class="procedure-name-link"
+    [attr.aria-label]="'Ver detalle de ' + row.nombreProcedimiento"
+    (click)="onViewProcedure(row, $event)"
+  >
+    {{ row.nombreProcedimiento }}
+  </button>
+</ng-template>
+
 <lib-data-table
   [dataTable]="procedimientosService.activeProcedimientos()"
-  [dataColumn]="columns"
+  [dataColumn]="columns()"
   [actions]="actions"
   (actionClick)="handleAction($event)"
   [loading]="procedimientosService.isLoading()"

@@ -11,12 +11,14 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { IActiveProfessional } from '@nx-boilerplate/api-interfaces';
 import {
+  AsideModalService,
   ConfirmationModalComponent,
   ConfirmationModalData,
   DataTableComponent,
   TableColumnDef,
 } from '@nx-boilerplate/layouts';
 import { ProfesionalesAdminService } from '../../services/profesionales-admin.service';
+import { ProfesionalDetailComponent } from '../profesional-detail/profesional-detail.component';
 
 @Component({
   selector: 'app-profesionales-list',
@@ -34,6 +36,7 @@ import { ProfesionalesAdminService } from '../../services/profesionales-admin.se
 export class ProfesionalesListComponent {
   public readonly profesionalesService = inject(ProfesionalesAdminService);
   private readonly dialog = inject(MatDialog);
+  readonly #asideModal = inject(AsideModalService);
 
   readonly viewFilter = signal<'activos' | 'inactivos'>('activos');
 
@@ -64,6 +67,30 @@ export class ProfesionalesListComponent {
 
   onAddNew(): void {
     this.profesionalesService.goToCreate();
+  }
+
+  onViewProfessional(prof: IActiveProfessional, event?: Event): void {
+    event?.stopPropagation();
+    const fullName = `${prof.nombres} ${prof.apellidos}`.trim();
+    const relatedProcedureNames = this.profesionalesService.resolveProcedureNames(
+      prof.procedimientosRelacionados
+    );
+
+    this.#asideModal.open(
+      {
+        title: fullName,
+        component: ProfesionalDetailComponent,
+        inputs: {
+          professional: prof,
+          relatedProcedureNames,
+        },
+        showCloseIcon: true,
+        showActions: false,
+      },
+      {
+        width: '480px',
+      }
+    );
   }
 
   onEdit(prof: IActiveProfessional, event?: Event): void {

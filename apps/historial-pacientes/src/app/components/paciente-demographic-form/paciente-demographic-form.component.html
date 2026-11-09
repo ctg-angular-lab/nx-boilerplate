@@ -1,0 +1,329 @@
+<div class="demographic-form-container">
+  @if (isSaving()) {
+    <mat-progress-bar mode="indeterminate" class="form-progress"></mat-progress-bar>
+  }
+
+  @if (errorMessage()) {
+    <div class="alert alert--error" role="alert">
+      <span class="material-symbols-outlined alert__icon">error</span>
+      <span class="alert__message">{{ errorMessage() }}</span>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="alert alert--success" role="status">
+      <span class="material-symbols-outlined alert__icon">check_circle</span>
+      <span class="alert__message">{{ successMessage() }}</span>
+    </div>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="demographic-form" novalidate>
+    <!-- SECCIÓN 1: Identificación y Contacto -->
+    <fieldset class="form-section">
+      <legend class="form-section__legend">
+        <span class="material-symbols-outlined">badge</span>
+        Identificación y Datos de Contacto
+      </legend>
+
+      <div class="form-grid form-grid--2-cols">
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de Documento</mat-label>
+          <mat-select formControlName="tipo_documento">
+            @for (tipo of tiposDocumento; track tipo) {
+              <mat-option [value]="tipo">{{ tipo }}</mat-option>
+            }
+          </mat-select>
+          @if (form.controls.tipo_documento.hasError('required') && form.controls.tipo_documento.touched) {
+            <mat-error>El tipo de documento es obligatorio</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Número de Documento</mat-label>
+          <input
+            matInput
+            formControlName="cedula"
+            placeholder="Ej. 1020304050"
+            autocomplete="off"
+          />
+          @if (form.controls.cedula.hasError('required') && form.controls.cedula.touched) {
+            <mat-error>El número de documento es obligatorio</mat-error>
+          }
+          @if (form.controls.cedula.hasError('pattern') && form.controls.cedula.touched) {
+            <mat-error>Solo caracteres alfanuméricos</mat-error>
+          }
+          @if ((form.controls.cedula.hasError('minlength') || form.controls.cedula.hasError('maxlength')) && form.controls.cedula.touched) {
+            <mat-error>Debe tener entre 5 y 20 caracteres</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <div class="form-grid form-grid--2-cols">
+        <mat-form-field appearance="outline">
+          <mat-label>Nombres</mat-label>
+          <input
+            matInput
+            formControlName="nombre"
+            placeholder="Ej. María Camila"
+            autocomplete="given-name"
+          />
+          @if (form.controls.nombre.hasError('required') && form.controls.nombre.touched) {
+            <mat-error>El nombre es obligatorio</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Apellidos</mat-label>
+          <input
+            matInput
+            formControlName="apellidos"
+            placeholder="Ej. Rodríguez Pérez"
+            autocomplete="family-name"
+          />
+          @if (form.controls.apellidos.hasError('required') && form.controls.apellidos.touched) {
+            <mat-error>Los apellidos son obligatorios</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <div class="form-grid form-grid--2-cols">
+        <mat-form-field appearance="outline">
+          <mat-label>Correo Electrónico</mat-label>
+          <input
+            matInput
+            type="email"
+            formControlName="correo"
+            placeholder="ejemplo@correo.com"
+            autocomplete="email"
+          />
+          @if (form.controls.correo.hasError('required') && form.controls.correo.touched) {
+            <mat-error>El correo electrónico es obligatorio</mat-error>
+          }
+          @if (form.controls.correo.hasError('email') && form.controls.correo.touched) {
+            <mat-error>Formato de correo inválido</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Teléfono Celular</mat-label>
+          <input
+            matInput
+            formControlName="celular"
+            placeholder="Ej. 3001234567"
+            autocomplete="tel"
+          />
+          @if (form.controls.celular.hasError('required') && form.controls.celular.touched) {
+            <mat-error>El celular es obligatorio</mat-error>
+          }
+          @if (form.controls.celular.hasError('pattern') && form.controls.celular.touched) {
+            <mat-error>Número telefónico inválido (7-15 dígitos)</mat-error>
+          }
+        </mat-form-field>
+      </div>
+    </fieldset>
+
+    <!-- SECCIÓN 2: Demografía y Residencia -->
+    <fieldset class="form-section">
+      <legend class="form-section__legend">
+        <span class="material-symbols-outlined">demography</span>
+        Demografía y Residencia
+      </legend>
+
+      <div class="form-grid form-grid--3-cols">
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha de Nacimiento</mat-label>
+          <input
+            matInput
+            type="date"
+            formControlName="fecha_nacimiento"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Edad Calculada</mat-label>
+          <input
+            matInput
+            type="number"
+            formControlName="edad"
+            readonly
+            placeholder="Calculada automáticamente"
+          />
+          <span matSuffix class="field-suffix">años</span>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Sexo</mat-label>
+          <mat-select formControlName="sexo">
+            <mat-option value="">-- Seleccionar --</mat-option>
+            @for (sexo of sexos; track sexo) {
+              <mat-option [value]="sexo">{{ sexo }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="form-grid form-grid--3-cols">
+        <mat-form-field appearance="outline">
+          <mat-label>Estado Civil</mat-label>
+          <mat-select formControlName="estado_civil">
+            <mat-option value="">-- Seleccionar --</mat-option>
+            @for (estado of estadosCiviles; track estado) {
+              <mat-option [value]="estado">{{ estado }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Ocupación</mat-label>
+          <input
+            matInput
+            formControlName="ocupacion"
+            placeholder="Ej. Docente, Ingeniero"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Dirección de Residencia</mat-label>
+          <input
+            matInput
+            formControlName="direccion_residencia"
+            placeholder="Ej. Cra 45 # 123-45 Apto 301"
+          />
+        </mat-form-field>
+      </div>
+    </fieldset>
+
+    <!-- SECCIÓN 3: Afiliación al Sistema de Salud -->
+    <fieldset class="form-section">
+      <legend class="form-section__legend">
+        <span class="material-symbols-outlined">health_and_safety</span>
+        Afiliación al Sistema de Salud
+      </legend>
+
+      <div class="form-grid form-grid--2-cols">
+        <mat-form-field appearance="outline">
+          <mat-label>Aseguradora / EPS / Prepagada</mat-label>
+          <input
+            matInput
+            formControlName="aseguradora"
+            placeholder="Ej. Sura EPS, Colsanitas, Sanitas"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de Vinculación</mat-label>
+          <mat-select formControlName="tipo_vinculacion">
+            <mat-option value="">-- Seleccionar --</mat-option>
+            @for (vinculacion of tiposVinculacion; track vinculacion) {
+              <mat-option [value]="vinculacion">{{ vinculacion }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </fieldset>
+
+    <!-- SECCIÓN 4: Red de Apoyo y Contactos -->
+    <fieldset class="form-section">
+      <legend class="form-section__legend">
+        <span class="material-symbols-outlined">escalator_warning</span>
+        Acompañante y Persona Responsable
+      </legend>
+
+      <div class="toggle-row">
+        <mat-slide-toggle formControlName="es_menor_de_edad" color="primary">
+          El paciente es menor de edad
+        </mat-slide-toggle>
+        @if (form.controls.es_menor_de_edad.value) {
+          <span class="badge-required">Persona responsable obligatoria por ley (Resolución 1995/1999)</span>
+        }
+      </div>
+
+      <!-- Datos del Acompañante -->
+      <h4 class="sub-legend">Acompañante</h4>
+      <div formGroupName="acompanante" class="form-grid form-grid--2-cols">
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre del Acompañante</mat-label>
+          <input matInput formControlName="nombre" placeholder="Nombre completo" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Teléfono del Acompañante</mat-label>
+          <input matInput formControlName="telefono" placeholder="Número de contacto" />
+        </mat-form-field>
+      </div>
+
+      <!-- Datos de la Persona Responsable -->
+      <h4 class="sub-legend">Persona Responsable</h4>
+      <div formGroupName="persona_responsable" class="form-grid form-grid--3-cols">
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre Responsable</mat-label>
+          <input matInput formControlName="nombre" placeholder="Nombre completo" />
+          @if (form.controls.persona_responsable.controls.nombre.hasError('required') && form.controls.persona_responsable.controls.nombre.touched) {
+            <mat-error>Requerido para menores de edad</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Teléfono Responsable</mat-label>
+          <input matInput formControlName="telefono" placeholder="Número de contacto" />
+          @if (form.controls.persona_responsable.controls.telefono.hasError('required') && form.controls.persona_responsable.controls.telefono.touched) {
+            <mat-error>Requerido para menores de edad</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Parentesco</mat-label>
+          <input matInput formControlName="parentesco" placeholder="Ej. Padre, Madre, Tutor" />
+          @if (form.controls.persona_responsable.controls.parentesco.hasError('required') && form.controls.persona_responsable.controls.parentesco.touched) {
+            <mat-error>Requerido para menores de edad</mat-error>
+          }
+        </mat-form-field>
+      </div>
+    </fieldset>
+
+    <!-- SECCIÓN 5: Observaciones Generales -->
+    <fieldset class="form-section">
+      <legend class="form-section__legend">
+        <span class="material-symbols-outlined">notes</span>
+        Observaciones y Recomendaciones
+      </legend>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Recomendaciones Médicas Iniciales</mat-label>
+        <textarea
+          matInput
+          formControlName="recomendaciones"
+          rows="3"
+          placeholder="Alergias generales, cuidados especiales o recomendaciones previas..."
+        ></textarea>
+      </mat-form-field>
+    </fieldset>
+
+    <!-- Acciones del Formulario -->
+    @if (showActions()) {
+      <footer class="form-actions">
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="onCancel()"
+          [disabled]="isSaving()"
+        >
+          Cancelar
+        </button>
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          [disabled]="form.invalid || isSaving()"
+        >
+          <span class="material-symbols-outlined">
+            {{ mode() === 'create' ? 'person_add' : 'save' }}
+          </span>
+          {{ mode() === 'create' ? 'Registrar Paciente' : 'Guardar Cambios' }}
+        </button>
+      </footer>
+    }
+  </form>
+</div>
+

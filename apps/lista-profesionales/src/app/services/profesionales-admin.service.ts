@@ -81,6 +81,20 @@ export class ProfesionalesAdminService {
       .subscribe((list) => this.#procedures.set(list));
   }
 
+  /**
+   * Cruza los IDs de procedimientos contra el catálogo cargado en memoria (#procedures)
+   * y retorna sus nombres legibles, o el ID como fallback si no existe coincidencia.
+   */
+  resolveProcedureNames(procedureIds: string[] | undefined): string[] {
+    if (!procedureIds || procedureIds.length === 0) {
+      return [];
+    }
+    const currentProcedures = this.#procedures();
+    const procMap = new Map(currentProcedures.map((p) => [p.idProcedimiento, p]));
+
+    return procedureIds.map((id) => procMap.get(id)?.nombreProcedimiento || id);
+  }
+
   // --- Orquestación de navegación ---
 
   setActiveTab(id: ProfesionalesTabId): void {

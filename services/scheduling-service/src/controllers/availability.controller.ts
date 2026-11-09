@@ -24,7 +24,10 @@ export class AvailabilityController {
 
     const doctorEmail = payload.doctorEmail || DEFAULT_DOCTOR.email;
     const doctorCedula = payload.doctorCedula || DEFAULT_DOCTOR.cedula;
-    const durationMinutes = 45;
+    const durationMinutes =
+      typeof payload.durationMinutes === 'number' && payload.durationMinutes >= 5
+        ? payload.durationMinutes
+        : 45;
 
     // Consulta optimizada por rango semanal
     if (payload.startDate && payload.endDate) {

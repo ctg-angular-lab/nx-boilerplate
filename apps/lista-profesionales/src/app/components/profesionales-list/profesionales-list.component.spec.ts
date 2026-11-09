@@ -5,9 +5,10 @@ import { signal } from '@angular/core';
 import { of } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { IActiveProfessional } from '@nx-boilerplate/api-interfaces';
-import { ConfirmationModalComponent, DataTableComponent } from '@nx-boilerplate/layouts';
+import { AsideModalService, ConfirmationModalComponent, DataTableComponent } from '@nx-boilerplate/layouts';
 import { ProfesionalesAdminService } from '../../services/profesionales-admin.service';
 import { ProfesionalesListComponent } from './profesionales-list.component';
+import { ProfesionalDetailComponent } from '../profesional-detail/profesional-detail.component';
 
 const mockProfessional: IActiveProfessional = {
   cedula: '12345678',
@@ -49,6 +50,10 @@ describe('ProfesionalesListComponent', () => {
     open: ReturnType<typeof vi.fn>;
   };
 
+  let mockAsideModal: {
+    open: ReturnType<typeof vi.fn>;
+  };
+
   beforeEach(async () => {
     mockProfesionalesListSignal = signal<IActiveProfessional[]>([mockProfessional]);
     mockIsLoadingSignal = signal<boolean>(false);
@@ -62,11 +67,18 @@ describe('ProfesionalesListComponent', () => {
       goToEdit: vi.fn(),
       deleteProfesional: vi.fn().mockReturnValue(of(true)),
       reactivateProfesional: vi.fn().mockReturnValue(of(true)),
+      resolveProcedureNames: vi.fn().mockReturnValue(['Rinoplastia Estética']),
     };
 
     mockDialog = {
       open: vi.fn().mockReturnValue({
         afterClosed: vi.fn().mockReturnValue(of(true)),
+      }),
+    };
+
+    mockAsideModal = {
+      open: vi.fn().mockReturnValue({
+        afterClosed: vi.fn().mockReturnValue(of(false)),
       }),
     };
 
@@ -76,6 +88,7 @@ describe('ProfesionalesListComponent', () => {
         provideNoopAnimations(),
         { provide: ProfesionalesAdminService, useValue: mockService },
         { provide: MatDialog, useValue: mockDialog },
+        { provide: AsideModalService, useValue: mockAsideModal },
       ],
     }).compileComponents();
 
@@ -98,6 +111,33 @@ describe('ProfesionalesListComponent', () => {
     addBtn.nativeElement.click();
 
     expect(mockService.goToCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it('debe abrir asideModal con ProfesionalDetailComponent al invocar onViewProfessional deteniendo propagación', () => {
+    const stopPropagationSpy = vi.fn();
+    const fakeEvent = { stopPropagation: stopPropagationSpy } as unknown as Event;
+
+    component.onViewProfessional(mockProfessional, fakeEvent);
+
+    expect(stopPropagationSpy).toHaveBeenCalledTimes(1);
+    expect(mockService.resolveProcedureNames).toHaveBeenCalledWith(
+      mockProfessional.procedimientosRelacionados
+    );
+    expect(mockAsideModal.open).toHaveBeenCalledWith(
+      {
+        title: 'Laura Gómez',
+        component: ProfesionalDetailComponent,
+        inputs: {
+          professional: mockProfessional,
+          relatedProcedureNames: ['Rinoplastia Estética'],
+        },
+        showCloseIcon: true,
+        showActions: false,
+      },
+      {
+        width: '480px',
+      }
+    );
   });
 
   it('debe invocar profesionalesService.goToEdit(mockProf) al ejecutar onEdit deteniendo propagación', () => {

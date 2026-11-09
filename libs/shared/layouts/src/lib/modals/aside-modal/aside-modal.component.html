@@ -1,0 +1,27 @@
+@if (data.title) {
+  <div class="aside-modal-header">
+    <h2 mat-dialog-title id="dialog-title" class="aside-dialog-title">
+      {{ data.title }}
+    </h2>
+    @if (data.showCloseIcon !== false) {
+      <button mat-icon-button (click)="close()" aria-label="Cerrar modal" class="aside-close-button">
+        <mat-icon class="material-symbols-outlined">close</mat-icon>
+      </button>
+    }
+  </div>
+}
+
+<mat-dialog-content id="dialog-content" class="aside-dialog-content">
+  <ng-container *ngComponentOutlet="data.component; inputs: data.inputs"></ng-container>
+</mat-dialog-content>
+
+@if (data.showActions !== false) {
+  <mat-dialog-actions align="end" class="aside-dialog-actions">
+    <button mat-button (click)="close()">
+      {{ data.cancelText || 'Cancelar' }}
+    </button>
+    <button mat-flat-button color="primary" (click)="confirm()">
+      {{ data.confirmText || 'Confirmar' }}
+    </button>
+  </mat-dialog-actions>
+}

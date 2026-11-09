@@ -1,0 +1,169 @@
+<main class="dashboard-layout" aria-label="Tablero Principal">
+  <!-- FILA 1: Selector de Profesionales y Bienvenida Contextual -->
+  <header class="dashboard-header-section">
+    <!-- Barra Desplazable de Selección de Profesionales (Pill Bar) -->
+    <section class="doctor-pill-bar" role="region" aria-label="Selección rápida de profesional médico">
+      <div class="doctor-pill-scroll">
+        @for (doctor of state.doctors(); track doctor.cedula) {
+          <button
+            type="button"
+            class="doctor-pill"
+            [class.doctor-pill--active]="state.activeDoctor()?.cedula === doctor.cedula"
+            (click)="onDoctorSelect(doctor.cedula)"
+            [attr.aria-pressed]="state.activeDoctor()?.cedula === doctor.cedula"
+          >
+            <span
+              class="doctor-pill__badge"
+              [style.background-color]="doctor.colorTheme.cssVar"
+            >
+              {{ doctor.initials }}
+            </span>
+            <span class="doctor-pill__name">{{ doctor.fullName }}</span>
+          </button>
+        }
+      </div>
+    </section>
+
+    <!-- Header de Bienvenida Contextual del Médico Activo -->
+    @if (state.activeDoctor(); as active) {
+      <div class="welcome-banner">
+        <div class="welcome-banner__info">
+          <div class="doctor-avatar-wrapper">
+            <span
+              class="doctor-avatar"
+              [style.background-color]="active.colorTheme.cssVar"
+            >
+              {{ active.initials }}
+            </span>
+          </div>
+          <div class="doctor-titles">
+            <h1 class="doctor-name">{{ active.fullName }}</h1>
+            <div class="specialty-chip">
+              <mat-icon class="material-symbols-outlined specialty-icon">medical_services</mat-icon>
+              <span>{{ active.profesion || 'Medicina General' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="welcome-banner__meta">
+          <span class="working-hours" [matTooltip]="'Horario de atención habitual'">
+            <mat-icon class="material-symbols-outlined hours-icon">schedule</mat-icon>
+            {{ active.horarioTrabajo.horaInicio }} - {{ active.horarioTrabajo.horaFin }}
+          </span>
+        </div>
+      </div>
+    }
+  </header>
+
+  <!-- FILA 2: Fila de 3 Tarjetas KPI Mensuales con Títulos Contextuales -->
+  <section class="kpi-metrics-row" aria-label="Indicadores mensuales de citas">
+    <!-- KPI 1: Citas del Mes Confirmadas (ej: "Citas de Noviembre Confirmadas") -->
+    <lib-metric-card
+      [title]="state.monthlyKpis().confirmedTitle"
+      [value]="state.monthlyKpis().confirmedCount"
+      [subtitle]="'Total acumulado de ' + state.monthlyKpis().monthYearLabel"
+      icon="check_circle"
+      variant="primary"
+    />
+
+    <!-- KPI 2: Citas del Mes Agendadas (ej: "Citas de Noviembre Agendadas") -->
+    <lib-metric-card
+      [title]="state.monthlyKpis().scheduledTitle"
+      [value]="state.monthlyKpis().scheduledCount"
+      [subtitle]="'Pendientes de confirmación'"
+      icon="event_available"
+      variant="secondary"
+    />
+
+    <!-- KPI 3: Próximo Espacio Disponible -->
+    <lib-metric-card
+      title="Proximo espacio disponible"
+      [value]="state.monthlyKpis().nextAvailableDate"
+      [subtitle]="nextAvailableSubtitle()"
+      icon="calendar_add_on"
+      variant="tertiary"
+    />
+  </section>
+
+  <!-- FILA 3: Panel Inferior a Dos Columnas -->
+  <section class="dashboard-main-grid" aria-label="Panel de calendarios">
+    <!-- Columna Izquierda (320px): Otros calendarios + Mini-Calendario Mensual MD3 -->
+    <aside class="sidebar-calendars-col">
+      <!-- Card 1: Otros Calendarios -->
+      <app-other-calendars-card
+        [doctors]="state.otherDoctors()"
+        [selectedCedulas]="state.comparedDoctorCedulas()"
+        (toggleDoctor)="onToggleComparedDoctor($event)"
+        (clearAll)="onClearComparedDoctors()"
+      />
+
+      <!-- Card 2: Calendario Mensual Compacto (Signals + MD3 nativo) -->
+      <section class="month-calendar-card" aria-label="Calendario mensual">
+        <header class="month-calendar-card__header">
+          <div class="header-title-group">
+            <mat-icon class="material-symbols-outlined header-icon">date_range</mat-icon>
+            <h3 class="header-title">Seleccionar fecha</h3>
+          </div>
+        </header>
+        <div class="month-calendar-card__body">
+          <div class="mini-calendar">
+            <div class="mini-calendar__nav">
+              <button
+                type="button"
+                class="mini-calendar__nav-btn"
+                (click)="onChangeCalendarMonth(-1)"
+                aria-label="Mes anterior"
+              >
+                <mat-icon class="material-symbols-outlined">chevron_left</mat-icon>
+              </button>
+              <span class="mini-calendar__month-label">{{ calendarMonthLabel() }}</span>
+              <button
+                type="button"
+                class="mini-calendar__nav-btn"
+                (click)="onChangeCalendarMonth(1)"
+                aria-label="Mes siguiente"
+              >
+                <mat-icon class="material-symbols-outlined">chevron_right</mat-icon>
+              </button>
+            </div>
+
+            <div class="mini-calendar__weekdays" role="row">
+              @for (dayLabel of weekdayLabels; track $index) {
+                <span class="mini-calendar__weekday" role="columnheader">{{ dayLabel }}</span>
+              }
+            </div>
+
+            <div class="mini-calendar__grid" role="grid">
+              @for (cell of calendarDays(); track cell.dateKey) {
+                <button
+                  type="button"
+                  class="mini-calendar__day"
+                  [class.mini-calendar__day--other-month]="!cell.isCurrentMonth"
+                  [class.mini-calendar__day--today]="cell.isToday"
+                  [class.mini-calendar__day--selected]="cell.isSelected"
+                  (click)="onDateChange(cell.date)"
+                  [attr.aria-label]="cell.dateKey"
+                  [attr.aria-selected]="cell.isSelected"
+                >
+                  {{ cell.dayNumber }}
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <!-- Columna Derecha (1fr): Calendario Diario con Superposición en Cascada -->
+    <section class="cascade-calendar-col">
+      <app-daily-cascade-calendar
+        [selectedDate]="state.selectedDate()"
+        [timeGridRows]="state.timeGridRows()"
+        [overlayDoctors]="state.activeOverlayDoctors()"
+        (navigateDay)="onNavigateDay($event)"
+        (goToToday)="onGoToToday()"
+        (slotClick)="onSlotClick($event)"
+      />
+    </section>
+  </section>
+</main>

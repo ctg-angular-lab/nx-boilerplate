@@ -1,39 +1,44 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { provideRouter } from '@angular/router';
 import { App } from './app';
-import { NxWelcome } from './nx-welcome';
-import { Router, RouterModule } from '@angular/router';
 
-describe('App', () => {
+describe('App (Host Component)', () => {
+  let component: App;
+  let fixture: ComponentFixture<App>;
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [
-        RouterModule.forRoot([{ path: '', component: NxWelcome }]),
-        App,
-        NxWelcome,
-      ],
+      imports: [App],
+      providers: [provideNoopAnimations(), provideRouter([])],
     }).compileComponents();
+
+    fixture = TestBed.createComponent(App);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
   });
 
-  it('should create the app', () => {
-    const fixture = TestBed.createComponent(App);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
+  it('debe crearse correctamente', () => {
+    expect(component).toBeTruthy();
   });
 
-  it(`should have as title 'app-shell'`, () => {
-    const fixture = TestBed.createComponent(App);
-    const app = fixture.componentInstance;
-    expect(app.title).toEqual('app-shell');
+  it('debe contener las 5 rutas federadas en mfeRoutes, incluyendo dashboard e historial-pacientes', () => {
+    const routes = component.mfeRoutes();
+    expect(routes.length).toBe(5);
+    expect(routes.some((r) => r.path === '/dashboard')).toBe(true);
+    expect(routes.some((r) => r.path === '/historial-pacientes')).toBe(true);
+    expect(routes.some((r) => r.path === '/agendador-citas')).toBe(true);
+    expect(routes.some((r) => r.path === '/profesionales')).toBe(true);
+    expect(routes.some((r) => r.path === '/procedimientos-medicos')).toBe(true);
   });
 
-  it('should render title', async () => {
-    const fixture = TestBed.createComponent(App);
-    const router = TestBed.inject(Router);
-    await router.navigate(['']);
-    await fixture.whenStable();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain(
-      'Welcome app-shell',
-    );
+  it('debe alternar y cerrar el estado del sidenav', () => {
+    expect(component.isSidenavOpen()).toBe(false);
+
+    component.toggleSidenav();
+    expect(component.isSidenavOpen()).toBe(true);
+
+    component.closeSidenav();
+    expect(component.isSidenavOpen()).toBe(false);
   });
 });

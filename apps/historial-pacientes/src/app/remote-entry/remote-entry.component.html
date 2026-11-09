@@ -1,0 +1,20 @@
+<div class="historial-pacientes-container">
+  <lib-tabs-collection
+    [tabs]="tabs()"
+    [preserveContent]="true"
+    [activeTabId]="service.activeTab()"
+    (activeTabIdChange)="onActiveTabChange($event)"
+  />
+
+  <ng-template #directoryTab>
+    <div class="tab-pane-wrapper">
+      <app-pacientes-directory />
+    </div>
+  </ng-template>
+
+  <ng-template #expedienteTab>
+    <div class="tab-pane-wrapper">
+      <app-paciente-expediente />
+    </div>
+  </ng-template>
+</div>

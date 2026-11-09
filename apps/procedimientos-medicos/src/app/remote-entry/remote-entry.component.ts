@@ -3,6 +3,8 @@ import {
   Component,
   computed,
   inject,
+  OnInit,
+  OnDestroy,
   TemplateRef,
   viewChild,
 } from '@angular/core';
@@ -29,7 +31,7 @@ import { ProcedimientosAdminService } from '../services/procedimientos-admin.ser
   styleUrl: './remote-entry.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class RemoteEntryComponent {
+export class RemoteEntryComponent implements OnInit, OnDestroy {
   readonly procedimientosService = inject(ProcedimientosAdminService);
 
   readonly listTabTpl = viewChild<TemplateRef<unknown>>('listTab');
@@ -66,8 +68,14 @@ export class RemoteEntryComponent {
     ];
   });
 
-  constructor() {
+  ngOnInit(): void {
+    this.procedimientosService.setActiveTab(PROCEDIMIENTOS_TABS.LIST);
     this.procedimientosService.loadProcedimientos();
+    this.procedimientosService.loadDoctors();
+  }
+
+  ngOnDestroy(): void {
+    this.procedimientosService.setActiveTab(PROCEDIMIENTOS_TABS.LIST);
   }
 
   onActiveTabChange(tabId: string | number | undefined): void {

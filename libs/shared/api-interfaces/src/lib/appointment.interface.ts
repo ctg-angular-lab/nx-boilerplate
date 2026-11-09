@@ -14,6 +14,7 @@ export interface ISlotDisplay {
   isBookable: boolean;     
   googleEventId?: string;
   patient?: IBookingPatient;
+  durationMinutes?: number;
 }
 
 export interface IDayAvailability {
@@ -31,6 +32,7 @@ export interface IGetAvailableDatesRequest {
   targetDate?: string;
   startDate?: string;
   endDate?: string;
+  durationMinutes?: number;
 }
 
 export interface IAvailableDate {

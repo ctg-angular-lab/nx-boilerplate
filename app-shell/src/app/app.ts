@@ -42,10 +42,11 @@ export class App {
   readonly isSidenavOpen = signal<boolean>(false);
 
   readonly mfeRoutes = signal<MfeRoute[]>([
+    { path: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
     { path: '/agendador-citas', label: 'Agendar Cita', icon: 'calendar_add_on' },
     { path: '/profesionales', label: 'Profesionales', icon: 'badge' },
     { path: '/procedimientos-medicos', label: 'Procedimientos Médicos', icon: 'medical_services' },
-    { path: '/mfe-pacientes', label: 'Pacientes', icon: 'person' }
+    { path: '/historial-pacientes', label: 'Historial de Pacientes', icon: 'clinical_notes' }
   ]);
 
   constructor() {

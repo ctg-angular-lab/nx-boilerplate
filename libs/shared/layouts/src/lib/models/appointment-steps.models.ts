@@ -1,19 +1,10 @@
-export interface ProcedureItem {
-  id: string;
-  nombre: string;
-  fecha: string;
-  profesional: string;
-}
+import {
+  IPatientHistory,
+  IProcedureItem,
+} from '@nx-boilerplate/api-interfaces';
 
-export interface PatientHistory {
-  cedula: string;
-  nombre: string;
-  apellidos: string;
-  correo: string;
-  celular: string;
-  ultimosProcedimientos: ProcedureItem[];
-  recomendaciones: string;
-}
+export type ProcedureItem = IProcedureItem;
+export type PatientHistory = IPatientHistory;
 
 export interface AvailableDate {
   id: string;

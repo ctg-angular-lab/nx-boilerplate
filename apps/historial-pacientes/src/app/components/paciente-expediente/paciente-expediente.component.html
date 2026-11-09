@@ -1,0 +1,184 @@
+<div class="expediente-container">
+  @if (!selectedPatient()) {
+    <!-- Estado Vacío: Sin Paciente Seleccionado -->
+    <div class="empty-expediente">
+      <span class="material-symbols-outlined empty-icon">person_search</span>
+      <h3 class="empty-title">No hay paciente seleccionado</h3>
+      <p class="empty-message">
+        Seleccione un paciente desde el Directorio de Pacientes para consultar o diligenciar su expediente clínico.
+      </p>
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        (click)="onVolverAlDirectorio()"
+      >
+        <span class="material-symbols-outlined">groups</span>
+        Ir al Directorio de Pacientes
+      </button>
+    </div>
+  } @else {
+    @if (selectedPatient(); as patient) {
+      <!-- Cabecera del Expediente del Paciente -->
+      <header class="patient-hero-card">
+        <div class="hero-top">
+          <button
+            mat-stroked-button
+            type="button"
+            class="back-btn"
+            (click)="onVolverAlDirectorio()"
+          >
+            <span class="material-symbols-outlined">arrow_back</span>
+            Volver al Directorio
+          </button>
+
+          <span
+            class="chip-status"
+            [class.chip-status--success]="isComplete()"
+            [class.chip-status--warning]="!isComplete()"
+          >
+            <span class="material-symbols-outlined chip-icon">
+              {{ isComplete() ? 'check_circle' : 'warning' }}
+            </span>
+            Ficha Demográfica {{ isComplete() ? 'Completa' : 'Incompleta' }}
+          </span>
+        </div>
+
+        <div class="hero-main">
+          <div class="patient-title-group">
+            <h2 class="patient-name">{{ patient.nombre }} {{ patient.apellidos }}</h2>
+            <div class="patient-badges">
+              <span class="badge-tag">
+                <span class="material-symbols-outlined">badge</span>
+                {{ patient.tipo_documento || 'CC' }} {{ patient.cedula }}
+              </span>
+              @if (patient.edad !== null && patient.edad !== undefined) {
+                <span class="badge-tag">
+                  <span class="material-symbols-outlined">cake</span>
+                  {{ patient.edad }} años
+                </span>
+              }
+              @if (patient.es_menor_de_edad) {
+                <span class="badge-tag badge-tag--minor">Menor de Edad</span>
+              }
+            </div>
+          </div>
+
+          <div class="patient-quick-info">
+            <div class="info-pill">
+              <span class="material-symbols-outlined">call</span>
+              <span>{{ patient.celular }}</span>
+            </div>
+            <div class="info-pill">
+              <span class="material-symbols-outlined">mail</span>
+              <span>{{ patient.correo }}</span>
+            </div>
+            @if (patient.aseguradora) {
+              <div class="info-pill">
+                <span class="material-symbols-outlined">health_and_safety</span>
+                <span>{{ patient.aseguradora }} ({{ patient.tipo_vinculacion || 'Cotizante' }})</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        @if (patient.ultimosProcedimientos?.length) {
+          <div class="history-tags">
+            <span class="tags-label">Procedimientos Previos Registrados:</span>
+            <div class="tags-list">
+              @for (proc of patient.ultimosProcedimientos; track proc.id) {
+                <span class="proc-chip">
+                  {{ proc.nombre }} ({{ proc.fecha }}) - {{ proc.profesional }}
+                </span>
+              }
+            </div>
+          </div>
+        }
+      </header>
+
+      <!-- SECCIÓN 1: Ficha Demográfica (Resolución 1995/1999) en MatExpansionPanel -->
+      <mat-expansion-panel
+        [expanded]="!isComplete()"
+        class="demographic-panel"
+      >
+        <mat-expansion-panel-header>
+          <mat-panel-title class="panel-title">
+            <span class="material-symbols-outlined panel-icon">demography</span>
+            Ficha Demográfica del Paciente (20 Campos)
+          </mat-panel-title>
+          <mat-panel-description class="panel-desc">
+            @if (isComplete()) {
+              <span class="text-success">Diligenciada correctamente según la norma</span>
+            } @else {
+              <span class="text-warning">Incompleta - Despliegue para registrar datos obligatorios</span>
+            }
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <div class="panel-content">
+          <app-paciente-demographic-form
+            [patient]="patient"
+            mode="edit"
+            [showActions]="true"
+          />
+        </div>
+      </mat-expansion-panel>
+
+      <!-- SECCIÓN 2: Historial de Atenciones Clínicas -->
+      <section class="clinical-records-section">
+        <lib-data-table
+          [dataTable]="service.clinicalRecordRows()"
+          rowKey="id"
+          [dataColumn]="recordColumns"
+          [actions]="recordActions"
+          [loading]="service.isLoadingRecords()"
+          [searchable]="true"
+          searchPlaceholder="Buscar por fecha, procedimiento o médico tratante..."
+          emptyMessage="No se registran atenciones clínicas para este paciente."
+          (actionClick)="onTableAction($event)"
+        >
+          <!-- Slot Header Tabla Clínica -->
+          <div table-header class="records-header">
+            <div class="records-header__info">
+              <h3 class="records-header__title">
+                <span class="material-symbols-outlined">clinical_notes</span>
+                Historial de Atenciones Clínicas
+              </h3>
+              <p class="records-header__subtitle">
+                Atenciones programadas y consultas asistidas según Resolución 1995 de 1999
+              </p>
+            </div>
+
+            <div class="records-header__actions">
+              <button
+                mat-flat-button
+                color="primary"
+                type="button"
+                (click)="onNuevaAtencionManual()"
+              >
+                <span class="material-symbols-outlined">note_add</span>
+                + Nueva Atención Manual
+              </button>
+            </div>
+          </div>
+        </lib-data-table>
+      </section>
+    }
+  }
+
+  <!-- Template personalizado para el estado de atención clínica -->
+  <ng-template #estadoRegistroTpl let-row>
+    @if (row.estadoRegistro === 'COMPLETADA') {
+      <span class="chip-status chip-status--success" matTooltip="Atención clínica completada y registrada en historia">
+        <span class="material-symbols-outlined chip-icon">check_circle</span>
+        Completada
+      </span>
+    } @else {
+      <span class="chip-status chip-status--warning" matTooltip="Cita médica pendiente por diligenciamiento clínico">
+        <span class="material-symbols-outlined chip-icon">schedule</span>
+        Pendiente de Atención
+      </span>
+    }
+  </ng-template>
+</div>
+

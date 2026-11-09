@@ -1,0 +1,299 @@
+[
+  {
+    "_id": "670123456789abcdef012341",
+    "cedula": "12345678",
+    "tipo_documento": "CC",
+    "nombre": "Marcela",
+    "apellidos": "Tabares Garcia",
+    "correo": "marcetg85@gmail.com",
+    "celular": "+573206134238",
+    "fecha_nacimiento": "1985-05-20",
+    "edad": 41,
+    "sexo": "Femenino",
+    "estado_civil": "Soltera",
+    "ocupacion": "Diseñadora",
+    "direccion_residencia": "Calle 123 # 45-67, Bogotá",
+    "aseguradora": "SURA",
+    "tipo_vinculacion": "Cotizante",
+    "es_menor_de_edad": false,
+    "acompanante": {
+      "nombre": null,
+      "telefono": null
+    },
+    "persona_responsable": {
+      "nombre": null,
+      "telefono": null,
+      "parentesco": null
+    },
+    "createdAt": {
+      "$date": "2026-10-01T10:30:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-10-01T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": "670123456789abcdef012342",
+    "cedula": "8026619",
+    "tipo_documento": "CC",
+    "nombre": "Camilo",
+    "apellidos": "Tabares Garcia",
+    "correo": "camilo.tabares.84@gmail.com",
+    "celular": "+573013802590",
+    "fecha_nacimiento": "1984-10-05",
+    "edad": 42,
+    "sexo": "Masculino",
+    "estado_civil": "Soltero",
+    "ocupacion": "Ingeniero",
+    "direccion_residencia": "Carrera 7 # 82-10, Bogotá",
+    "aseguradora": "Particular",
+    "tipo_vinculacion": "Cotizante",
+    "es_menor_de_edad": false,
+    "acompanante": {
+      "nombre": null,
+      "telefono": null
+    },
+    "persona_responsable": {
+      "nombre": null,
+      "telefono": null,
+      "parentesco": null
+    },
+    "createdAt": {
+      "$date": "2026-10-05T01:43:51.854Z"
+    },
+    "updatedAt": {
+      "$date": "2026-10-05T01:43:51.854Z"
+    }
+  },
+  {
+    "_id": "670123456789abcdef012343",
+    "cedula": "30293842",
+    "tipo_documento": "CC",
+    "nombre": "Oscar",
+    "apellidos": "Morantes",
+    "correo": "ocorreo@correo.com",
+    "celular": "+573102560858",
+    "fecha_nacimiento": "1990-03-15",
+    "edad": 36,
+    "sexo": "Masculino",
+    "estado_civil": "Soltero",
+    "ocupacion": "Comerciante",
+    "direccion_residencia": "Calle 45 # 12-34, Bogotá",
+    "aseguradora": "Particular",
+    "tipo_vinculacion": "Cotizante",
+    "es_menor_de_edad": false,
+    "acompanante": {
+      "nombre": null,
+      "telefono": null
+    },
+    "persona_responsable": {
+      "nombre": null,
+      "telefono": null,
+      "parentesco": null
+    },
+    "createdAt": {
+      "$date": "2026-10-05T22:20:16.077Z"
+    },
+    "updatedAt": {
+      "$date": "2026-10-05T22:20:16.077Z"
+    }
+  },
+  {
+    "_id": "670123456789abcdef012345",
+    "cedula": "1017187698",
+    "tipo_documento": "CC",
+    "nombre": "Mariana",
+    "apellidos": "Giraldo Giraldo",
+    "correo": "marianbotero1991@gmail.com",
+    "celular": "+573014489527",
+    "fecha_nacimiento": "1991-08-15",
+    "edad": 35,
+    "sexo": "Femenino",
+    "estado_civil": "Soltera",
+    "ocupacion": "Profesional",
+    "direccion_residencia": "Calle 10 # 30-45, Medellín",
+    "aseguradora": "Particular",
+    "tipo_vinculacion": "Cotizante",
+    "es_menor_de_edad": false,
+    "acompanante": {
+      "nombre": null,
+      "telefono": null
+    },
+    "persona_responsable": {
+      "nombre": null,
+      "telefono": null,
+      "parentesco": null
+    },
+    "createdAt": {
+      "$date": "2026-10-08T02:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-10-08T02:00:00.000Z"
+    }
+  },
+  {
+    "_id": "670123456789abcdef012346",
+    "cedula": "70052530",
+    "tipo_documento": "CC",
+    "nombre": "Jose Nelson",
+    "apellidos": "Tabares",
+    "correo": "nelsontabaresa@gmail.com",
+    "celular": "+573172741241",
+    "fecha_nacimiento": "1958-04-12",
+    "edad": 68,
+    "sexo": "Masculino",
+    "estado_civil": "Casado",
+    "ocupacion": "Pensionado",
+    "direccion_residencia": "Calle 45 # 22-15, Medellín",
+    "aseguradora": "Particular",
+    "tipo_vinculacion": "Cotizante",
+    "es_menor_de_edad": false,
+    "acompanante": {
+      "nombre": null,
+      "telefono": null
+    },
+    "persona_responsable": {
+      "nombre": null,
+      "telefono": null,
+      "parentesco": null
+    },
+    "createdAt": {
+      "$date": "2026-10-10T15:56:39.612Z"
+    },
+    "updatedAt": {
+      "$date": "2026-10-10T15:56:39.612Z"
+    }
+  },
+  {
+    "_id": "670123456789abcdef012347",
+    "cedula": "42974332",
+    "tipo_documento": "CC",
+    "nombre": "Gloria",
+    "apellidos": "Garcia Rojas",
+    "correo": "gloriagarciar@gmail.com",
+    "celular": "+573137656481",
+    "fecha_nacimiento": "1960-09-25",
+    "edad": 66,
+    "sexo": "Femenino",
+    "estado_civil": "Casada",
+    "ocupacion": "Ama de casa",
+    "direccion_residencia": "Carrera 80 # 45-20, Medellín",
+    "aseguradora": "Particular",
+    "tipo_vinculacion": "Cotizante",
+    "es_menor_de_edad": false,
+    "acompanante": {
+      "nombre": null,
+      "telefono": null
+    },
+    "persona_responsable": {
+      "nombre": null,
+      "telefono": null,
+      "parentesco": null
+    },
+    "createdAt": {
+      "$date": "2026-10-10T16:11:33.024Z"
+    },
+    "updatedAt": {
+      "$date": "2026-10-10T16:11:33.024Z"
+    }
+  },
+  {
+    "_id": "670123456789abcdef012348",
+    "cedula": "1152702424",
+    "tipo_documento": "CC",
+    "nombre": "Maria Isabel",
+    "apellidos": "Garcia",
+    "correo": "mariaisabelgarciab4@gmail.com",
+    "celular": "+573166264388",
+    "fecha_nacimiento": "1996-03-18",
+    "edad": 30,
+    "sexo": "Femenino",
+    "estado_civil": "Soltera",
+    "ocupacion": "Profesional",
+    "direccion_residencia": "Calle 33 # 76-40, Medellín",
+    "aseguradora": "Particular",
+    "tipo_vinculacion": "Cotizante",
+    "es_menor_de_edad": false,
+    "acompanante": {
+      "nombre": null,
+      "telefono": null
+    },
+    "persona_responsable": {
+      "nombre": null,
+      "telefono": null,
+      "parentesco": null
+    },
+    "createdAt": {
+      "$date": "2026-10-11T16:00:50.739Z"
+    },
+    "updatedAt": {
+      "$date": "2026-10-11T16:00:50.739Z"
+    }
+  },
+  {
+    "_id": "670123456789abcdef01234a",
+    "cedula": "1040183851",
+    "tipo_documento": "CC",
+    "nombre": "Carolina",
+    "apellidos": "Garcia Botero",
+    "correo": "carolinagarciab@outlook.com",
+    "celular": "+573176708896",
+    "fecha_nacimiento": "1994-11-20",
+    "edad": 31,
+    "sexo": "Femenino",
+    "estado_civil": "Soltera",
+    "ocupacion": "Profesional",
+    "direccion_residencia": "Circular 4 # 73-12, Medellín",
+    "aseguradora": "Particular",
+    "tipo_vinculacion": "Cotizante",
+    "es_menor_de_edad": false,
+    "acompanante": {
+      "nombre": null,
+      "telefono": null
+    },
+    "persona_responsable": {
+      "nombre": null,
+      "telefono": null,
+      "parentesco": null
+    },
+    "createdAt": {
+      "$date": "2026-10-11T16:16:53.090Z"
+    },
+    "updatedAt": {
+      "$date": "2026-10-11T16:16:53.090Z"
+    }
+  },
+  {
+    "_id": "670123456789abcdef01234c",
+    "cedula": "1234567899",
+    "tipo_documento": "CC",
+    "nombre": "Marcela",
+    "apellidos": "Tabares",
+    "correo": "marce.tab@gmail.com",
+    "celular": "+573204535697",
+    "fecha_nacimiento": "1988-06-14",
+    "edad": 38,
+    "sexo": "Femenino",
+    "estado_civil": "Soltera",
+    "ocupacion": "Profesional",
+    "direccion_residencia": "Calle 123 # 45-67, Bogotá",
+    "aseguradora": "Particular",
+    "tipo_vinculacion": "Cotizante",
+    "es_menor_de_edad": false,
+    "acompanante": {
+      "nombre": null,
+      "telefono": null
+    },
+    "persona_responsable": {
+      "nombre": null,
+      "telefono": null,
+      "parentesco": null
+    },
+    "createdAt": {
+      "$date": "2026-10-14T01:51:36.641Z"
+    },
+    "updatedAt": {
+      "$date": "2026-10-14T01:51:36.641Z"
+    }
+  }
+]

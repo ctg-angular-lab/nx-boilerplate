@@ -1,0 +1,263 @@
+<div class="clinical-form-container">
+  @if (isSaving()) {
+    <mat-progress-bar mode="indeterminate" class="form-progress"></mat-progress-bar>
+  }
+
+  @if (errorMessage()) {
+    <div class="alert alert--error" role="alert">
+      <span class="material-symbols-outlined alert__icon">error</span>
+      <span class="alert__message">{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- Header Card: Contexto del Paciente -->
+  <header class="patient-banner">
+    <div class="patient-banner__info">
+      <span class="patient-name">{{ patient().nombre }} {{ patient().apellidos }}</span>
+      <span class="patient-meta">
+        Doc: {{ patient().tipo_documento || 'CC' }} {{ patient().cedula }}
+        @if (patient().aseguradora) {
+          • EPS: {{ patient().aseguradora }}
+        }
+      </span>
+    </div>
+
+    <span class="context-badge" [class.manual]="isManualCreation()">
+      <span class="material-symbols-outlined">
+        {{ isManualCreation() ? 'edit_note' : 'event_available' }}
+      </span>
+      {{ isManualCreation() ? 'Atención Médica Manual' : ('Cita ' + (record()?.appointmentId || '')) }}
+    </span>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="clinical-form" novalidate>
+    <!-- BLOQUE 1: Profesional y Datos de la Atención -->
+    <fieldset class="form-section">
+      <legend class="form-section__legend">
+        <span class="material-symbols-outlined">person_outline</span>
+        Médico Tratante y Fecha de Atención
+      </legend>
+
+      @if (!isManualCreation()) {
+        <!-- Precargado desde la cita -->
+        <div class="preloaded-card">
+          <div class="preloaded-item">
+            <span class="label">Profesional Responsable</span>
+            <span class="val">
+              {{ doctorName() || preloadedDoctor()?.nombre_profesional || preloadedDoctor()?.cedula_profesional || 'Asignado en agendamiento' }}
+            </span>
+          </div>
+          <div class="preloaded-item">
+            <span class="label">Fecha Programada</span>
+            <span class="val">{{ form.controls.fecha_atencion.value }}</span>
+          </div>
+        </div>
+      } @else {
+        <!-- Selector manual para atención sin cita previa -->
+        <div class="form-grid form-grid--2-cols">
+          <mat-form-field appearance="outline">
+            <mat-label>Seleccione Médico Tratante</mat-label>
+            <mat-select formControlName="cedula_profesional">
+              @for (doc of service.doctors(); track doc.cedula) {
+                <mat-option [value]="doc.cedula">
+                  {{ doc.nombres }} {{ doc.apellidos }} ({{ doc.profesion }})
+                </mat-option>
+              }
+            </mat-select>
+            @if (form.controls.cedula_profesional.hasError('required') && form.controls.cedula_profesional.touched) {
+              <mat-error>El médico tratante es obligatorio</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de la Atención</mat-label>
+            <input matInput type="date" formControlName="fecha_atencion" />
+            @if (form.controls.fecha_atencion.hasError('required') && form.controls.fecha_atencion.touched) {
+              <mat-error>La fecha es obligatoria</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      }
+    </fieldset>
+
+    <!-- BLOQUE 2: Procedimiento y Lote -->
+    <fieldset class="form-section">
+      <legend class="form-section__legend">
+        <span class="material-symbols-outlined">medical_information</span>
+        Procedimiento Realizado y Trazabilidad
+      </legend>
+
+      <div class="form-grid form-grid--2-cols">
+        <mat-form-field appearance="outline">
+          <mat-label>Procedimiento Realizado</mat-label>
+          <input
+            matInput
+            formControlName="procedimiento_realizado"
+            placeholder="Ej. Limpieza Facial Profunda, Toxina Botulínica"
+          />
+          @if (form.controls.procedimiento_realizado.hasError('required') && form.controls.procedimiento_realizado.touched) {
+            <mat-error>El procedimiento realizado es obligatorio</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Lote del Producto / Dispositivo Médico</mat-label>
+          <input
+            matInput
+            formControlName="lote_producto"
+            placeholder="Ej. LOT-2026-X1 o N/A"
+          />
+        </mat-form-field>
+      </div>
+    </fieldset>
+
+    <!-- BLOQUE 3: Anamnesis -->
+    <fieldset class="form-section">
+      <legend class="form-section__legend">
+        <span class="material-symbols-outlined">description</span>
+        Anamnesis (Motivo de Consulta y Enfermedad Actual)
+      </legend>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Motivo de Consulta</mat-label>
+        <textarea
+          matInput
+          formControlName="motivo_consulta"
+          rows="2"
+          placeholder="Describa brevemente el motivo referido por el paciente..."
+        ></textarea>
+        @if (form.controls.motivo_consulta.hasError('required') && form.controls.motivo_consulta.touched) {
+          <mat-error>El motivo de consulta es obligatorio</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Enfermedad Actual</mat-label>
+        <textarea
+          matInput
+          formControlName="enfermedad_actual"
+          rows="2"
+          placeholder="Evolución clínica, cronología y sintomatología actual..."
+        ></textarea>
+        @if (form.controls.enfermedad_actual.hasError('required') && form.controls.enfermedad_actual.touched) {
+          <mat-error>La enfermedad actual es obligatoria</mat-error>
+        }
+      </mat-form-field>
+    </fieldset>
+
+    <!-- BLOQUE 4: Antecedentes Médicos (Resolución 1995 de 1999) -->
+    <fieldset class="form-section">
+      <legend class="form-section__legend">
+        <span class="material-symbols-outlined">history_edu</span>
+        Antecedentes Médicos
+      </legend>
+
+      <div class="form-grid form-grid--2-cols">
+        <mat-form-field appearance="outline">
+          <mat-label>Patológicos</mat-label>
+          <input matInput formControlName="patologicos" placeholder="Ninguno" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Alérgicos</mat-label>
+          <input matInput formControlName="alergicos" placeholder="Ninguno" />
+        </mat-form-field>
+      </div>
+
+      <div class="form-grid form-grid--2-cols">
+        <mat-form-field appearance="outline">
+          <mat-label>Farmacológicos</mat-label>
+          <input matInput formControlName="farmacologicos" placeholder="Ninguno" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Procedimientos Previos</mat-label>
+          <input matInput formControlName="procedimientos_previos" placeholder="Ninguno" />
+        </mat-form-field>
+      </div>
+    </fieldset>
+
+    <!-- BLOQUE 5: Examen Físico y Recomendaciones -->
+    <fieldset class="form-section">
+      <legend class="form-section__legend">
+        <span class="material-symbols-outlined">assignment</span>
+        Examen Físico y Recomendaciones
+      </legend>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Examen Físico</mat-label>
+        <textarea
+          matInput
+          formControlName="examen_fisico"
+          rows="3"
+          placeholder="Hallazgos clínicos, inspección cutánea y signos relevantes..."
+        ></textarea>
+        @if (form.controls.examen_fisico.hasError('required') && form.controls.examen_fisico.touched) {
+          <mat-error>El examen físico es obligatorio</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Recomendaciones y Plan de Cuidado</mat-label>
+        <textarea
+          matInput
+          formControlName="recomendaciones"
+          rows="3"
+          placeholder="Indicaciones post-tratamiento, signos de alarma y cita de control..."
+        ></textarea>
+        @if (form.controls.recomendaciones.hasError('required') && form.controls.recomendaciones.touched) {
+          <mat-error>Las recomendaciones son obligatorias</mat-error>
+        }
+      </mat-form-field>
+    </fieldset>
+
+    <!-- BLOQUE 6: Soporte Documental (Consentimiento Informado) -->
+    <fieldset class="form-section">
+      <legend class="form-section__legend">
+        <span class="material-symbols-outlined">verified</span>
+        Soporte Documental y Consentimiento Informado
+      </legend>
+
+      <div class="consent-toggle-row">
+        <mat-slide-toggle formControlName="consentimiento_informado" color="primary">
+          Consentimiento informado firmado por el paciente / responsable
+        </mat-slide-toggle>
+      </div>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Enlace o Referencia del Soporte Firmado</mat-label>
+        <input
+          matInput
+          formControlName="descargable_consentimiento"
+          placeholder="Ej. https://cdn.clinica.com/consentimientos/c-123.pdf o Pendiente de adjunto"
+        />
+        @if (form.controls.descargable_consentimiento.hasError('required') && form.controls.descargable_consentimiento.touched) {
+          <mat-error>El soporte de consentimiento es obligatorio</mat-error>
+        }
+      </mat-form-field>
+    </fieldset>
+
+    <!-- Pie de Acciones -->
+    <footer class="form-actions">
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="onCancel()"
+        [disabled]="isSaving()"
+      >
+        Cancelar
+      </button>
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="submit"
+        [disabled]="form.invalid || isSaving()"
+      >
+        <span class="material-symbols-outlined">save</span>
+        Guardar Historia Clínica
+      </button>
+    </footer>
+  </form>
+</div>
+

@@ -1,244 +1,180 @@
-# App Shell (Host MFE)
+# App Shell — Host MFE y Nexo Central de Arquitectura Frontend
 
 > **Ficha Técnica del Módulo**  
 > * **Ubicación en Monorepo:** `app-shell`  
-> * **Tipo de Módulo:** Host Microfrontend Angular 21+ (Webpack Module Federation Host)  
+> * **Tipo de Módulo:** Host Microfrontend Angular 21+ (Dynamic Module Federation Host, Standalone + Zoneless)  
 > * **Tags Nx (`project.json`):** `["scope:frontend", "type:app"]`  
 > * **Puerto Dev Local:** `4200` (`http://localhost:4200`)  
-> * **Remotes Federados:** `agendador-citas` (:4201), `login` (:4202)  
-> * **Estado:** Activo (Contenedor y Shell de Navegación Global)  
+> * **Remotes Federados Activos:** `agendador-citas` (:4201), `Login` (:4202), `lista-profesionales` (:4203), `procedimientos-medicos` (:4204), `historial-pacientes` (:4205)  
+> * **Rol Documental:** **Documento Nexo Central** del Frontend. Conecta el contenedor principal con todos los Microfrontends remotos y las librerías compartidas.
 
 ---
 
-## 1. Propósito y Alcance de Negocio
+## 1. Mapa de Navegación de la Documentación Frontend
 
-El **`app-shell`** es la aplicación anfitriona (Host) y punto de entrada unificado para el usuario final en la arquitectura de Microfrontends (MFE). Su responsabilidad principal es proveer el marco de trabajo estructural (Shell), la identidad visual corporativa ("Dras Botero") y la orquestación de la navegación global.
+El ecosistema Frontend está compuesto por el Host (`app-shell`), los Microfrontends remotos en `apps/*` y las librerías transversales en `libs/shared/*`:
 
-Entre sus responsabilidades clave se encuentran:
-1. **Contenedor Estructural de Layout:** Centraliza el encabezado superior (`MatToolbar`), el menú lateral retráctil (`MatSidenav`) y el área de trabajo dinámica donde se proyectan los microfrontends mediante `<router-outlet>`.
-2. **Gobernanza de Estilos y Theming MD3:** Inyecta globalmente los Design Tokens, tipografías e iconos nativos de Material Design 3 definidos en `@nx-boilerplate/theme`, además de renderizar fondos ambientales animados (*Ambient Glow Orbs*).
-3. **Carga Perezosa de Remotes Federados:** Resuelve dinámicamente en tiempo de ejecución (`Runtime Federation`) los paquetes remotos expuestos por cada microfrontend utilizando `@module-federation/enhanced/runtime`.
+| Documento | Módulo / Ubicación | Puerto | Ruta en Host | Estado y Responsabilidad |
+|---|---|---|---|---|
+| **[`app-shell.md`](./app-shell.md)** *(Actual)* | `app-shell` | `4200` | `/` | **Host & Nexo Central:** Layout global, Sidenav, Theming MD3, `HttpClient` con `loaderInterceptor` y carga dinámica de remotes vía manifest. |
+| **[`agendador-citas.md`](./agendador-citas.md)** | `apps/agendador-citas` | `4201` | `/agendador-citas` | **Activo:** Stepper de agendamiento (3 pasos), Calendario semanal dinámico y CRM diario de confirmación de citas. |
+| **[`lista-profesionales.md`](./lista-profesionales.md)** | `apps/lista-profesionales` | `4203` | `/profesionales` | **Activo:** Gestión CRUD de especialistas (Tab Host, tabla Activos/Inactivos, `AsideModal` de detalle y Stepper de 4 pasos para alta/edición). |
+| **[`procedimientos-medicos.md`](./procedimientos-medicos.md)** | `apps/procedimientos-medicos` | `4204` | `/procedimientos-medicos` | **Activo:** Gestión CRUD de procedimientos y laboratorios (Tab Host, auto-recuperación de inactivos, bloqueo de baja si tiene médicos asignados). |
+| **[`homologacion-navegacion.md`](./homologacion-navegacion.md)** | `libs/shared/layouts` & `apps/*` | *Transversal* | *N/A* | **Estándar Implementado:** Patrón canónico de navegación por pestañas (`lib-tabs-collection`), tablas (`lib-data-table`), modales y steppers. |
+| **[`historial-pacientes.md`](./historial-pacientes.md)** | `apps/historial-pacientes` | `4205` | `/historial-pacientes` | **Activo:** Directorio de pacientes, ficha demográfica de 20 campos (Resolución 1995 de 1999), expediente clínico y modales laterales (`AsideModal`) de lectura y diligenciamiento médico. |
+
+> **Conexión con la Documentación Backend:**  
+> Todos los Microfrontends se comunican exclusivamente con el API Gateway (`:3000/api`). Consulta el nexo de backend en [`docs/documentacion-back/00-api-gateway.md`](../documentacion-back/00-api-gateway.md).
 
 ---
 
-## 2. Diagrama de Arquitectura y Flujo de Información
+## 2. Propósito y Alcance del `app-shell`
+
+El **`app-shell`** es la aplicación anfitriona (Host) y punto de entrada único para el usuario final:
+
+1. **Contenedor Estructural de Layout:** Centraliza la barra superior (`MatToolbar`), el menú de navegación lateral retráctil (`MatSidenav`) con auto-cierre reactivo al cambiar de ruta (`NavigationEnd`) y el área de trabajo principal (`<router-outlet>`).
+2. **Gobernanza de Estilos y Theming MD3:** Inyecta globalmente los Design Tokens (`--sys-color-*`), tipografías e iconos nativos (`material-symbols-outlined`) de `@nx-boilerplate/theme`, junto con los fondos ambientales animados (*Ambient Glow Orbs*).
+3. **Federación Dinámica en Runtime (`Runtime Manifest Federation`):** Descubre y registra los microfrontends en tiempo de ejecución leyendo `public/module-federation.manifest.json` mediante `registerRemotes()`, evitando acoplamiento estático y conflictos de puertos.
+4. **Proveedor Global de Infraestructura (`app.config.ts`):** Como los archivos `app.config.ts` de los remotes no se ejecutan cuando son cargados dentro del Host, el `app-shell` provee globalmente `provideZonelessChangeDetection()` y `provideHttpClient(withInterceptors([loaderInterceptor]))`.
+
+---
+
+## 3. Diagrama de Arquitectura y Federación en Runtime
 
 ```mermaid
 graph TD
-    subgraph Browser [Navegador Web / Cliente :4200]
-        Index[index.html] --> Bootstrap[main.ts / bootstrap.ts]
-        Bootstrap --> Config[app.config.ts: Zoneless + Router]
-        Config --> ShellApp[App Component / Host Layout]
+    subgraph Browser ["Navegador Web (Host :4200)"]
+        Main["main.ts\nfetch('/module-federation.manifest.json')\n-> registerRemotes()"] --> Bootstrap["bootstrap.ts"]
+        Bootstrap --> Config["app.config.ts\nZoneless + Router + HttpClient(loaderInterceptor)"]
+        Config --> ShellApp["App Component (app.ts / app.html)"]
     end
 
-    subgraph ShellLayout [Estructura Visual App Shell]
-        ShellApp --> Topbar[MatToolbar: Título, Menú & Perfil]
-        ShellApp --> Sidenav[MatSidenav: Navegación Global]
-        ShellApp --> AmbientOrbs[Ambient Glow Orbs: Animaciones MD3]
-        ShellApp --> Workspace[Main Workspace: router-outlet]
+    subgraph ShellLayout ["Layout Global MD3"]
+        ShellApp --> Topbar["MatToolbar: Marca 'Dras Botero' & Botón Menú"]
+        ShellApp --> Sidenav["MatSidenav: mfeRoutes() + Cierre en NavigationEnd"]
+        ShellApp --> Workspace["Workspace: <router-outlet>"]
     end
 
-    subgraph FedRuntime [Module Federation Enhanced Runtime]
-        MfeResolver[loadRemote Resolver]
+    subgraph Remotes ["Microfrontends Federados (loadRemote)"]
+        R_AG["agendador-citas (:4201)\n/agendador-citas"]
+        R_LP["lista-profesionales (:4203)\n/profesionales"]
+        R_PM["procedimientos-medicos (:4204)\n/procedimientos-medicos"]
+        R_HP["historial-pacientes (:4205)\n/historial-pacientes"]
+        R_LG["Login (:4202)\n/login"]
     end
 
-    subgraph RemoteMFEs [Remotes MFE Angular Independientes]
-        RemoteAgendador[agendador-citas :4201 /Routes]
-        RemoteLogin[login :4202 /Routes]
-        RemoteFuture[Futuros Remotes: users, billing, reports]
+    Workspace --> R_AG & R_LP & R_PM & R_HP & R_LG
+
+    subgraph SharedLibs ["Librerías Compartidas (libs/shared/*)"]
+        L_LAY["@nx-boilerplate/layouts\n(Tabs, DataTable, AsideModal, ConfirmationModal, Steps)"]
+        L_THM["@nx-boilerplate/theme\n(Tokens MD3, Tipografía, Módulos SCSS)"]
+        L_DA["@nx-boilerplate/data-access\n(ApiClientService, loaderInterceptor, LoaderStateService)"]
+        L_INT["@nx-boilerplate/api-interfaces\n(Contratos TypeScript Puros)"]
+        L_UTL["@nx-boilerplate/utils\n(calculateAgeFromBirthDate, getNextWorkingDays)"]
     end
 
-    Workspace -->|Ruta /agendador-citas| FedRuntime
-    Workspace -->|Ruta /login| FedRuntime
-    FedRuntime -->|Descarga asíncrona de bundles| RemoteAgendador
-    FedRuntime -->|Descarga asíncrona de bundles| RemoteLogin
-    FedRuntime -.->|Enrutamiento preparado| RemoteFuture
-
-    subgraph SharedTheme [libs/shared/theme]
-        ThemeTokens[Tokens MD3: --sys-color-*, Typography, Icons]
-    end
-    SharedTheme -.->|Estilos Globales SCSS| ShellApp
+    R_AG & R_LP & R_PM & R_HP --> L_LAY & L_THM & L_DA & L_INT & L_UTL
 ```
 
 ---
 
-## 3. Contratos y Estado Reactivo de Navegación
+## 4. Configuración Real de Module Federation y Enrutamiento
 
-### A. Modelo de Enrutamiento (`MfeRoute`)
+### 4.1 Manifiesto Dinámico (`app-shell/public/module-federation.manifest.json`)
+Archivo leído en el arranque (`main.ts`) para registrar las URLs de cada remote sin recompilar el Host:
 
-Definido localmente en `app-shell/src/app/app.ts` para tipar estrictamente el catálogo de microfrontends accesibles desde el menú lateral:
-
-```typescript
-interface MfeRoute {
-  path: string;
-  label: string;
-  icon: string;
+```json
+{
+  "agendador-citas": "http://localhost:4201/mf-manifest.json",
+  "Login": "http://localhost:4202/mf-manifest.json",
+  "lista-profesionales": "http://localhost:4203/mf-manifest.json",
+  "procedimientos-medicos": "http://localhost:4204/mf-manifest.json",
+  "historial-pacientes": "http://localhost:4205/mf-manifest.json"
 }
 ```
 
-### B. Estado Reactivo con Signals
-
-La reactividad del Host está gobernada por Signals puros y detección de cambios `OnPush`:
-
-| Signal | Tipo | Valor Inicial | Propósito |
-|---|---|---|---|
-| `isSidenavOpen` | `WritableSignal<boolean>` | `false` | Controla la apertura/cierre del panel lateral retráctil (`mode="over"`). |
-| `mfeRoutes` | `WritableSignal<MfeRoute[]>` | Lista de 5 rutas | Catálogo reactivo de aplicaciones remotas enlazadas al Sidenav. |
-
-### C. Control Flow Moderno en Plantilla (`app.html`)
-
-El menú lateral itera la lista de aplicaciones mediante `@for` y maneja estados vacíos con `@empty`:
-
-```html
-<mat-nav-list class="shell-nav-list">
-  @for (route of mfeRoutes(); track route.path) {
-    <a mat-list-item [routerLink]="route.path" routerLinkActive="is-active" class="shell-nav-item">
-      <mat-icon matListItemIcon class="nav-icon">{{ route.icon }}</mat-icon>
-      <span matListItemTitle class="nav-label">{{ route.label }}</span>
-    </a>
-  } @empty {
-    <div class="shell-empty-state">
-      <p>No hay aplicaciones disponibles.</p>
-    </div>
-  }
-</mat-nav-list>
-```
-
----
-
-## 4. Configuración de Module Federation y Enrutamiento
-
-### A. Configuración Host (`module-federation.config.ts`)
-
-Declara los nombres simbólicos de los microfrontends remotos que el host está autorizado a resolver:
+### 4.2 Singletons Compartidos (`app-shell/module-federation.config.ts`)
+Para evitar errores de hidratación y duplicación de proveedores de Angular Material (`NG0912`), el Host comparte como singletons las librerías de UI y deja vacío el arreglo estático de `remotes`:
 
 ```typescript
-import { ModuleFederationConfig } from '@nx/module-federation';
+import { ModuleFederationConfig, sharePackages } from '@nx/module-federation';
 
 const config: ModuleFederationConfig = {
   name: 'app-shell',
-  remotes: ['agendador-citas', 'Login'],
+  // Los remotes se registran dinámicamente en runtime vía main.ts -> registerRemotes()
+  additionalShared: Object.entries(
+    sharePackages(['@angular/animations', '@angular/cdk', '@angular/material'])
+  ),
 };
 
 export default config;
 ```
 
-### B. Enrutamiento Federado Dinámico (`app.routes.ts`)
+### 4.3 Tabla de Rutas Federadas ([`app-shell/src/app/app.routes.ts`](file:///Users/usuario/Desktop/nx-boilerplate/app-shell/src/app/app.routes.ts))
 
-Utiliza la función `loadRemote` de `@module-federation/enhanced/runtime` para resolver asíncronamente las rutas expuestas por cada remote sin acoplamiento en tiempo de compilación:
+| Path en Host | Acción / Redirección | Remote Resuelto (`loadRemote`) |
+|---|---|---|
+| `''` | `redirectTo: 'agendador-citas'` | — |
+| `'agendador-citas'` | Carga perezosa | `agendador-citas/Routes` (`remoteRoutes`) |
+| `'dashboard'` | `redirectTo: 'agendador-citas'` | — |
+| `'login'` / `'Login'` | Carga perezosa | `Login/Routes` (`remoteRoutes`) |
+| `'profesionales'` | Carga perezosa | `lista-profesionales/Routes` (`remoteRoutes`) |
+| `'lista-profesionales'` | `redirectTo: 'profesionales'` | — |
+| `'procedimientos-medicos'` | Carga perezosa | `procedimientos-medicos/Routes` (`remoteRoutes`) |
+| `'historial-pacientes'` | Carga perezosa | `historial-pacientes/Routes` (`remoteRoutes`) |
+| `'mfe-pacientes'` | `redirectTo: 'historial-pacientes'` | — |
 
-```typescript
-import { Route } from '@angular/router';
-import { loadRemote } from '@module-federation/enhanced/runtime';
-
-export const appRoutes: Route[] = [
-  {
-    path: '',
-    redirectTo: 'agendador-citas',
-    pathMatch: 'full',
-  },
-  {
-    path: 'agendador-citas',
-    loadChildren: () =>
-      loadRemote<typeof import('agendador-citas/Routes')>(
-        'agendador-citas/Routes'
-      ).then((m) => m!.remoteRoutes),
-  },
-  {
-    path: 'dashboard',
-    redirectTo: 'agendador-citas',
-  },
-  {
-    path: 'login',
-    loadChildren: () =>
-      loadRemote<typeof import('Login/Routes')>('Login/Routes').then(
-        (m) => m!.remoteRoutes
-      ),
-  },
-  {
-    path: 'Login',
-    redirectTo: 'login',
-  },
-];
-```
-
-### C. Proveedores de la Aplicación (`app.config.ts`)
+### 4.4 Estado Reactivo del Menú Lateral ([`app-shell/src/app/app.ts`](file:///Users/usuario/Desktop/nx-boilerplate/app-shell/src/app/app.ts))
+El componente raíz `App` gestiona el menú lateral mediante Signals y cierra automáticamente el cajón de navegación tras cada transición exitosa del router:
 
 ```typescript
-export const appConfig: ApplicationConfig = {
-  providers: [
-    provideZonelessChangeDetection(),
-    provideBrowserGlobalErrorListeners(),
-    provideRouter(appRoutes),
-  ],
-};
+readonly isSidenavOpen = signal<boolean>(false);
+
+readonly mfeRoutes = signal<MfeRoute[]>([
+  { path: '/agendador-citas', label: 'Agendar Cita', icon: 'calendar_add_on' },
+  { path: '/profesionales', label: 'Profesionales', icon: 'badge' },
+  { path: '/procedimientos-medicos', label: 'Procedimientos Médicos', icon: 'medical_services' },
+  { path: '/historial-pacientes', label: 'Historial de Pacientes', icon: 'clinical_notes' },
+]);
 ```
 
 ---
 
-## 5. Diseño Visual, Layout y Theming Material Design 3
+## 5. Ecosistema de Librerías Compartidas de Frontend (`libs/shared/*`)
 
-### A. Sistema de Capas y Orbs Ambientales (`app.scss`)
-El shell incorpora un fondo dinámico con tres "Orbs" tonales animados mediante CSS `@keyframes` (`floatOrbOne`, `floatOrbTwo`, `floatOrbThree`) que utilizan gradientes radiales basados en los tokens semánticos de MD3:
-* **Orb Uno:** `var(--sys-color-primary)` con blur de 100px.
-* **Orb Dos:** `var(--sys-color-tertiary)` con blur de 100px.
-* **Orb Tres:** `var(--sys-color-secondary)` con blur de 100px.
+Todos los Microfrontends orquestados por el `app-shell` se apoyan en cinco librerías transversales:
 
-### B. Integración de Iconos Nativa MD3
-El componente raíz configura globalmente el set de iconos a `material-symbols-outlined`:
-```typescript
-providers: [
-  {
-    provide: MAT_ICON_DEFAULT_OPTIONS,
-    useValue: { fontSet: 'material-symbols-outlined' },
-  },
-]
-```
-
----
-
-## 6. Dependencias y Límites Arquitectónicos (Nx)
-
-### A. Dependencias Consumidas
-* **`@nx-boilerplate/theme`:** Consumo directo en `styles.scss` (`@use '../../libs/shared/theme/src/lib/theme';`).
-* **Angular Material MD3:** `MatSidenavModule`, `MatToolbarModule`, `MatButtonModule`, `MatIconModule`, `MatListModule`.
-* **Nx & Module Federation:** `@nx/angular`, `@module-federation/enhanced`.
-
-### B. Límites Arquitectónicos
-* **Scope Frontend:** Taggeado con `["scope:frontend", "type:app"]`. No tiene acceso directo a código ni entidades de backend.
-* **Zoneless:** No depende de `zone.js`. Utiliza `provideZonelessChangeDetection()`.
-* **Zero-Legacy:** Sin `@NgModule`, inyecciones limpias y componentes standalone.
+1. **`@nx-boilerplate/layouts` ([`libs/shared/layouts/src/index.ts`](file:///Users/usuario/Desktop/nx-boilerplate/libs/shared/layouts/src/index.ts)):**
+   * **Navegación y Tablas:** `TabsCollectionComponent` (`lib-tabs-collection`), `DataTableComponent` (`lib-data-table`), `MetricCardComponent`.
+   * **Modales Transversales:**
+     * `AsideModalComponent` y `AsideModalService`: Panel lateral deslizante reutilizable para visualizar detalles o formularios contextuales (usado en `lista-profesionales` e `historial-pacientes`).
+     * `ConfirmationModalComponent`: Diálogo estándar de confirmación y alertas de bloqueo.
+     * `AgendarModalComponent`: Modal de reserva de turno en calendario.
+   * **Pasos de Formularios Dumb (`forms/`):**
+     * `ui-appointment-steps`: `StepCedulaComponent` (configurable con input `subject`), `StepPersonalInfoComponent`, `StepProcedureSelectionComponent`.
+     * `ui-procedure-steps`: `StepProcedureNameComponent`, `StepProcedurePricingComponent`, `StepProcedureSummaryComponent`.
+     * `ui-professional-steps`: `StepProfessionalInfoComponent`, `StepProfessionalScheduleComponent`, `StepProfessionalProceduresComponent`.
+2. **`@nx-boilerplate/data-access` ([`libs/shared/data-access/src/index.ts`](file:///Users/usuario/Desktop/nx-boilerplate/libs/shared/data-access/src/index.ts)):**
+   * `ApiClientService`: Cliente HTTP tipado que desenvuelve respuestas `IApiResponse<T>`.
+   * `loaderInterceptor` y `LoaderStateService`: Interceptor funcional y estado global con Signals para indicadores de carga.
+3. **`@nx-boilerplate/theme` ([`libs/shared/theme/src/lib/_theme.scss`](file:///Users/usuario/Desktop/nx-boilerplate/libs/shared/theme/src/lib/_theme.scss)):**
+   * Sistema de diseño Material Design 3 con módulos SCSS dedicados (`_buttons.scss`, `_forms.scss`, `_modals.scss`, `_navigation.scss`, `_stepper.scss`, `_tabs.scss`).
+4. **`@nx-boilerplate/utils` ([`libs/shared/utils/src/index.ts`](file:///Users/usuario/Desktop/nx-boilerplate/libs/shared/utils/src/index.ts)):**
+   * Utilidades puras de fecha y negocio: `getNextWorkingDays` (cálculo de días hábiles del calendario) y `calculateAgeFromBirthDate` (cálculo exacto de edad para la ficha demográfica).
+5. **`@nx-boilerplate/ui-charts` ([`libs/shared/ui-charts/src/index.ts`](file:///Users/usuario/Desktop/nx-boilerplate/libs/shared/ui-charts/src/index.ts)):**
+   * Componente envoltorio de Chart.js reactivo con Signals.
 
 ---
 
-## 7. Diagnóstico Actual y Hoja de Ruta de Evolución
-
-| Capacidad | Estado | Descripción / Siguiente Paso |
-|---|:---:|---|
-| **Layout Shell (Navbar + Sidenav)** | ✅ Operativo | Maquetación con MD3, navegación colapsable y brand "Dras Botero". |
-| **Carga de Remote `agendador-citas`** | ✅ Operativo | Carga lazy transparente en ruta `/agendador-citas`. |
-| **Carga de Remote `login`** | ✅ Configurado | Preparado para recibir el MFE de autenticación en `/login`. |
-| **Rutas Futuras en Sidenav** | ⚠️ Enlazadas a UI | `/mfe-users`, `/mfe-billing`, `/mfe-reports` y `/settings` listas para cuando se creen los remotes respectivos. |
-| **Error Boundary de Remotes** | ⚠️ Pendiente | Implementar un componente de fallback en el router en caso de que un microfrontend remote esté caído o inaccesible por red. |
-| **Gestión de Sesión Global** | ⚠️ Pendiente | Compartir estado de autenticación (Token JWT / Perfil de usuario) entre el Shell y los remotes. |
-
----
-
-## 8. Comandos de Verificación (Nx)
+## 6. Comandos de Verificación (Nx)
 
 ```bash
-# Servir el Host en modo orquestado (Lanza concurrentemente los remotes federados en dev)
+# Levantar el Host en puerto 4200 junto con los remotes
 npx nx serve app-shell
 
-# Compilar proyecto en modo desarrollo
-npx nx build app-shell --configuration=development
+# Compilar el Host y todos los MFEs activos
+npx nx run-many -t build -p app-shell agendador-citas lista-profesionales procedimientos-medicos historial-pacientes
 
-# Compilar en modo producción
-npx nx build app-shell --configuration=production
-
-# Ejecutar pruebas unitarias (Vitest)
-npx nx test app-shell
-
-# Validar calidad y límites de módulos (Lint)
-npx nx lint app-shell
+# Ejecutar pruebas unitarias del Host
+./node_modules/.bin/vitest run --config app-shell/vite.config.mts
 ```

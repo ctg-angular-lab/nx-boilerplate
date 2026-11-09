@@ -14,8 +14,6 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { provideNativeDateAdapter } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatBadgeModule } from '@angular/material/badge';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -40,7 +38,6 @@ export interface QuickDateOption {
 @Component({
   selector: 'app-filtros-confirmacion',
   standalone: true,
-  providers: [provideNativeDateAdapter()],
   imports: [
     CommonModule,
     ReactiveFormsModule,
@@ -49,7 +46,6 @@ export interface QuickDateOption {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatDatepickerModule,
     MatIconModule,
     MatBadgeModule,
   ],
@@ -134,6 +130,21 @@ export class FiltrosConfirmacionComponent implements OnInit {
 
   onPillSelect(dateStr: string): void {
     this.dateChange.emit(dateStr);
+  }
+
+  openNativeDatePicker(inputEl: HTMLInputElement): void {
+    if (typeof inputEl.showPicker === 'function') {
+      inputEl.showPicker();
+    } else {
+      inputEl.click();
+    }
+  }
+
+  onNativeDateChange(event: Event): void {
+    const target = event.target as HTMLInputElement | null;
+    if (target?.value) {
+      this.dateChange.emit(target.value);
+    }
   }
 
   onCustomDateSelect(date: Date | null): void {

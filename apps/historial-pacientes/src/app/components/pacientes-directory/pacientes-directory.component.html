@@ -1,0 +1,55 @@
+<div class="directory-container">
+  <lib-data-table
+    [dataTable]="service.directoryRows()"
+    rowKey="cedula"
+    [dataColumn]="columns"
+    [actions]="directoryActions"
+    [loading]="service.isLoading()"
+    [searchable]="true"
+    searchPlaceholder="Buscar paciente por cédula, nombre o correo..."
+    emptyMessage="No se encontraron pacientes en el directorio."
+    (actionClick)="onTableAction($event)"
+    (rowClick)="onRowClick($event)"
+  >
+    <!-- Slot Table Header -->
+    <div table-header class="directory-header">
+      <div class="directory-header__info">
+        <h2 class="directory-header__title">
+          <span class="material-symbols-outlined header-icon">groups</span>
+          Directorio de Pacientes
+        </h2>
+        <p class="directory-header__subtitle">
+          Consulte los expedientes y la completitud de la ficha demográfica (Resolución 1995 de 1999)
+        </p>
+      </div>
+
+      <div class="directory-header__actions">
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          (click)="onAgregarPaciente()"
+        >
+          <span class="material-symbols-outlined">person_add</span>
+          Agregar Paciente
+        </button>
+      </div>
+    </div>
+  </lib-data-table>
+
+  <!-- Template personalizado para la columna de Estado de Ficha Demográfica -->
+  <ng-template #estadoFichaTpl let-row>
+    @if (row.estadoFicha === 'COMPLETA') {
+      <span class="chip-status chip-status--success" matTooltip="Todos los campos requeridos por ley están diligenciados">
+        <span class="material-symbols-outlined chip-icon">check_circle</span>
+        Completa
+      </span>
+    } @else {
+      <span class="chip-status chip-status--warning" matTooltip="Faltan datos requeridos (fecha de nacimiento, sexo, dirección o responsable)">
+        <span class="material-symbols-outlined chip-icon">warning</span>
+        Incompleta
+      </span>
+    }
+  </ng-template>
+</div>
+

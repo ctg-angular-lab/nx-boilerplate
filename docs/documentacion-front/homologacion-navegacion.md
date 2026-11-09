@@ -3,10 +3,11 @@
 
 > **Ficha Técnica del Documento**  
 > * **Ubicación:** `docs/documentacion-front/homologacion-navegacion.md`  
-> * **Módulos Involucrados:** `apps/agendador-citas`, `apps/lista-profesionales`, `libs/shared/layouts` (`TabsCollectionComponent`, `DataTableComponent`, steps), `libs/shared/api-interfaces`  
-> * **Tipo:** Especificación Técnica y Plan de Refactorización Frontend (Angular 21+ MFE Standalone / Zoneless)  
-> * **Versión:** 2.0 (revisada: fases libres de conflictos, `lib-data-table` intacto y diseño del stepper de alta)  
-> * **Estado:** Propuesta Técnica pendiente de confirmación (Fase 2 del protocolo)  
+> * **Módulos Involucrados:** `apps/agendador-citas`, `apps/lista-profesionales`, `apps/procedimientos-medicos`, `apps/historial-pacientes`, `libs/shared/layouts` (`TabsCollectionComponent`, `DataTableComponent`, `AsideModalComponent`, `ConfirmationModalComponent`, steps), `libs/shared/api-interfaces`  
+> * **Tipo:** Estándar Arquitectónico de Navegación y Componentes Transversales Frontend (Angular 21+ MFE Standalone / Zoneless)  
+> * **Versión:** 2.2 (Consolidado en los 4 MFEs operativos con Tab Host, Stepper, ViewModels planos y Aside Modal)  
+> * **Estado:** Implementado y Activo  
+> * **Nexo Padre:** [Volver a `app-shell.md`](./app-shell.md)  
 
 ---
 
@@ -316,11 +317,25 @@ Configuración de pestañas: `Lista de Profesionales` (icono `badge`) y `Agregar
 
 ---
 
-## 10. Comandos de Verificación (Nx)
+## 10. Adopción Transversal del Estándar en los 4 MFEs Operativos
+
+El patrón establecido en este documento es el estándar vigente en todos los Microfrontends del monorepo:
+
+| MFE | Especificación | Tab Host (`lib-tabs-collection`) | Uso de `lib-data-table` | Uso de `AsideModalService` / `ConfirmationModalComponent` |
+|---|---|---|---|---|
+| **[`agendador-citas`](./agendador-citas.md)** | 3 Pestañas (`FORM`, `CALENDAR`, `CONFIRMATION`) | `AppointmentLogicService.activeTab` | Pestaña 3: CRM de confirmación de citas (`rowKey="appointmentId"`) | `ConfirmationModalComponent` en reserva y confirmación |
+| **[`lista-profesionales`](./lista-profesionales.md)** | 2 Pestañas (`LIST`, `FORM`) | `ProfesionalesAdminService.activeTab` | Pestaña 1: Directorio Activos/Inactivos (`rowKey="cedula"`) | `ProfesionalDetailComponent` (`480px`) + `ConfirmationModalComponent` para baja/reactivación |
+| **[`procedimientos-medicos`](./procedimientos-medicos.md)** | 2 Pestañas (`LIST`, `FORM`) | `ProcedimientosAdminService.activeTab` | Pestaña 1: Catálogo de procedimientos (`rowKey="idProcedimiento"`) | `ConfirmationModalComponent` para baja lógica y bloqueo por médicos asignados |
+| **[`historial-pacientes`](./historial-pacientes.md)** | 2 Pestañas (`DIRECTORY`, `EXPEDIENTE`) | `HistorialPacientesService.activeTab` | Pestaña 1: `directoryRows` (`rowKey="cedula"`)<br>Pestaña 2: `clinicalRecordRows` (`rowKey="id"`, ViewModels planos) | `ClinicalRecordDetailComponent` (`560px`), `ClinicalRecordFormComponent` (`680px`, `showActions: false`), `PacienteDemographicFormComponent` (`680px`, `showActions: false`) + `ConfirmationModalComponent` para altas sin cita previa |
+
+---
+
+## 11. Comandos de Verificación (Nx)
 
 ```bash
 npx nx test layouts
 npx nx test lista-profesionales
-npx nx run-many -t build -p app-shell agendador-citas lista-profesionales
-npx nx lint lista-profesionales
+npx nx test procedimientos-medicos
+npx nx test historial-pacientes
+npx nx run-many -t build -p app-shell agendador-citas lista-profesionales procedimientos-medicos historial-pacientes
 ```

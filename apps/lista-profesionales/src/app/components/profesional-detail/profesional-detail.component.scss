@@ -1,0 +1,180 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.profesional-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.contact-card,
+.schedule-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 1rem;
+  background-color: var(--sys-color-surface-container-low, #f0f0f7);
+  border-radius: 12px;
+  border: 1px solid var(--sys-color-outline-variant, rgba(0, 0, 0, 0.08));
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  .contact-icon {
+    font-size: 20px;
+    color: var(--sys-color-primary);
+  }
+
+  .contact-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+
+    .contact-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--sys-color-on-surface-variant);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .contact-value {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--sys-color-on-surface);
+
+      &.placeholder-text {
+        font-style: italic;
+        font-weight: 400;
+        color: var(--sys-color-on-surface-variant);
+      }
+    }
+  }
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  .section-icon {
+    font-size: 20px;
+    color: var(--sys-color-primary);
+  }
+
+  .section-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--sys-color-on-surface);
+  }
+
+  .section-badge {
+    margin-left: auto;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.125rem 0.5rem;
+    border-radius: 12px;
+    background-color: var(--sys-color-primary-container);
+    color: var(--sys-color-on-primary-container);
+  }
+}
+
+.schedule-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+
+  .schedule-subtitle {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--sys-color-on-surface-variant);
+  }
+
+  .schedule-text {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--sys-color-on-surface);
+  }
+}
+
+.days-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+
+  .day-chip {
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 6px;
+    background-color: var(--sys-color-surface-container-highest, #e0e2ec);
+    color: var(--sys-color-on-surface);
+  }
+
+  .empty-hint {
+    font-size: 0.8125rem;
+    font-style: italic;
+    color: var(--sys-color-on-surface-variant);
+  }
+}
+
+.procedures-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+
+  .procedure-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    background-color: var(--sys-color-primary-container);
+    color: var(--sys-color-on-primary-container);
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+
+    .chip-icon {
+      font-size: 16px;
+      color: var(--sys-color-primary);
+    }
+
+    .chip-label {
+      line-height: 1.2;
+    }
+  }
+}
+
+.empty-state-text {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: var(--sys-color-on-surface-variant);
+  background-color: var(--sys-color-surface-container-lowest, #ffffff);
+  border-radius: 8px;
+  border: 1px dashed var(--sys-color-outline-variant, #c1c7cf);
+}
+
+.detail-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--sys-color-outline-variant, rgba(0, 0, 0, 0.08));
+
+  .detail-modal__close-btn {
+    min-width: 96px;
+  }
+}

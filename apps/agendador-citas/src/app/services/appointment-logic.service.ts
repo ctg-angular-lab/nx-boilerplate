@@ -275,9 +275,13 @@ export class AppointmentLogicService {
    * Limpia el contexto temporal de agendamiento y el historial del paciente verificado
    */
   clearBookingContext(): void {
+    const hadContext = this.#bookingContext() !== null;
     this.#bookingContext.set(null);
     this._patientHistory.set(null);
     this.#isNewPatient.set(false);
+    if (hadContext && this.#activeProfessional()?.email) {
+      this.refreshCalendar();
+    }
   }
 
   /**
@@ -377,6 +381,10 @@ export class AppointmentLogicService {
       // Extraer hora de inicio del primer slot y hora de fin del último
       const rangeStart = slots[i].time.split(' - ')[0].trim();   // "13:00"
       const rangeEnd   = slots[j - 1].time.split(' - ')[1].trim(); // "15:15"
+      let totalDuration = 0;
+      for (let k = i; k < j; k++) {
+        totalDuration += slots[k].durationMinutes ?? 45;
+      }
 
       merged.push({
         id: slots[i].id,
@@ -385,6 +393,7 @@ export class AppointmentLogicService {
         title: slots[i].title,
         startTime: slots[i].startTime,
         endTime: slots[j - 1].endTime,
+        durationMinutes: totalDuration,
         mergedCount: j - i,
         isAppEvent: false,
       });
@@ -445,12 +454,20 @@ export class AppointmentLogicService {
       const rawSlots: TimeSlot[] = (backendDay?.slots ?? []).map((slot: ISlotDisplay, index) => {
         const isAvailable = slot.isBookable === true;
         const isAppEvent = slot.status === 'TENTATIVE' || slot.status === 'CONFIRMED';
+        let durationMinutes = slot.durationMinutes;
+        if (!durationMinutes && slot.startTime && slot.endTime) {
+          const diffMs = new Date(slot.endTime).getTime() - new Date(slot.startTime).getTime();
+          if (diffMs > 0) {
+            durationMinutes = Math.round(diffMs / 60000);
+          }
+        }
         return {
           id: `${dateStr}-slot-${index}`,
           time: slot.display,
           status: isAvailable ? ('disponible' as SlotStatus) : ('reservado' as SlotStatus),
           startTime: slot.startTime,
           endTime: slot.endTime,
+          durationMinutes: durationMinutes ?? (this.#bookingContext()?.procedure?.duracionStandar || 45),
           title: slot.title,
           colorId: slot.colorId,
           googleEventId: slot.googleEventId,
@@ -486,10 +503,15 @@ export class AppointmentLogicService {
   ): Observable<{ calendarDays: CalendarDay[]; offset: number; hasAvailable: boolean }> {
     const { days, window } = getWeekSchedule(offset);
     const cedulaParam = doctorCedula ? `&doctorCedula=${encodeURIComponent(doctorCedula)}` : '';
+    const procedureDuration = this.#bookingContext()?.procedure?.duracionStandar;
+    const durationParam =
+      typeof procedureDuration === 'number' && procedureDuration >= 5
+        ? `&durationMinutes=${procedureDuration}`
+        : '';
 
     const url = `/api/appointments/available-dates?doctorEmail=${encodeURIComponent(
       doctorEmail
-    )}${cedulaParam}&startDate=${window.startDate}&endDate=${window.endDate}`;
+    )}${cedulaParam}&startDate=${window.startDate}&endDate=${window.endDate}${durationParam}`;
 
     return this.apiClient.get<IDayAvailability[]>(url).pipe(
       map((response) => response.data ?? []),

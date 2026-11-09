@@ -1,0 +1,135 @@
+.demographic-form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1rem 0;
+  color: var(--sys-color-on-surface, #1d1b20);
+}
+
+.form-progress {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+
+  &--error {
+    background-color: var(--sys-color-error-container, #f9dedc);
+    color: var(--sys-color-on-error-container, #410e0b);
+    border: 1px solid var(--sys-color-error, #b3261e);
+  }
+
+  &--success {
+    background-color: var(--sys-color-primary-container, #eaddff);
+    color: var(--sys-color-on-primary-container, #21005d);
+    border: 1px solid var(--sys-color-primary, #6750a4);
+  }
+
+  &__icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  &__message {
+    flex: 1;
+  }
+}
+
+.demographic-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-section {
+  border: 1px solid var(--sys-color-outline-variant, #cac4d0);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  margin: 0;
+  background-color: var(--sys-color-surface, #fff);
+
+  &__legend {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 0.5rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--sys-color-primary, #6750a4);
+
+    .material-symbols-outlined {
+      font-size: 1.25rem;
+    }
+  }
+}
+
+.sub-legend {
+  margin: 1rem 0 0.5rem 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--sys-color-on-surface-variant, #49454f);
+}
+
+.form-grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 0.5rem;
+
+  &--2-cols {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+
+  &--3-cols {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 0.5rem 0 1rem 0;
+}
+
+.badge-required {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  background-color: var(--sys-color-error-container, #f9dedc);
+  color: var(--sys-color-on-error-container, #410e0b);
+  font-weight: 500;
+}
+
+.field-suffix {
+  margin-right: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--sys-color-on-surface-variant, #49454f);
+}
+
+.w-full {
+  width: 100%;
+}
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--sys-color-outline-variant, #cac4d0);
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+}
+

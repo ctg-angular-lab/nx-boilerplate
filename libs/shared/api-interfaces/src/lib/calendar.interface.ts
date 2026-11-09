@@ -8,6 +8,7 @@ export interface TimeSlot {
   status: SlotStatus;
   startTime?: string;
   endTime?: string;
+  durationMinutes?: number;
   title?: string;
   colorId?: string | null;
   googleEventId?: string;

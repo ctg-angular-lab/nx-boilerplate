@@ -1,0 +1,263 @@
+.daily-cascade-calendar {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--sys-color-surface-container-lowest, #ffffff);
+  border: 1px solid var(--sys-color-outline-variant, #c1c7cf);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--mat-sys-level1, 0 1px 3px rgba(0, 0, 0, 0.08));
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--sys-color-surface-container, #e7e8ee);
+    gap: 16px;
+    flex-wrap: wrap;
+
+    .title-and-date {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+
+      .title-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        .title-icon {
+          color: var(--sys-color-primary, #1e4ba8);
+          font-size: 24px;
+          width: 24px;
+          height: 24px;
+        }
+
+        .title-text {
+          margin: 0;
+          font-size: 1.125rem;
+          font-weight: 600;
+          color: var(--sys-color-on-surface, #191c20);
+        }
+      }
+    }
+
+    .calendar-controls {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+
+      .today-btn {
+        height: 32px;
+        line-height: 32px;
+        padding: 0 14px;
+        border-radius: 16px;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        border-color: var(--sys-color-outline-variant, #c1c7cf);
+      }
+    }
+  }
+
+  .cascade-legend {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    background-color: var(--sys-color-surface-container-low, #f0f0f7);
+    border-bottom: 1px solid var(--sys-color-surface-container, #e7e8ee);
+    overflow-x: auto;
+
+    .legend-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background-color: var(--sys-color-surface-container-lowest, #ffffff);
+      border: 1px solid var(--sys-color-outline-variant, #c1c7cf);
+      border-radius: 12px;
+      white-space: nowrap;
+      font-size: 0.75rem;
+
+      &__indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      &__label {
+        color: var(--sys-color-on-surface, #191c20);
+
+        .badge-layer {
+          font-weight: 600;
+          color: var(--sys-color-on-surface-variant, #41474e);
+          margin-right: 2px;
+        }
+      }
+    }
+  }
+
+  .calendar-grid-container {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 600px;
+
+    .grid-body {
+      display: flex;
+      flex-direction: column;
+      min-width: 600px;
+    }
+
+    .grid-row {
+      display: flex;
+      align-items: stretch;
+      min-height: 48px;
+      border-bottom: 1px solid var(--sys-color-surface-container, #e7e8ee);
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .time-col {
+        width: 72px;
+        min-width: 72px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--sys-color-surface-container-low, #f0f0f7);
+        border-right: 1px solid var(--sys-color-surface-container, #e7e8ee);
+
+        .time-label {
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: var(--sys-color-on-surface-variant, #41474e);
+          font-variant-numeric: tabular-nums;
+        }
+      }
+
+      .slots-track {
+        flex: 1;
+        position: relative;
+        min-height: 48px;
+        background-color: var(--sys-color-surface-container-lowest, #ffffff);
+      }
+
+      .slot-layer {
+        position: absolute;
+        top: 2px;
+        bottom: 2px;
+        border-left-width: 4px;
+        border-left-style: solid;
+        border-radius: 4px;
+        padding: 4px 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+        &:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.14);
+        }
+
+        &__content {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          width: 100%;
+          overflow: hidden;
+        }
+
+        .slot-meta {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-shrink: 0;
+
+          .doc-badge {
+            font-size: 0.6875rem;
+            font-weight: 700;
+            color: #ffffff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+          }
+
+          .status-tag {
+            font-size: 0.75rem;
+            font-weight: 500;
+          }
+
+          .duration-pill {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            padding: 1px 6px;
+            border-radius: 6px;
+            background-color: var(--sys-color-surface-container-lowest, #ffffff);
+            color: var(--sys-color-on-surface, #191c20);
+            border: 1px solid var(--sys-color-outline-variant, #c1c7cf);
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+          }
+        }
+
+        .appointment-info {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          overflow: hidden;
+          min-width: 0;
+
+          .proc-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          .patient-name {
+            font-size: 0.75rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+        }
+
+        // Variantes semánticas según el estado
+        &--confirmed {
+          background-color: var(--sys-color-primary-container, #d4e3ff);
+          color: var(--sys-color-on-primary-container, #001945);
+        }
+
+        &--scheduled {
+          background-color: var(--sys-color-secondary-container, #d3dffe);
+          color: var(--sys-color-on-secondary-container, #0d1b30);
+        }
+
+        &--blocked {
+          background-color: var(--sys-color-surface-container-highest, #d9dae0);
+          color: var(--sys-color-on-surface-variant, #41474e);
+        }
+
+        &--lunch {
+          background-color: var(--app-color-warning-container, #ffdf9e);
+          color: var(--app-color-on-warning-container, #261900);
+        }
+
+        &--available {
+          background-color: var(--sys-color-surface-container-low, #f0f0f7);
+          color: var(--sys-color-on-surface-variant, #41474e);
+        }
+
+        &--out {
+          background-color: var(--sys-color-surface-container, #e7e8ee);
+          color: var(--sys-color-outline, #71777f);
+        }
+      }
+    }
+  }
+}
+

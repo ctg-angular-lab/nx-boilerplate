@@ -1,0 +1,178 @@
+.clinical-form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1rem 0;
+  color: var(--sys-color-on-surface, #1d1b20);
+}
+
+.form-progress {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+
+  &--error {
+    background-color: var(--sys-color-error-container, #f9dedc);
+    color: var(--sys-color-on-error-container, #410e0b);
+    border: 1px solid var(--sys-color-error, #b3261e);
+  }
+
+  &__icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  &__message {
+    flex: 1;
+  }
+}
+
+.patient-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background-color: var(--sys-color-surface-container-low, #f7f2fa);
+  border: 1px solid var(--sys-color-outline-variant, #cac4d0);
+  border-radius: 0.75rem;
+  padding: 0.875rem 1.125rem;
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+}
+
+.patient-name {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--sys-color-on-surface, #1d1b20);
+}
+
+.patient-meta {
+  font-size: 0.8125rem;
+  color: var(--sys-color-on-surface-variant, #49454f);
+}
+
+.context-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: var(--sys-color-primary-container, #eaddff);
+  color: var(--sys-color-on-primary-container, #21005d);
+  border: 1px solid var(--sys-color-primary, #6750a4);
+
+  .material-symbols-outlined {
+    font-size: 0.9375rem;
+  }
+
+  &.manual {
+    background-color: var(--sys-color-tertiary-container, #ffd8e4);
+    color: var(--sys-color-on-tertiary-container, #31111d);
+    border: 1px solid var(--sys-color-tertiary, #7d5260);
+  }
+}
+
+.clinical-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-section {
+  border: 1px solid var(--sys-color-outline-variant, #cac4d0);
+  border-radius: 0.75rem;
+  padding: 1.125rem;
+  margin: 0;
+  background-color: var(--sys-color-surface, #fff);
+
+  &__legend {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 0.5rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--sys-color-primary, #6750a4);
+
+    .material-symbols-outlined {
+      font-size: 1.125rem;
+    }
+  }
+}
+
+.preloaded-card {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--sys-color-surface-container, #f3edf7);
+  border-radius: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.preloaded-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+
+  .label {
+    font-size: 0.75rem;
+    color: var(--sys-color-on-surface-variant, #49454f);
+  }
+
+  .val {
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+}
+
+.form-grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 0.5rem;
+
+  &--2-cols {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+}
+
+.w-full {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.consent-toggle-row {
+  margin: 0.5rem 0 0.75rem 0;
+}
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--sys-color-outline-variant, #cac4d0);
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+}
+

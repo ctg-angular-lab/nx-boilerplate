@@ -1,0 +1,326 @@
+.dashboard-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  max-width: 1600px;
+  margin: 0 auto;
+  box-sizing: border-box;
+
+  // FILA 1: Header y selector
+  .dashboard-header-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    .doctor-pill-bar {
+      width: 100%;
+      overflow-x: auto;
+      padding-bottom: 4px;
+
+      .doctor-pill-scroll {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: max-content;
+      }
+
+      .doctor-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px 6px 6px;
+        border-radius: 24px;
+        border: 1px solid var(--sys-color-outline-variant, #c1c7cf);
+        background-color: var(--sys-color-surface-container-lowest, #ffffff);
+        color: var(--sys-color-on-surface, #191c20);
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.15s ease-in-out;
+        user-select: none;
+
+        &:hover {
+          background-color: var(--sys-color-surface-container, #e7e8ee);
+        }
+
+        &--active {
+          border-color: var(--sys-color-primary, #1e4ba8);
+          background-color: var(--sys-color-primary-container, #d4e3ff);
+          color: var(--sys-color-on-primary-container, #001945);
+          font-weight: 600;
+        }
+
+        &__badge {
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #ffffff;
+          font-size: 0.75rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          flex-shrink: 0;
+        }
+
+        &__name {
+          white-space: nowrap;
+        }
+      }
+    }
+
+    .welcome-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 20px;
+      background-color: var(--sys-color-surface-container-lowest, #ffffff);
+      border: 1px solid var(--sys-color-outline-variant, #c1c7cf);
+      border-radius: 16px;
+      box-shadow: var(--mat-sys-level1, 0 1px 3px rgba(0, 0, 0, 0.08));
+
+      &__info {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+
+        .doctor-avatar-wrapper {
+          .doctor-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 1.125rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+          }
+        }
+
+        .doctor-titles {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+
+          .doctor-name {
+            margin: 0;
+            font-size: 1.375rem;
+            font-weight: 700;
+            color: var(--sys-color-on-surface, #191c20);
+          }
+
+          .specialty-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: var(--sys-color-primary, #1e4ba8);
+
+            .specialty-icon {
+              font-size: 18px;
+              width: 18px;
+              height: 18px;
+            }
+          }
+        }
+      }
+
+      &__meta {
+        .working-hours {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 12px;
+          background-color: var(--sys-color-surface-container-low, #f0f0f7);
+          border-radius: 12px;
+          font-size: 0.8125rem;
+          font-weight: 600;
+          color: var(--sys-color-on-surface-variant, #41474e);
+
+          .hours-icon {
+            font-size: 16px;
+            width: 16px;
+            height: 16px;
+            color: var(--sys-color-primary, #1e4ba8);
+          }
+        }
+      }
+    }
+  }
+
+  // FILA 2: 3 Tarjetas KPI
+  .kpi-metrics-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+
+    @media (max-width: 1024px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  // FILA 3: Layout principal a 2 columnas
+  .dashboard-main-grid {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
+    align-items: start;
+
+    @media (max-width: 1024px) {
+      grid-template-columns: 1fr;
+    }
+
+    .sidebar-calendars-col {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+
+      .month-calendar-card {
+        background-color: var(--sys-color-surface-container-lowest, #ffffff);
+        border: 1px solid var(--sys-color-outline-variant, #c1c7cf);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: var(--mat-sys-level1, 0 1px 3px rgba(0, 0, 0, 0.08));
+
+        &__header {
+          padding: 16px 20px 12px;
+          border-bottom: 1px solid var(--sys-color-surface-container, #e7e8ee);
+
+          .header-title-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            .header-icon {
+              color: var(--sys-color-primary, #1e4ba8);
+              font-size: 22px;
+              width: 22px;
+              height: 22px;
+            }
+
+            .header-title {
+              margin: 0;
+              font-size: 1rem;
+              font-weight: 600;
+              color: var(--sys-color-on-surface, #191c20);
+            }
+          }
+        }
+
+        &__body {
+          padding: 16px;
+
+          .mini-calendar {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+
+            &__nav {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              padding: 0 4px;
+            }
+
+            &__month-label {
+              font-size: 0.9375rem;
+              font-weight: 600;
+              color: var(--sys-color-on-surface, #191c20);
+            }
+
+            &__nav-btn {
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              width: 32px;
+              height: 32px;
+              border-radius: 50%;
+              border: none;
+              background: transparent;
+              color: var(--sys-color-on-surface-variant, #41474e);
+              cursor: pointer;
+              transition: background-color 0.15s ease;
+
+              &:hover {
+                background-color: var(--sys-color-surface-container, #e7e8ee);
+              }
+            }
+
+            &__weekdays {
+              display: grid;
+              grid-template-columns: repeat(7, 1fr);
+              text-align: center;
+            }
+
+            &__weekday {
+              font-size: 0.75rem;
+              font-weight: 600;
+              color: var(--sys-color-on-surface-variant, #41474e);
+              padding: 4px 0;
+            }
+
+            &__grid {
+              display: grid;
+              grid-template-columns: repeat(7, 1fr);
+              gap: 4px;
+            }
+
+            &__day {
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              height: 36px;
+              border-radius: 50%;
+              border: 1px solid transparent;
+              background: transparent;
+              color: var(--sys-color-on-surface, #191c20);
+              font-family: inherit;
+              font-size: 0.8125rem;
+              font-weight: 500;
+              cursor: pointer;
+              transition: all 0.15s ease;
+
+              &:hover {
+                background-color: var(--sys-color-surface-container, #e7e8ee);
+              }
+
+              &--other-month {
+                color: var(--sys-color-outline, #71787e);
+                opacity: 0.55;
+              }
+
+              &--today {
+                border-color: var(--sys-color-primary, #1e4ba8);
+                color: var(--sys-color-primary, #1e4ba8);
+                font-weight: 700;
+              }
+
+              &--selected {
+                background-color: var(--sys-color-primary, #1e4ba8);
+                color: var(--sys-color-on-primary, #ffffff);
+                font-weight: 700;
+
+                &:hover {
+                  background-color: var(--sys-color-primary, #1e4ba8);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    .cascade-calendar-col {
+      min-width: 0;
+    }
+  }
+}

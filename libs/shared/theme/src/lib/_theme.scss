@@ -7,6 +7,7 @@
 @use 'theme-modules/tabs' as tabs;
 @use 'theme-modules/forms' as forms;
 @use 'theme-modules/stepper' as stepper;
+@use 'theme-modules/modals' as modals;
 
 // 1. Inicialización de utilidades core de Material
 @include mat.core();
@@ -94,6 +95,7 @@ html, :root {
   @include tabs.tabs-overrides();
   @include forms.form-overrides();
   @include stepper.stepper-overrides();
+  @include modals.modals-overrides();
 
   background-color: var(--sys-color-surface);
   color: var(--sys-color-on-surface);

@@ -37,6 +37,7 @@ describe('RemoteEntryComponent (Tab Host)', () => {
     isEditMode: () => boolean;
     loadProfesionales: ReturnType<typeof vi.fn>;
     loadProcedures: ReturnType<typeof vi.fn>;
+    goToList: ReturnType<typeof vi.fn>;
     setActiveTab: ReturnType<typeof vi.fn>;
     goToEdit: ReturnType<typeof vi.fn>;
     profesionalesList: WritableSignal<IActiveProfessional[]>;
@@ -57,6 +58,10 @@ describe('RemoteEntryComponent (Tab Host)', () => {
       isEditMode: () => mockEditingProfessionalSignal() !== null,
       loadProfesionales: vi.fn(),
       loadProcedures: vi.fn(),
+      goToList: vi.fn(() => {
+        mockEditingProfessionalSignal.set(null);
+        mockActiveTabSignal.set(PROFESIONALES_TABS.LIST);
+      }),
       setActiveTab: vi.fn((tab: ProfesionalesTabId) => {
         mockActiveTabSignal.set(tab);
       }),

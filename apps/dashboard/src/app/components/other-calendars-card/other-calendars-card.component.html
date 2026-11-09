@@ -1,0 +1,68 @@
+<section class="other-calendars-card" aria-label="Otros calendarios">
+  <header class="other-calendars-card__header">
+    <div class="header-title-group">
+      <mat-icon class="material-symbols-outlined header-icon">group</mat-icon>
+      <h3 class="header-title">Otros calendarios</h3>
+    </div>
+    @if (selectedCedulas().length > 0) {
+      <button
+        mat-button
+        type="button"
+        class="clear-btn"
+        (click)="onClear()"
+        matTooltip="Deseleccionar todos los calendarios secundarios"
+      >
+        Limpiar
+      </button>
+    }
+  </header>
+
+  <div class="other-calendars-card__body">
+    @if (doctors().length === 0) {
+      <p class="empty-state">No hay otros profesionales disponibles.</p>
+    } @else {
+      <div class="doctor-checklist" role="group" aria-label="Lista de profesionales para superponer">
+        @for (doctor of doctors(); track doctor.cedula) {
+          <div
+            class="doctor-item"
+            [class.doctor-item--selected]="isChecked(doctor.cedula)"
+            (click)="onToggle(doctor.cedula)"
+            tabindex="0"
+            role="button"
+            (keydown.enter)="onToggle(doctor.cedula)"
+            (keydown.space)="$event.preventDefault(); onToggle(doctor.cedula)"
+          >
+            <mat-checkbox
+              [checked]="isChecked(doctor.cedula)"
+              (click)="$event.stopPropagation()"
+              (change)="onToggle(doctor.cedula)"
+              color="primary"
+              aria-label="Seleccionar calendario de {{ doctor.fullName }}"
+            />
+
+            <span
+              class="color-dot"
+              [style.background-color]="doctor.colorTheme.cssVar"
+              [matTooltip]="doctor.colorTheme.label"
+            ></span>
+
+            <div class="doctor-info">
+              <span class="doctor-name">{{ doctor.fullName }}</span>
+              <span class="doctor-specialty">{{ doctor.profesion || 'General' }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  @if (selectedCedulas().length >= 3) {
+    <footer class="other-calendars-card__footer">
+      <span class="max-badge">
+        <mat-icon class="material-symbols-outlined max-icon">info</mat-icon>
+        Límite máximo alcanzado (4 capas en total). Al marcar otro se rotará el más antiguo.
+      </span>
+    </footer>
+  }
+</section>
+
