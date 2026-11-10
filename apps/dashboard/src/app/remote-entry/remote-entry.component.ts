@@ -48,12 +48,6 @@ export interface IMiniCalendarDay {
 export class RemoteEntryComponent implements OnInit, OnDestroy {
   readonly state = inject(DashboardStateService);
 
-  readonly nextAvailableSubtitle = computed<string>(() => {
-    return this.state.monthlyKpis().nextAvailableDate !== 'Sin Cupos este mes'
-      ? 'Agendar en este espacio'
-      : '';
-  });
-
   readonly weekdayLabels = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as const;
 
   readonly #displayedMonth = signal<Date>(

@@ -9,6 +9,7 @@ import {
   computeWeeklyKpis,
   extractInitials,
   findNextAvailableDate,
+  findNextAvailableDates,
   formatTime12h,
   assignDoctorColorTheme,
 } from './dashboard-calendar.mapper';
@@ -330,6 +331,38 @@ describe('dashboard-calendar.mapper', () => {
     it('debe retornar "Sin Cupos este mes" si no hay slots disponibles o el arreglo es vacío', () => {
       expect(findNextAvailableDate([])).toBe('Sin Cupos este mes');
       expect(findNextAvailableDate(undefined)).toBe('Sin Cupos este mes');
+    });
+
+    it('debe retornar hasta 3 próximos turnos disponibles con findNextAvailableDates', () => {
+      const mockDays: IDayAvailability[] = [
+        {
+          date: '2026-11-10',
+          dayName: 'Martes',
+          isCalendarSynced: true,
+          isWorkingDay: true,
+          slots: [
+            { startTime: '08:00', endTime: '08:45', display: '08:00 - 08:45', title: 'Libre', colorId: null, isBookable: true, status: 'AVAILABLE' },
+            { startTime: '08:45', endTime: '09:30', display: '08:45 - 09:30', title: 'Libre', colorId: null, isBookable: true, status: 'AVAILABLE' },
+          ],
+        },
+        {
+          date: '2026-11-11',
+          dayName: 'Miércoles',
+          isCalendarSynced: true,
+          isWorkingDay: true,
+          slots: [
+            { startTime: '14:00', endTime: '14:45', display: '14:00 - 14:45', title: 'Libre', colorId: null, isBookable: true, status: 'AVAILABLE' },
+            { startTime: '15:00', endTime: '15:45', display: '15:00 - 15:45', title: 'Libre', colorId: null, isBookable: true, status: 'AVAILABLE' },
+          ],
+        },
+      ];
+
+      const refDate = new Date('2026-11-09T08:00:00');
+      expect(findNextAvailableDates(mockDays, refDate, 3)).toEqual([
+        '10/11/2026 - 8:00 am',
+        '10/11/2026 - 8:45 am',
+        '11/11/2026 - 2:00 pm',
+      ]);
     });
   });
 

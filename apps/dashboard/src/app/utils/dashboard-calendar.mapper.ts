@@ -291,14 +291,15 @@ export function buildTimeGridRows(
 }
 
 /**
- * Busca la fecha del próximo turno disponible en el mes y la formatea en DD/MM/YYYY
+ * Busca hasta `maxCount` próximos turnos disponibles en el mes y los formatea en DD/MM/YYYY - h:mm a
  */
-export function findNextAvailableDate(
+export function findNextAvailableDates(
   monthlyAvailability: readonly IDayAvailability[] | undefined,
-  referenceDate: Date = getColombiaToday()
-): string {
+  referenceDate: Date = getColombiaToday(),
+  maxCount = 3
+): readonly string[] {
   if (!monthlyAvailability || monthlyAvailability.length === 0) {
-    return 'Sin Cupos este mes';
+    return ['Sin Cupos este mes'];
   }
 
   const todayStr = formatDateYMD(referenceDate);
@@ -306,28 +307,41 @@ export function findNextAvailableDate(
 
   // Ordenar días cronológicamente
   const sortedDays = [...monthlyAvailability].sort((a, b) => a.date.localeCompare(b.date));
+  const results: string[] = [];
 
   for (const day of sortedDays) {
     if (day.date < todayStr || !day.slots || day.slots.length === 0) continue;
 
     const isToday = day.date === todayStr;
-    const availableSlot = day.slots.find((slot) => {
-      if (slot.status !== 'AVAILABLE' || slot.isBookable !== true) return false;
+    const [year, month, d] = day.date.split('-');
+
+    for (const slot of day.slots) {
+      if (slot.status !== 'AVAILABLE' || slot.isBookable !== true) continue;
       if (isToday) {
         const slotMinutes = isoOrTimeToMinutes(slot.startTime);
-        return slotMinutes >= currentMinutes;
+        if (slotMinutes < currentMinutes) continue;
       }
-      return true;
-    });
 
-    if (availableSlot) {
-      const [year, month, d] = day.date.split('-');
-      const timeStr = formatTime12h(availableSlot.startTime);
-      return timeStr ? `${d}/${month}/${year} - ${timeStr}` : `${d}/${month}/${year}`;
+      const timeStr = formatTime12h(slot.startTime);
+      results.push(timeStr ? `${d}/${month}/${year} - ${timeStr}` : `${d}/${month}/${year}`);
+
+      if (results.length >= maxCount) {
+        return results;
+      }
     }
   }
 
-  return 'Sin Cupos este mes';
+  return results.length > 0 ? results : ['Sin Cupos este mes'];
+}
+
+/**
+ * Busca la fecha del próximo turno disponible en el mes y la formatea en DD/MM/YYYY - h:mm a
+ */
+export function findNextAvailableDate(
+  monthlyAvailability: readonly IDayAvailability[] | undefined,
+  referenceDate: Date = getColombiaToday()
+): string {
+  return findNextAvailableDates(monthlyAvailability, referenceDate, 1)[0] ?? 'Sin Cupos este mes';
 }
 
 /**
@@ -359,7 +373,8 @@ export function computeMonthlyKpis(
     }
   }
 
-  const nextAvailableDate = findNextAvailableDate(monthlyAvailability, d);
+  const nextAvailableDates = findNextAvailableDates(monthlyAvailability, d, 3);
+  const nextAvailableDate = nextAvailableDates[0] ?? 'Sin Cupos este mes';
 
   return {
     confirmedCount,
@@ -369,6 +384,7 @@ export function computeMonthlyKpis(
     confirmedTitle: `Citas de ${monthName} Confirmadas`,
     scheduledTitle: `Citas de ${monthName} Agendadas`,
     nextAvailableDate,
+    nextAvailableDates,
     weekRangeLabel: monthYearLabel,
   };
 }
@@ -404,6 +420,7 @@ export function computeWeeklyKpis(
     confirmedTitle: 'Citas Confirmadas',
     scheduledTitle: 'Citas Agendadas',
     nextAvailableDate: 'Sin Cupos este mes',
+    nextAvailableDates: ['Sin Cupos este mes'],
     weekRangeLabel,
   };
 }

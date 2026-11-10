@@ -26,17 +26,25 @@
   </div>
 
   <div class="card-body">
-    <div class="value-container">
-      <span class="metric-value">{{ value() }}</span>
-      @if (trend()) {
-        <div class="trend-badge" [attr.data-direction]="trend()?.direction">
-          <span class="material-symbols-outlined trend-icon">
-            {{ trend()?.direction === 'up' ? 'trending_up' : trend()?.direction === 'down' ? 'trending_down' : 'trending_flat' }}
-          </span>
-          <span>{{ trend()?.value }}</span>
-        </div>
-      }
-    </div>
+    @if (listValues(); as items) {
+      <div class="value-list-container">
+        @for (item of items; track $index) {
+          <span class="metric-value-item">{{ item }}</span>
+        }
+      </div>
+    } @else {
+      <div class="value-container">
+        <span class="metric-value">{{ value() }}</span>
+        @if (trend()) {
+          <div class="trend-badge" [attr.data-direction]="trend()?.direction">
+            <span class="material-symbols-outlined trend-icon">
+              {{ trend()?.direction === 'up' ? 'trending_up' : trend()?.direction === 'down' ? 'trending_down' : 'trending_flat' }}
+            </span>
+            <span>{{ trend()?.value }}</span>
+          </div>
+        }
+      </div>
+    }
 
     @if (subtitle()) {
       <p class="metric-subtitle">{{ subtitle() }}</p>

@@ -148,33 +148,38 @@ describe('RemoteEntryComponent', () => {
     expect(state.selectedDate().toDateString()).toBe(today.toDateString());
   });
 
-  it('debe computar correctamente nextAvailableSubtitle y renderizar el subtitulo en <p class="metric-subtitle"> al haber cupos disponibles', () => {
-    // Inicialmente con mockAvailability, hay cupo el 20/11/2026 a las 10:00 am
-    expect(component.state.monthlyKpis().nextAvailableDate).toBe('20/11/2026 - 10:00 am');
-    expect(component.nextAvailableSubtitle()).toBe('Agendar en este espacio');
+  it('debe renderizar hasta 3 espacios disponibles en .metric-value-item sin subtitulo en la tercera tarjeta KPI', () => {
+    expect(component.state.monthlyKpis().nextAvailableDates).toEqual(['20/11/2026 - 10:00 am']);
 
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     const cards = compiled.querySelectorAll('lib-metric-card');
     const thirdCard = cards[2];
     expect(thirdCard).toBeTruthy();
+
+    const valueItems = thirdCard.querySelectorAll('.metric-value-item');
+    expect(valueItems.length).toBe(1);
+    expect(valueItems[0]?.textContent?.trim()).toBe('20/11/2026 - 10:00 am');
+
     const subtitleEl = thirdCard.querySelector('.metric-subtitle');
-    expect(subtitleEl).toBeTruthy();
-    expect(subtitleEl?.textContent?.trim()).toBe('Agendar en este espacio');
+    expect(subtitleEl).toBeNull();
   });
 
-  it('debe mantener nextAvailableSubtitle vacío y omitir el elemento <p class="metric-subtitle"> cuando no hay cupos disponibles', () => {
-    // Al seleccionar el doctor 1002 que no tiene cupos disponibles
+  it('debe mostrar "Sin Cupos este mes" sin subtitulo cuando no hay cupos disponibles', () => {
     component.onDoctorSelect('1002');
     fixture.detectChanges();
 
-    expect(component.state.monthlyKpis().nextAvailableDate).toBe('Sin Cupos este mes');
-    expect(component.nextAvailableSubtitle()).toBe('');
+    expect(component.state.monthlyKpis().nextAvailableDates).toEqual(['Sin Cupos este mes']);
 
     const compiled = fixture.nativeElement as HTMLElement;
     const cards = compiled.querySelectorAll('lib-metric-card');
     const thirdCard = cards[2];
     expect(thirdCard).toBeTruthy();
+
+    const valueItems = thirdCard.querySelectorAll('.metric-value-item');
+    expect(valueItems.length).toBe(1);
+    expect(valueItems[0]?.textContent?.trim()).toBe('Sin Cupos este mes');
+
     const subtitleEl = thirdCard.querySelector('.metric-subtitle');
     expect(subtitleEl).toBeNull();
   });
