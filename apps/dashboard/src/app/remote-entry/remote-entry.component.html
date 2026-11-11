@@ -71,6 +71,7 @@
       [value]="state.monthlyKpis().nextAvailableDates"
       icon="calendar_add_on"
       variant="tertiary"
+      (itemClick)="onAvailableSlotItemClick($event)"
     />
   </section>
 

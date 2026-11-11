@@ -180,6 +180,13 @@ export class RemoteEntryComponent implements OnInit, OnDestroy {
     this.#displayedMonth.set(new Date(today.getFullYear(), today.getMonth(), 1));
   }
 
+  onAvailableSlotItemClick(slotLabel: string): void {
+    if (!slotLabel || slotLabel === 'Sin Cupos este mes') {
+      return;
+    }
+    this.router.navigate(['/agendador-citas']);
+  }
+
   onSlotClick(cell: IDashboardDoctorCell): void {
     if (cell.status === 'SCHEDULED' || cell.status === 'CONFIRMED') {
       this.openBookedAppointmentModal(cell);

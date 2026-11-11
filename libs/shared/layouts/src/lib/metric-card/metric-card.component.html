@@ -38,7 +38,14 @@
     } @else if (listValues(); as items) {
       <div class="value-list-container">
         @for (item of items; track $index) {
-          <span class="metric-value-item">{{ item }}</span>
+          <span
+            class="metric-value-item"
+            role="button"
+            tabindex="0"
+            (click)="itemClick.emit(item)"
+            (keydown.enter)="itemClick.emit(item)"
+            (keydown.space)="itemClick.emit(item); $event.preventDefault()"
+          >{{ item }}</span>
         }
       </div>
     } @else {

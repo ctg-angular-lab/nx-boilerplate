@@ -175,6 +175,24 @@ describe('RemoteEntryComponent', () => {
     expect(subtitleEl).toBeNull();
   });
 
+  it('debe navegar a /agendador-citas al hacer clic en un .metric-value-item disponible del card "Proximo espacio disponible"', () => {
+    const router = TestBed.inject(Router);
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const secondCard = compiled.querySelectorAll('lib-metric-card')[1];
+    const firstItem = secondCard?.querySelector('.metric-value-item') as HTMLElement;
+    expect(firstItem).toBeTruthy();
+
+    firstItem.click();
+    expect(navigateSpy).toHaveBeenCalledWith(['/agendador-citas']);
+
+    navigateSpy.mockClear();
+    component.onAvailableSlotItemClick('Sin Cupos este mes');
+    expect(navigateSpy).not.toHaveBeenCalled();
+  });
+
   it('debe mostrar "Sin Cupos este mes" sin subtitulo cuando no hay cupos disponibles', () => {
     component.onDoctorSelect('1002');
     fixture.detectChanges();

@@ -24,6 +24,7 @@ export class MetricCardComponent {
   readonly actions = input<MetricCardAction[]>([]);
 
   readonly actionClick = output<string>();
+  readonly itemClick = output<string>();
 
   readonly listValues = computed<readonly string[] | null>(() => {
     const val = this.value();
