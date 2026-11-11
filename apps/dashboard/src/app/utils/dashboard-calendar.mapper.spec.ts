@@ -257,6 +257,7 @@ describe('dashboard-calendar.mapper', () => {
           dayName: 'Viernes',
           isCalendarSynced: true,
           isWorkingDay: true,
+          cancelledCount: 1,
           slots: [
             { startTime: '11:00', endTime: '11:45', display: '11:00 - 11:45', title: 'Cita 3', colorId: null, isBookable: false, status: 'CONFIRMED' },
             { startTime: '14:00', endTime: '14:45', display: '14:00 - 14:45', title: 'Cita 4', colorId: null, isBookable: false, status: 'TENTATIVE' },
@@ -270,8 +271,10 @@ describe('dashboard-calendar.mapper', () => {
 
       expect(kpis.confirmedCount).toBe(2);
       expect(kpis.scheduledCount).toBe(3);
+      expect(kpis.cancelledCount).toBe(1);
       expect(kpis.monthName).toBe('Noviembre');
       expect(kpis.monthYearLabel).toBe('Noviembre 2026');
+      expect(kpis.reportTitle).toBe('Reporte de citas de Noviembre del 2026');
       expect(kpis.confirmedTitle).toBe('Citas de Noviembre Confirmadas');
       expect(kpis.scheduledTitle).toBe('Citas de Noviembre Agendadas');
     });
@@ -281,6 +284,7 @@ describe('dashboard-calendar.mapper', () => {
       const kpis = computeMonthlyKpis([], decDate);
 
       expect(kpis.monthName).toBe('Diciembre');
+      expect(kpis.reportTitle).toBe('Reporte de citas de Diciembre del 2026');
       expect(kpis.confirmedTitle).toBe('Citas de Diciembre Confirmadas');
       expect(kpis.scheduledTitle).toBe('Citas de Diciembre Agendadas');
       expect(kpis.confirmedCount).toBe(0);

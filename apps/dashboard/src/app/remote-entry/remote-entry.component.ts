@@ -8,11 +8,22 @@ import {
   signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MetricCardComponent } from '@nx-boilerplate/layouts';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import {
+  AgendarModalComponent,
+  AgendarModalData,
+  AgendarModalResult,
+  ConfirmationModalComponent,
+  ConfirmationModalData,
+  MetricCardComponent,
+  MetricCardStatItem,
+} from '@nx-boilerplate/layouts';
+import { IBookingPatient } from '@nx-boilerplate/api-interfaces';
 import { formatDateYMD, getColombiaToday } from '@nx-boilerplate/utils';
 import { DashboardStateService } from '../services/dashboard-state.service';
 import { OtherCalendarsCardComponent } from '../components/other-calendars-card/other-calendars-card.component';
@@ -37,6 +48,7 @@ export interface IMiniCalendarDay {
     MatIconModule,
     MatButtonModule,
     MatTooltipModule,
+    MatDialogModule,
     MetricCardComponent,
     OtherCalendarsCardComponent,
     DailyCascadeCalendarComponent,
@@ -47,6 +59,17 @@ export interface IMiniCalendarDay {
 })
 export class RemoteEntryComponent implements OnInit, OnDestroy {
   readonly state = inject(DashboardStateService);
+  private readonly dialog = inject(MatDialog);
+  private readonly router = inject(Router);
+
+  readonly appointmentReportStats = computed<readonly MetricCardStatItem[]>(() => {
+    const kpis = this.state.monthlyKpis();
+    return [
+      { value: kpis.confirmedCount, label: 'Citas Confirmadas' },
+      { value: kpis.scheduledCount, label: 'Citas Agendadas' },
+      { value: kpis.cancelledCount, label: 'Citas Canceladas' },
+    ];
+  });
 
   readonly weekdayLabels = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as const;
 
@@ -158,7 +181,109 @@ export class RemoteEntryComponent implements OnInit, OnDestroy {
   }
 
   onSlotClick(cell: IDashboardDoctorCell): void {
-    // Hook preparado para la Etapa 2 (Acciones granulares de agendamiento/edición/modal)
-    console.debug('Slot clickeado en etapa 1:', cell);
+    if (cell.status === 'SCHEDULED' || cell.status === 'CONFIRMED') {
+      this.openBookedAppointmentModal(cell);
+      return;
+    }
+    this.openSlotConfirmationModal(cell);
+  }
+
+  private openBookedAppointmentModal(cell: IDashboardDoctorCell): void {
+    const activeDate = this.state.selectedDate();
+    const weekday = new Intl.DateTimeFormat('es-CO', { weekday: 'long' }).format(activeDate);
+    const capWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+    const monthShort = new Intl.DateTimeFormat('es-CO', { month: 'short' }).format(activeDate);
+    const timeLabel = cell.timeRangeLabel || '';
+    const dateRange = `${capWeekday} ${activeDate.getDate()} ${monthShort}${
+      timeLabel ? ' | ' + timeLabel : ''
+    }`;
+
+    let modalTitle = cell.procedureTitle || 'Cita Médica';
+    let patientData: IBookingPatient | null = cell.patient ?? null;
+
+    if (cell.procedureTitle?.includes(' - ')) {
+      const parts = cell.procedureTitle.split(' - ');
+      modalTitle = parts[0].replace(/^Cita Médica:\s*/i, '').trim() || parts[0].trim();
+      const extractedName = parts.slice(1).join(' - ').trim();
+      if (!patientData && extractedName) {
+        patientData = {
+          nombre: extractedName,
+          apellidos: '',
+          cedula: '',
+          correo: '',
+          celular: '',
+        };
+      }
+    } else if (cell.procedureTitle) {
+      modalTitle = cell.procedureTitle.replace(/^Cita Médica:\s*/i, '').trim();
+    }
+
+    if (!patientData && cell.patientName) {
+      patientData = {
+        nombre: cell.patientName,
+        apellidos: '',
+        cedula: '',
+        correo: '',
+        celular: '',
+      };
+    }
+
+    const slotStatus = cell.status === 'SCHEDULED' ? 'TENTATIVE' : 'CONFIRMED';
+
+    const dialogRef = this.dialog.open<
+      AgendarModalComponent,
+      AgendarModalData,
+      AgendarModalResult
+    >(AgendarModalComponent, {
+      data: {
+        title: modalTitle,
+        professional: cell.doctorName,
+        dateRange,
+        patient: patientData,
+        isTentativeView: true,
+        colorId: cell.colorId ?? (slotStatus === 'TENTATIVE' ? '5' : '10'),
+        startTime: cell.startTime,
+        endTime: cell.endTime,
+        slotStatus,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result?.goToConfirmationTab) {
+        this.router.navigate(['/agendador-citas'], {
+          queryParams: {
+            tab: 'confirmacion',
+            date: formatDateYMD(activeDate),
+          },
+        });
+      }
+    });
+  }
+
+  private openSlotConfirmationModal(_cell: IDashboardDoctorCell): void {
+    const modalData: ConfirmationModalData<boolean> = {
+      title: 'Confirmar agendamiento',
+      text: '¿Quieres agendar una nueva cita en este espacio?',
+      actions: [
+        { label: 'Cancelar', color: 'default', value: false },
+        { label: 'Confirmar', color: 'primary', value: true },
+      ],
+    };
+
+    const dialogRef = this.dialog.open<
+      ConfirmationModalComponent,
+      ConfirmationModalData<boolean>,
+      boolean
+    >(ConfirmationModalComponent, {
+      data: modalData,
+      width: '420px',
+      disableClose: true,
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.router.navigate(['/agendador-citas']);
+      }
+    });
   }
 }

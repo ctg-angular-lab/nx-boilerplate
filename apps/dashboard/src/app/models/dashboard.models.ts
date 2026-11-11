@@ -1,4 +1,4 @@
-import { IActiveProfessional } from '@nx-boilerplate/api-interfaces';
+import { IActiveProfessional, IBookingPatient } from '@nx-boilerplate/api-interfaces';
 
 /** Estados semánticos de un bloque horario en la grilla de 30 minutos */
 export type DashboardSlotStatus =
@@ -85,6 +85,10 @@ export interface IDashboardDoctorCell {
   readonly statusLabel: string;
   readonly procedureTitle?: string;
   readonly patientName?: string;
+  readonly patient?: IBookingPatient;
+  readonly startTime?: string;
+  readonly endTime?: string;
+  readonly colorId?: string | null;
   readonly durationMinutes?: number;
   readonly timeRangeLabel?: string;
   readonly spanRatio?: number;
@@ -104,8 +108,10 @@ export interface IDashboardTimeRow {
 export interface IDashboardMonthlyKpis {
   readonly confirmedCount: number;
   readonly scheduledCount: number;
+  readonly cancelledCount: number;
   readonly monthName: string;
   readonly monthYearLabel: string;
+  readonly reportTitle: string;
   readonly confirmedTitle: string;
   readonly scheduledTitle: string;
   readonly nextAvailableDate: string;

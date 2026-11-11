@@ -196,6 +196,10 @@ export function buildTimeGridRows(
       let status: DashboardSlotStatus = 'AVAILABLE';
       let procedureTitle: string | undefined = undefined;
       let patientName: string | undefined = undefined;
+      let patient: ISlotDisplay['patient'] = undefined;
+      let startTime: string | undefined = undefined;
+      let endTime: string | undefined = undefined;
+      let colorId: string | null | undefined = undefined;
       let durationMinutes: number | undefined = undefined;
       let timeRangeLabel: string | undefined = undefined;
       let spanRatio = 1;
@@ -225,7 +229,12 @@ export function buildTimeGridRows(
               ? matchedSlot.durationMinutes
               : Math.max(5, slotEnd - slotStart);
 
+          startTime = matchedSlot.startTime;
+          endTime = matchedSlot.endTime;
+          colorId = matchedSlot.colorId;
+
           if (matchedSlot.patient) {
+            patient = matchedSlot.patient;
             patientName = `${matchedSlot.patient.nombre} ${matchedSlot.patient.apellidos}`.trim();
           }
 
@@ -271,6 +280,10 @@ export function buildTimeGridRows(
         statusLabel: getStatusLabel(status),
         procedureTitle,
         patientName,
+        patient,
+        startTime,
+        endTime,
+        colorId,
         durationMinutes,
         timeRangeLabel,
         spanRatio,
@@ -359,15 +372,21 @@ export function computeMonthlyKpis(
 
   let confirmedCount = 0;
   let scheduledCount = 0;
+  let cancelledCount = 0;
 
   if (monthlyAvailability && monthlyAvailability.length > 0) {
     for (const day of monthlyAvailability) {
+      if (typeof day.cancelledCount === 'number' && day.cancelledCount > 0) {
+        cancelledCount += day.cancelledCount;
+      }
       if (!day.slots) continue;
       for (const slot of day.slots) {
         if (slot.status === 'CONFIRMED') {
           confirmedCount++;
         } else if (slot.status === 'TENTATIVE') {
           scheduledCount++;
+        } else if (slot.status === 'CANCELLED') {
+          cancelledCount++;
         }
       }
     }
@@ -379,8 +398,10 @@ export function computeMonthlyKpis(
   return {
     confirmedCount,
     scheduledCount,
+    cancelledCount,
     monthName,
     monthYearLabel,
+    reportTitle: `Reporte de citas de ${monthName} del ${d.getFullYear()}`,
     confirmedTitle: `Citas de ${monthName} Confirmadas`,
     scheduledTitle: `Citas de ${monthName} Agendadas`,
     nextAvailableDate,
@@ -398,15 +419,21 @@ export function computeWeeklyKpis(
 ): IDashboardWeeklyKpis {
   let confirmedCount = 0;
   let scheduledCount = 0;
+  let cancelledCount = 0;
 
   if (weeklyAvailability && weeklyAvailability.length > 0) {
     for (const day of weeklyAvailability) {
+      if (typeof day.cancelledCount === 'number' && day.cancelledCount > 0) {
+        cancelledCount += day.cancelledCount;
+      }
       if (!day.slots) continue;
       for (const slot of day.slots) {
         if (slot.status === 'CONFIRMED') {
           confirmedCount++;
         } else if (slot.status === 'TENTATIVE') {
           scheduledCount++;
+        } else if (slot.status === 'CANCELLED') {
+          cancelledCount++;
         }
       }
     }
@@ -415,8 +442,10 @@ export function computeWeeklyKpis(
   return {
     confirmedCount,
     scheduledCount,
+    cancelledCount,
     monthName: 'Mes',
     monthYearLabel: weekRangeLabel,
+    reportTitle: 'Reporte de citas',
     confirmedTitle: 'Citas Confirmadas',
     scheduledTitle: 'Citas Agendadas',
     nextAvailableDate: 'Sin Cupos este mes',

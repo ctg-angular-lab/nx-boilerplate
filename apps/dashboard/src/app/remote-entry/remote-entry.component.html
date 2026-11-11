@@ -55,27 +55,17 @@
     }
   </header>
 
-  <!-- FILA 2: Fila de 3 Tarjetas KPI Mensuales con Títulos Contextuales -->
+  <!-- FILA 2: Fila de 2 Tarjetas KPI Mensuales (Reporte de citas + Próximo espacio disponible) -->
   <section class="kpi-metrics-row" aria-label="Indicadores mensuales de citas">
-    <!-- KPI 1: Citas del Mes Confirmadas (ej: "Citas de Noviembre Confirmadas") -->
+    <!-- KPI 1: Reporte de Citas (Confirmadas, Agendadas, Canceladas) -->
     <lib-metric-card
-      [title]="state.monthlyKpis().confirmedTitle"
-      [value]="state.monthlyKpis().confirmedCount"
-      [subtitle]="'Total acumulado de ' + state.monthlyKpis().monthYearLabel"
-      icon="check_circle"
+      [title]="state.monthlyKpis().reportTitle"
+      [stats]="appointmentReportStats()"
+      icon="assessment"
       variant="primary"
     />
 
-    <!-- KPI 2: Citas del Mes Agendadas (ej: "Citas de Noviembre Agendadas") -->
-    <lib-metric-card
-      [title]="state.monthlyKpis().scheduledTitle"
-      [value]="state.monthlyKpis().scheduledCount"
-      [subtitle]="'Pendientes de confirmación'"
-      icon="event_available"
-      variant="secondary"
-    />
-
-    <!-- KPI 3: Próximo Espacio Disponible -->
+    <!-- KPI 2: Próximo Espacio Disponible -->
     <lib-metric-card
       title="Proximo espacio disponible"
       [value]="state.monthlyKpis().nextAvailableDates"

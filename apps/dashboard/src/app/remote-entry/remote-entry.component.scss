@@ -156,11 +156,12 @@
     }
   }
 
-  // FILA 2: 3 Tarjetas KPI
+  // FILA 2: 2 Tarjetas KPI (Reporte de citas + Próximo espacio disponible)
   .kpi-metrics-row {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 2fr 1fr;
     gap: 16px;
+    align-items: stretch;
 
     @media (max-width: 1024px) {
       grid-template-columns: 1fr;

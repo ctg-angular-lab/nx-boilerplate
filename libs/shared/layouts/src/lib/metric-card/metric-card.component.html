@@ -26,7 +26,16 @@
   </div>
 
   <div class="card-body">
-    @if (listValues(); as items) {
+    @if (stats().length > 0) {
+      <div class="stats-row-container">
+        @for (stat of stats(); track stat.label) {
+          <div class="stat-block">
+            <span class="metric-value">{{ stat.value }}</span>
+            <p class="metric-subtitle">{{ stat.label }}</p>
+          </div>
+        }
+      </div>
+    } @else if (listValues(); as items) {
       <div class="value-list-container">
         @for (item of items; track $index) {
           <span class="metric-value-item">{{ item }}</span>

@@ -53,6 +53,29 @@
     flex-direction: column;
     gap: 6px;
 
+    .stats-row-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      width: 100%;
+
+      .stat-block {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+
+        .metric-value {
+          font-size: 1.875rem;
+          font-weight: 700;
+          text-align: center;
+          color: var(--sys-color-on-surface);
+          line-height: 1.1;
+          font-variant-numeric: tabular-nums;
+        }
+      }
+    }
+
     .value-list-container {
       display: flex;
       flex-direction: column;

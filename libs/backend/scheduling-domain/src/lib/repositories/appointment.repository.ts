@@ -23,14 +23,18 @@ export class AppointmentRepository {
   async findByDoctorAndDateRange(
     doctorEmail: string,
     startOfDay: Date,
-    endOfDay: Date
+    endOfDay: Date,
+    includeCancelled = false
   ): Promise<Appointment[]> {
+    const query: Record<string, unknown> = {
+      doctorEmail,
+      startTime: { $gte: startOfDay, $lte: endOfDay },
+    };
+    if (!includeCancelled) {
+      query['status'] = { $ne: AppointmentStatus.CANCELLED };
+    }
     return this.appointmentModel
-      .find({
-        doctorEmail,
-        status: { $ne: AppointmentStatus.CANCELLED },
-        startTime: { $gte: startOfDay, $lte: endOfDay },
-      })
+      .find(query)
       .select('-_id -__v')
       .lean<Appointment[]>()
       .exec();

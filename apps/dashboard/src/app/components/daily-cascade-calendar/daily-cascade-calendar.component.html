@@ -89,6 +89,8 @@
                   [style.z-index]="getCellZIndex(cell)"
                   [style.border-left-color]="cell.colorCssVar"
                   (click)="onSlotSelect(cell)"
+                  (keydown.enter)="onSlotSelect(cell)"
+                  (keydown.space)="onSlotSelect(cell); $event.preventDefault()"
                   tabindex="0"
                   role="button"
                   [attr.aria-label]="cell.doctorName + ' - ' + cell.statusLabel + (cell.procedureTitle ? ' - ' + cell.procedureTitle : '') + (cell.durationMinutes ? ' (' + cell.durationMinutes + ' min)' : '')"

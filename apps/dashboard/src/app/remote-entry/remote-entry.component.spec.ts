@@ -1,7 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ApiClientService } from '@nx-boilerplate/data-access';
+import {
+  AgendarModalComponent,
+  AgendarModalResult,
+  ConfirmationModalComponent,
+} from '@nx-boilerplate/layouts';
 import { RemoteEntryComponent } from './remote-entry.component';
 import { DashboardStateService } from '../services/dashboard-state.service';
 import { IActiveProfessional, IDayAvailability } from '@nx-boilerplate/api-interfaces';
@@ -112,8 +119,10 @@ describe('RemoteEntryComponent', () => {
 
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('Dr(a). Alejandro Gómez');
-    expect(compiled.textContent).toContain(component.state.monthlyKpis().confirmedTitle);
-    expect(compiled.textContent).toContain(component.state.monthlyKpis().scheduledTitle);
+    expect(compiled.textContent).toContain(component.state.monthlyKpis().reportTitle);
+    expect(compiled.textContent).toContain('Citas Confirmadas');
+    expect(compiled.textContent).toContain('Citas Agendadas');
+    expect(compiled.textContent).toContain('Citas Canceladas');
     expect(compiled.textContent).toContain('Proximo espacio disponible');
     expect(compiled.textContent).toContain('Otros calendarios');
     expect(compiled.textContent).toContain('Calendario — ');
@@ -148,20 +157,21 @@ describe('RemoteEntryComponent', () => {
     expect(state.selectedDate().toDateString()).toBe(today.toDateString());
   });
 
-  it('debe renderizar hasta 3 espacios disponibles en .metric-value-item sin subtitulo en la tercera tarjeta KPI', () => {
+  it('debe renderizar hasta 3 espacios disponibles en .metric-value-item sin subtitulo en la segunda tarjeta KPI', () => {
     expect(component.state.monthlyKpis().nextAvailableDates).toEqual(['20/11/2026 - 10:00 am']);
 
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     const cards = compiled.querySelectorAll('lib-metric-card');
-    const thirdCard = cards[2];
-    expect(thirdCard).toBeTruthy();
+    expect(cards.length).toBe(2);
+    const secondCard = cards[1];
+    expect(secondCard).toBeTruthy();
 
-    const valueItems = thirdCard.querySelectorAll('.metric-value-item');
+    const valueItems = secondCard.querySelectorAll('.metric-value-item');
     expect(valueItems.length).toBe(1);
     expect(valueItems[0]?.textContent?.trim()).toBe('20/11/2026 - 10:00 am');
 
-    const subtitleEl = thirdCard.querySelector('.metric-subtitle');
+    const subtitleEl = secondCard.querySelector('.metric-subtitle');
     expect(subtitleEl).toBeNull();
   });
 
@@ -173,14 +183,14 @@ describe('RemoteEntryComponent', () => {
 
     const compiled = fixture.nativeElement as HTMLElement;
     const cards = compiled.querySelectorAll('lib-metric-card');
-    const thirdCard = cards[2];
-    expect(thirdCard).toBeTruthy();
+    const secondCard = cards[1];
+    expect(secondCard).toBeTruthy();
 
-    const valueItems = thirdCard.querySelectorAll('.metric-value-item');
+    const valueItems = secondCard.querySelectorAll('.metric-value-item');
     expect(valueItems.length).toBe(1);
     expect(valueItems[0]?.textContent?.trim()).toBe('Sin Cupos este mes');
 
-    const subtitleEl = thirdCard.querySelector('.metric-subtitle');
+    const subtitleEl = secondCard.querySelector('.metric-subtitle');
     expect(subtitleEl).toBeNull();
   });
 
@@ -188,5 +198,81 @@ describe('RemoteEntryComponent', () => {
     const resetSpy = vi.spyOn(component.state, 'resetToDefaults');
     component.ngOnDestroy();
     expect(resetSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('debe abrir ConfirmationModalComponent al hacer clic en un slot disponible y navegar a /agendador-citas si se confirma', () => {
+    const dialog = fixture.debugElement.injector.get(MatDialog);
+    const router = TestBed.inject(Router);
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    const openSpy = vi.spyOn(dialog, 'open').mockReturnValue({
+      afterClosed: () => of(true),
+    } as MatDialogRef<ConfirmationModalComponent, boolean>);
+
+    const sampleCell = component.state.timeGridRows()[0]?.layers[0];
+    expect(sampleCell).toBeDefined();
+
+    component.onSlotClick({ ...sampleCell, status: 'AVAILABLE' });
+
+    expect(openSpy).toHaveBeenCalledWith(
+      ConfirmationModalComponent,
+      expect.objectContaining({
+        data: expect.objectContaining({
+          text: '¿Quieres agendar una nueva cita en este espacio?',
+          actions: [
+            { label: 'Cancelar', color: 'default', value: false },
+            { label: 'Confirmar', color: 'primary', value: true },
+          ],
+        }),
+      })
+    );
+    expect(navigateSpy).toHaveBeenCalledWith(['/agendador-citas']);
+  });
+
+  it('debe abrir AgendarModalComponent con los datos de la cita al hacer clic en un slot SCHEDULED y redirigir al tab 3 de agendador-citas al confirmar cita', () => {
+    const dialog = fixture.debugElement.injector.get(MatDialog);
+    const router = TestBed.inject(Router);
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    const openSpy = vi.spyOn(dialog, 'open').mockReturnValue({
+      afterClosed: () => of({ agendar: false, goToConfirmationTab: true }),
+    } as MatDialogRef<AgendarModalComponent, AgendarModalResult>);
+
+    const sampleCell = component.state.timeGridRows()[0]?.layers[0];
+    expect(sampleCell).toBeDefined();
+
+    component.onSlotClick({
+      ...sampleCell,
+      status: 'SCHEDULED',
+      procedureTitle: 'Toxina Botulínica',
+      patientName: 'Elena Castro',
+      timeRangeLabel: '10:30 - 11:15',
+      patient: {
+        nombre: 'Elena',
+        apellidos: 'Castro',
+        cedula: '778899',
+        correo: 'elena@mail.com',
+        celular: '3004445566',
+      },
+    });
+
+    expect(openSpy).toHaveBeenCalledWith(
+      AgendarModalComponent,
+      expect.objectContaining({
+        data: expect.objectContaining({
+          title: 'Toxina Botulínica',
+          professional: 'Dr(a). Alejandro Gómez',
+          isTentativeView: true,
+          slotStatus: 'TENTATIVE',
+        }),
+      })
+    );
+
+    expect(navigateSpy).toHaveBeenCalledWith(
+      ['/agendador-citas'],
+      expect.objectContaining({
+        queryParams: expect.objectContaining({
+          tab: 'confirmacion',
+        }),
+      })
+    );
   });
 });
