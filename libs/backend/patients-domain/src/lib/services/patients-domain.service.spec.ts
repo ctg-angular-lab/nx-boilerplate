@@ -5,6 +5,7 @@ import { IPatientHistory, ICitaMedica } from '@nx-boilerplate/api-interfaces';
 import { PatientsDomainService } from './patients-domain.service';
 import { PatientsRepository } from '../repositories/patients.repository';
 import { ClinicalRecordsRepository } from '../repositories/clinical-records.repository';
+import { ProfessionalNamesRepository } from '../repositories/professional-names.repository';
 
 describe('PatientsDomainService', () => {
   let service: PatientsDomainService;
@@ -101,6 +102,14 @@ describe('PatientsDomainService', () => {
             }),
           },
         },
+        {
+          provide: ProfessionalNamesRepository,
+          useValue: {
+            findFullNameByCedula: vi.fn().mockImplementation((cedula: string) =>
+              Promise.resolve(cedula === '71345678' ? 'Carlos Andrés Ruiz' : null)
+            ),
+          },
+        },
       ],
     }).compile();
 
@@ -125,6 +134,8 @@ describe('PatientsDomainService', () => {
     expect(result).toBeDefined();
     expect(result.cedula).toBe('1020304050');
     expect(result.recomendaciones).toBe('Evitar masajear la zona por 24 horas');
+    expect(result.ultimoMedicoTratante).toBe('Dra. María Gómez');
+    expect(result.ultimoMedicoTratanteCedula).toBe('DOC-1');
     expect(result.ultimosProcedimientos).toEqual([
       expect.objectContaining({
         nombre: 'Toxina Botulínica',
@@ -133,6 +144,84 @@ describe('PatientsDomainService', () => {
     ]);
     expect(patientsRepository.findByCedula).toHaveBeenCalledWith('1020304050');
     expect(clinicalRecordsRepository.findByPatientCedula).toHaveBeenCalledWith('1020304050');
+  });
+
+  it('debe usar la historia COMPLETADA más reciente por fecha de atención e ignorar PENDIENTE_ATENCION', async () => {
+    const pendingNewest: ICitaMedica = {
+      ...mockClinicalRecord,
+      _id: 'rec-pending',
+      appointmentId: 'APT-300',
+      estado_registro: 'PENDIENTE_ATENCION',
+      medico_tratante: [
+        { cedula_profesional: 'DOC-3', nombre_profesional: 'Dr. Pendiente', fecha_atencion: new Date('2026-11-10') },
+      ],
+      registro_clinico: { ...mockClinicalRecord.registro_clinico, recomendaciones: '' },
+    };
+    const completedOlder: ICitaMedica = {
+      ...mockClinicalRecord,
+      _id: 'rec-old',
+      appointmentId: 'APT-050',
+      medico_tratante: [
+        { cedula_profesional: 'DOC-0', nombre_profesional: 'Dr. Antiguo', fecha_atencion: new Date('2026-08-01') },
+      ],
+      registro_clinico: { ...mockClinicalRecord.registro_clinico, recomendaciones: 'Recomendación antigua' },
+    };
+    vi.mocked(clinicalRecordsRepository.findByPatientCedula).mockResolvedValueOnce([
+      pendingNewest,
+      completedOlder,
+      mockClinicalRecord,
+    ]);
+
+    const result = await service.findByNationalId('1020304050');
+    expect(result.ultimoMedicoTratante).toBe('Dra. María Gómez');
+    expect(result.recomendaciones).toBe('Evitar masajear la zona por 24 horas');
+  });
+
+  it('debe resolver el nombre del médico por cédula cuando nombre_profesional viene null', async () => {
+    vi.mocked(clinicalRecordsRepository.findByPatientCedula).mockResolvedValueOnce([
+      {
+        ...mockClinicalRecord,
+        medico_tratante: [
+          {
+            cedula_profesional: '71345678',
+            nombre_profesional: null as unknown as undefined,
+            fecha_atencion: new Date('2026-10-20'),
+          },
+        ],
+      },
+    ]);
+
+    const result = await service.findByNationalId('1020304050');
+    expect(result.ultimoMedicoTratante).toBe('Carlos Andrés Ruiz');
+  });
+
+  it('debe usar la cédula como último recurso si no se puede resolver el nombre', async () => {
+    vi.mocked(clinicalRecordsRepository.findByPatientCedula).mockResolvedValueOnce([
+      {
+        ...mockClinicalRecord,
+        medico_tratante: [
+          {
+            cedula_profesional: '00000000',
+            nombre_profesional: null as unknown as undefined,
+            fecha_atencion: new Date('2026-10-20'),
+          },
+        ],
+      },
+    ]);
+
+    const result = await service.findByNationalId('1020304050');
+    expect(result.ultimoMedicoTratante).toBe('00000000');
+  });
+
+  it('no debe retornar médico ni recomendaciones cuando no hay historias COMPLETADA', async () => {
+    vi.mocked(clinicalRecordsRepository.findByPatientCedula).mockResolvedValueOnce([
+      { ...mockClinicalRecord, estado_registro: 'PENDIENTE_ATENCION' },
+    ]);
+
+    const result = await service.findByNationalId('1020304050');
+    expect(result.ultimoMedicoTratante).toBeUndefined();
+    expect(result.ultimoMedicoTratanteCedula).toBeUndefined();
+    expect(result.recomendaciones).toBeUndefined();
   });
 
   it('debe lanzar RpcException 404 cuando el paciente no existe', async () => {

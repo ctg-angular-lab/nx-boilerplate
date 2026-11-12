@@ -12,6 +12,7 @@ import {
   ClinicalRecord,
   ClinicalRecordDocument,
 } from '../schemas/clinical-record.schema';
+import { ProfessionalNamesRepository } from './professional-names.repository';
 
 @Injectable()
 export class ClinicalRecordsRepository {
@@ -19,15 +20,21 @@ export class ClinicalRecordsRepository {
 
   constructor(
     @InjectModel(ClinicalRecord.name)
-    private readonly clinicalRecordModel: Model<ClinicalRecordDocument>
+    private readonly clinicalRecordModel: Model<ClinicalRecordDocument>,
+    private readonly professionalNamesRepository: ProfessionalNamesRepository
   ) {}
 
   /**
    * Crea un borrador clínico de forma atómica e idempotente cuando se confirma una cita en el agendador.
+   * Resuelve el nombre del médico tratante (nombres + apellidos) desde 'profesionalesActivos' por cédula.
    */
   async createDraftFromAppointment(
     event: IAppointmentConfirmedEvent
   ): Promise<ICitaMedica> {
+    const nombreProfesional = await this.professionalNamesRepository.findFullNameByCedula(
+      event.doctorCedula
+    );
+
     const draftData: Partial<ClinicalRecord> = {
       appointmentId: event.appointmentId,
       cedula_paciente: event.patientNationalId,
@@ -35,6 +42,7 @@ export class ClinicalRecordsRepository {
       medico_tratante: [
         {
           cedula_profesional: event.doctorCedula,
+          nombre_profesional: nombreProfesional ?? undefined,
           fecha_atencion: new Date(event.appointmentDate),
         },
       ],
