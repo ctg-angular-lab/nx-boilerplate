@@ -20,6 +20,7 @@ El ecosistema Frontend está compuesto por el Host (`app-shell`), los Microfront
 | **[`agendador-citas.md`](./agendador-citas.md)** | `apps/agendador-citas` | `4201` | `/agendador-citas` | **Activo:** Stepper de agendamiento (3 pasos), Calendario semanal dinámico y CRM diario de confirmación de citas. |
 | **[`lista-profesionales.md`](./lista-profesionales.md)** | `apps/lista-profesionales` | `4203` | `/profesionales` | **Activo:** Gestión CRUD de especialistas (Tab Host, tabla Activos/Inactivos, `AsideModal` de detalle y Stepper de 4 pasos para alta/edición). |
 | **[`procedimientos-medicos.md`](./procedimientos-medicos.md)** | `apps/procedimientos-medicos` | `4204` | `/procedimientos-medicos` | **Activo:** Gestión CRUD de procedimientos y laboratorios (Tab Host, auto-recuperación de inactivos, bloqueo de baja si tiene médicos asignados). |
+| **[`dashboard.md`](./dashboard.md)** | `apps/dashboard` | `4206` | `/dashboard` | **Activo:** Tablero de mando ejecutivo, métricas operativas, próximos espacios disponibles con navegación a citas y calendario diario en cascada. |
 | **[`homologacion-navegacion.md`](./homologacion-navegacion.md)** | `libs/shared/layouts` & `apps/*` | *Transversal* | *N/A* | **Estándar Implementado:** Patrón canónico de navegación por pestañas (`lib-tabs-collection`), tablas (`lib-data-table`), modales y steppers. |
 | **[`historial-pacientes.md`](./historial-pacientes.md)** | `apps/historial-pacientes` | `4205` | `/historial-pacientes` | **Activo:** Directorio de pacientes, ficha demográfica de 20 campos (Resolución 1995 de 1999), expediente clínico y modales laterales (`AsideModal`) de lectura y diligenciamiento médico. |
 
@@ -56,6 +57,7 @@ graph TD
     end
 
     subgraph Remotes ["Microfrontends Federados (loadRemote)"]
+        R_DB["dashboard (:4206)\n/dashboard"]
         R_AG["agendador-citas (:4201)\n/agendador-citas"]
         R_LP["lista-profesionales (:4203)\n/profesionales"]
         R_PM["procedimientos-medicos (:4204)\n/procedimientos-medicos"]
@@ -63,7 +65,7 @@ graph TD
         R_LG["Login (:4202)\n/login"]
     end
 
-    Workspace --> R_AG & R_LP & R_PM & R_HP & R_LG
+    Workspace --> R_DB & R_AG & R_LP & R_PM & R_HP & R_LG
 
     subgraph SharedLibs ["Librerías Compartidas (libs/shared/*)"]
         L_LAY["@nx-boilerplate/layouts\n(Tabs, DataTable, AsideModal, ConfirmationModal, Steps)"]

@@ -107,8 +107,10 @@ Cuando se consulta un paciente por su cédula (`patients.find-by-national-id`):
    ]);
    ```
 2. Si el paciente no existe en `patients`, lanza `RpcException({ statusCode: 404, message: '...' })`.
-3. Si existen registros en `historialMedico`, extrae los procedimientos realizados (`ultimosProcedimientos`) y la recomendación médica más reciente (`recomendaciones`) y los inyecta en el contrato `IPatientHistory`.
-4. **Beneficio:** El Paso 2 del MFE `agendador-citas` muestra automáticamente los antecedentes reales del paciente sin hacer peticiones adicionales.
+3. Si existen registros en `historialMedico`, extrae los procedimientos realizados (`ultimosProcedimientos`), la recomendación médica más reciente (`recomendaciones`) y resuelve el **último médico tratante** (`ultimoMedicoTratante` y `ultimoMedicoTratanteCedula`):
+   * Localiza la atención médica con `estado_registro === 'COMPLETADA'` más reciente (ordenada por `fecha_atencion` y `createdAt`).
+   * Si el registro clínico contiene el nombre del médico, lo toma directamente; en caso contrario, utiliza el repositorio de lectura [`ProfessionalNamesRepository`](file:///Users/usuario/Desktop/nx-boilerplate/libs/backend/patients-domain/src/lib/repositories/professional-names.repository.ts) (proyección ligera sobre la colección `profesionalesActivos`) para resolver el nombre legible del especialista a partir de su cédula sin generar acoplamiento de red con otros microservicios.
+4. **Beneficio:** El Paso 2 del MFE `agendador-citas` muestra automáticamente los antecedentes reales del paciente y permite preseleccionar al médico tratante previo para agendar citas de control o seguimiento sin fricción.
 
 ### 4.2 Inicialización Idempotente de Borrador Clínico (`createDraftFromAppointment`)
 Archivo: [`clinical-records.repository.ts`](file:///Users/usuario/Desktop/nx-boilerplate/libs/backend/patients-domain/src/lib/repositories/clinical-records.repository.ts)

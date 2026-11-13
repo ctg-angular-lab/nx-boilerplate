@@ -4,7 +4,7 @@
 > * **Microservicio Ejecutable:** `services/procedures-service` (`["scope:backend", "type:service"]`)  
 > * **Librería de Dominio:** `libs/backend/procedures-domain` (`["scope:backend", "type:domain-lib"]`)  
 > * **Cola RabbitMQ:** `procedures_queue` (`Transport.RMQ`)  
-> * **Colecciones MongoDB Atlas:** `procedures`, `active_professionals`, `area_codes`, `counters`  
+> * **Colecciones MongoDB Atlas:** `procedures`, `active_professionals` (`profesionalesActivos`), `categoriaMedica`, `area_codes`, `counters`  
 > * **Nexo Padre:** [Volver a `00-api-gateway.md`](./00-api-gateway.md)
 
 ---
@@ -30,12 +30,14 @@ graph TD
     subgraph API_Gateway ["services/api-gateway"]
         PRC["ProceduresController\n(/api/procedures)"]
         DRC["DoctorsController\n(/api/doctors)"]
+        CAT["CategoriesController\n(/api/categories)"]
         ARC["AreaCodesController\n(/api/area-codes)"]
     end
 
     subgraph RMQ ["RabbitMQ (procedures_queue)"]
         M_PRO["@MessagePattern('procedures.*')"]
         M_DOC["@MessagePattern('doctors.*')"]
+        M_CAT["@MessagePattern('categories.get-all')"]
         M_ARC["@MessagePattern('area-codes.get-all')"]
     end
 
@@ -52,17 +54,19 @@ graph TD
 
     subgraph MongoDB ["MongoDB Atlas"]
         COL_PR[("Colección: procedures\n(idProcedimiento: PROC-XXX)")]
-        COL_DR[("Colección: active_professionals\n(cedula única)")]
+        COL_DR[("Colección: active_professionals\n(profesionalesActivos)")]
+        COL_CAT[("Colección: categoriaMedica\n(Especialidades activas)")]
         COL_AC[("Colección: area_codes")]
         COL_CT[("Colección: counters\n(Secuencias atómicas)")]
     end
 
     PRC --> M_PRO --> PMC --> PDS
     DRC --> M_DOC --> PMC & DMC --> PDS
+    CAT --> M_CAT --> PMC --> PDS
     ARC --> M_ARC --> PMC --> PDS
 
     PDS --> PREP
-    PREP --> COL_PR & COL_DR & COL_AC & COL_CT
+    PREP --> COL_PR & COL_DR & COL_CAT & COL_AC & COL_CT
     SEED -.->|Inicializa datos base si BD vacía| PREP
 ```
 
@@ -78,12 +82,14 @@ graph TD
 * `laboratorios`: Sub-documentos `{ id: string, nombre: string }` con las marcas o insumos aprobados para el procedimiento.
 * `isActive`: Booleano (`default: true`) para control de estado activo/inactivo.
 
-### 3.2 Colección `active_professionals` ([`active-professional.schema.ts`](file:///Users/usuario/Desktop/nx-boilerplate/libs/backend/procedures-domain/src/lib/schemas/active-professional.schema.ts))
+### 3.2 Colección `profesionalesActivos` ([`active-professional.schema.ts`](file:///Users/usuario/Desktop/nx-boilerplate/libs/backend/procedures-domain/src/lib/schemas/active-professional.schema.ts))
 * `cedula`: Documento de identidad único del profesional (`unique: true`).
 * `nombres`, `apellidos`, `email`, `profesion`.
+* `specialtyCategory` (`ProfessionalSpecialtyCategorySchema`): Objeto `{ categoryId: string, name: string, slug: string }` que referencia de forma desnormalizada la categoría médica oficial del especialista.
+* `actoAdministrativo`: Cadena de texto opcional (`trim: true`) que almacena el acto administrativo, resolución de habilitación o registro normativo del profesional.
 * `procedimientosRelacionados`: Array de strings (`string[]`) que almacena los `idProcedimiento` que el especialista realiza.
 * `horarioTrabajo` (`WorkScheduleSchema`):
-  * `diasLaborales`: Array de días (`[1, 2, 3, 4, 5]` donde `1 = Lunes`).
+  * `diasLaborales`: Array de días (`['LUNES', 'MARTES', ...]` o `[1, 2, 3, 4, 5]`).
   * `horaInicio` y `horaFin`: Formato `"HH:mm"` (ej. `"08:00"` a `"17:00"`).
   * `recesoAlmuerzo`: `{ inicio: "12:00", fin: "13:00" }`.
 * `horariosExcepcionales` (`ExceptionScheduleSchema[]`):
@@ -92,7 +98,15 @@ graph TD
   * `horaInicio`, `horaFin`, `motivo`.
 * `isActive`: Booleano (`default: true`) para inactivación lógica del especialista.
 
-### 3.3 Colecciones `counters` ([`counter.schema.ts`](file:///Users/usuario/Desktop/nx-boilerplate/libs/backend/procedures-domain/src/lib/schemas/counter.schema.ts)) y `area_codes` ([`area-code.schema.ts`](file:///Users/usuario/Desktop/nx-boilerplate/libs/backend/procedures-domain/src/lib/schemas/area-code.schema.ts))
+### 3.3 Colección `categoriaMedica` ([`category.schema.ts`](file:///Users/usuario/Desktop/nx-boilerplate/libs/backend/procedures-domain/src/lib/schemas/category.schema.ts))
+* `categoryId`: Identificador único de negocio (`CAT-01`, `CAT-02`, etc.).
+* `name`: Nombre de la especialidad (ej. `"Medicina Estética"`, `"Cirujano"`, `"Médica General"`).
+* `slug`: Slug normalizado en minúsculas y sin acentos (`"medicina-estetica"`, `"cirujano"`).
+* `description`: Breve descripción del alcance médico.
+* `isActive`: Booleano (`default: true`) para activar o retirar especialidades del catálogo.
+* **Auto-Seeding e Idempotencia ([`procedures.seeder.ts`](file:///Users/usuario/Desktop/nx-boilerplate/libs/backend/procedures-domain/src/lib/seeders/procedures.seeder.ts)):** Durante el arranque (`OnApplicationBootstrap`), el seeder verifica si la colección está vacía o si requiere migración desde esquemas legacy, insertando automáticamente las categorías iniciales.
+
+### 3.4 Colecciones `counters` ([`counter.schema.ts`](file:///Users/usuario/Desktop/nx-boilerplate/libs/backend/procedures-domain/src/lib/schemas/counter.schema.ts)) y `area_codes` ([`area-code.schema.ts`](file:///Users/usuario/Desktop/nx-boilerplate/libs/backend/procedures-domain/src/lib/schemas/area-code.schema.ts))
 * `counters`: Mantiene secuencias numéricas atómicas (`findOneAndUpdate` con `$inc: { seq: 1 }`) para garantizar que nunca se repita un código `PROC-XXX` ni un ID de laboratorio `LAB-XXX`.
 * `area_codes`: Almacena `{ country, code, iso, flag, pattern, placeholder }` para validación internacional de teléfonos.
 
@@ -102,11 +116,12 @@ graph TD
 
 Archivo: [`procedures-domain.service.ts`](file:///Users/usuario/Desktop/nx-boilerplate/libs/backend/procedures-domain/src/lib/services/procedures-domain.service.ts)
 
-1. **Filtrado Inteligente Activos vs. Todos (`includeInactive`):**
+1. **Filtrado Inteligente Activos vs. Todos y Especialidad (`includeInactive` y `categorySlug`):**
    * Cuando el MFE `agendador-citas` solicita procedimientos o doctores (`includeInactive = false`), el dominio filtra estrictamente aquellos con `isActive: true`.
+   * Permite filtrar doctores por categoría médica pasando `categorySlug` (ej. `query['specialtyCategory.slug'] = payload.categorySlug`), optimizando la selección de especialistas en el agendamiento y en el panel de profesionales.
    * Cuando los MFEs administrativos (`procedimientos-medicos` y `lista-profesionales`) envían `?includeInactive=true`, el dominio retorna el catálogo completo para permitir su reactivación o edición.
 2. **Cruce Relacional Procedimiento ↔ Especialista:**
-   * `getDoctorsByProcedureId(idProcedimiento)`: Busca todos los profesionales activos cuyo array `procedimientosRelacionados` contenga el `idProcedimiento` solicitado.
+   * `getDoctorsByProcedureId(idProcedimiento)`: Busca todos los profesionales activos cuyo array `procedimientosRelacionados` contenga el `idProcedimiento` solicitado, mapeando además `actoAdministrativo` y `specialtyCategory`.
    * `getByDoctor(doctorCedula)`: Recupera el profesional por su cédula y retorna los documentos completos de `procedures` que coincidan con su lista de `procedimientosRelacionados`.
 3. **Inactivación Lógica Segura (`softDeleteProcedure` y `softDeleteProfessional`):**
    * En lugar de ejecutar `deleteOne` en MongoDB, actualiza `{ isActive: false }`, preservando la trazabilidad histórica para citas e historias clínicas existentes.
@@ -125,7 +140,8 @@ Archivo: [`procedures-domain.service.ts`](file:///Users/usuario/Desktop/nx-boile
 | `@MessagePattern` | `procedures.create` | `CreateProcedureDto` | `createProcedure(payload)` |
 | `@MessagePattern` | `procedures.update` | `UpdateProcedureMessageDto` | `updateProcedure(idProcedimiento, data)` |
 | `@MessagePattern` | `procedures.soft-delete` | `FindProcedureByIdDto` | `softDeleteProcedure(idProcedimiento)` |
-| `@MessagePattern` | `doctors.get-all` | `GetDoctorsMessageDto` | `getAllDoctors(includeInactive)` |
+| `@MessagePattern` | `doctors.get-all` | `GetDoctorsFilterDto` | `findAllDoctors(filter)` (con filtro `categorySlug`) |
+| `@MessagePattern` | `categories.get-all` | — | `getAllCategories(onlyActive = true)` |
 | `@MessagePattern` | `area-codes.get-all` | — | `getAllAreaCodes()` |
 
 ### [`DoctorsMessageController`](file:///Users/usuario/Desktop/nx-boilerplate/services/procedures-service/src/controllers/doctors-message.controller.ts)

@@ -53,7 +53,7 @@ graph TD
     GW --> VP
     VP --> C_PAT["PatientsController\nClinicalRecordsController"]
     VP --> C_SCH["AppointmentsController\nAppointmentConfirmationController"]
-    VP --> C_PRO["ProceduresController\nDoctorsController\nAreaCodesController"]
+    VP --> C_PRO["ProceduresController\nDoctorsController\nCategoriesController\nAreaCodesController"]
     VP --> C_HLT["HealthController"]
     
     subgraph RabbitMQ ["Broker RabbitMQ (AMQP :5672)"]
@@ -150,11 +150,16 @@ Configurada globalmente en [`services/api-gateway/src/main.ts`](file:///Users/us
 #### [`DoctorsController`](file:///Users/usuario/Desktop/nx-boilerplate/services/api-gateway/src/controllers/doctors.controller.ts) (`/api/doctors`)
 | Método | Ruta HTTP | DTO de Entrada | Patrón RabbitMQ | Timeout | Propósito |
 |---|---|---|---|---|---|
-| `GET` | `/api/doctors` | `GetDoctorsFilterDto` | `doctors.get-all` | `5000ms` | Lista los profesionales médicos activos (o todos si `?includeInactive=true`). |
-| `POST` | `/api/doctors` | `CreateProfessionalDto` | `doctors.create` | `5000ms` | Registra un nuevo profesional con su jornada laboral (`horarioTrabajo`). |
-| `PATCH` | `/api/doctors/:cedula` | `UpdateProfessionalDto` | `doctors.update` | `10000ms` | Actualiza datos del profesional, procedimientos asignados, horario o estado `isActive`. |
+| `GET` | `/api/doctors` | `GetDoctorsFilterDto` | `doctors.get-all` | `5000ms` | Lista los profesionales médicos activos (con soporte para filtrar por especialidad `?categorySlug=` o incluir inactivos con `?includeInactive=true`). |
+| `POST` | `/api/doctors` | `CreateProfessionalDto` | `doctors.create` | `5000ms` | Registra un nuevo profesional con su jornada laboral (`horarioTrabajo`), especialidad (`specialtyCategory`) y acto administrativo (`actoAdministrativo`). |
+| `PATCH` | `/api/doctors/:cedula` | `UpdateProfessionalDto` | `doctors.update` | `10000ms` | Actualiza datos del profesional, procedimientos asignados, horario, especialidad, acto administrativo o estado `isActive`. |
 | `PATCH` | `/api/doctors/:cedula/schedule` | `UpdateScheduleExceptionsDto` | `doctors.update-schedule` | `5000ms` | Actualiza turnos extra (`EXTRA_SHIFT`) o días libres (`DAY_OFF`). |
 | `DELETE` | `/api/doctors/:cedula` | `:cedula` | `doctors.soft-delete` | `5000ms` | Inactiva lógicamente al profesional (`isActive: false`). |
+
+#### [`CategoriesController`](file:///Users/usuario/Desktop/nx-boilerplate/services/api-gateway/src/controllers/categories.controller.ts) (`/api/categories`)
+| Método | Ruta HTTP | DTO de Entrada | Patrón RabbitMQ | Timeout | Propósito |
+|---|---|---|---|---|---|
+| `GET` | `/api/categories` | — | `categories.get-all` (`procedures_queue`) | `5000ms` | Retorna el catálogo maestro de categorías y especialidades médicas activas (`categoriaMedica`). |
 
 #### [`AreaCodesController`](file:///Users/usuario/Desktop/nx-boilerplate/services/api-gateway/src/controllers/area-codes.controller.ts) (`/api/area-codes`) y [`HealthController`](file:///Users/usuario/Desktop/nx-boilerplate/services/api-gateway/src/controllers/health.controller.ts) (`/api/health`)
 | Método | Ruta HTTP | Patrón RabbitMQ | Propósito |

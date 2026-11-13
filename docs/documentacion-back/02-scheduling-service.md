@@ -111,9 +111,11 @@ Archivos: [`availability.service.ts`](file:///Users/usuario/Desktop/nx-boilerpla
    * Aplica las excepciones (`horariosExcepcionales`):
      * `DAY_OFF`: Si es de día completo, anula toda la disponibilidad de ese día; si es parcial, recorta los bloques afectados.
      * `EXTRA_SHIFT`: Abre bloques adicionales de atención incluso en días no laborales (ej. un sábado especial).
-2. **Cruce con Citas Locales y Google Calendar:**
+2. **Cálculo de Franjas y Duración Estándar (`duracionStandar`):**
+   * Divide las ventanas laborales en intervalos adaptados a la duración estándar del procedimiento solicitado (`duracionStandar`, con valor por defecto de 45 minutos), garantizando que las citas ocupen los bloques temporales exactos tanto en el agendador como en el dashboard.
+3. **Cruce con Citas Locales y Google Calendar:**
    * Consulta las citas activas en MongoDB (`status !== 'CANCELLED'`) y los bloques ocupados en Google Calendar.
-   * Clasifica cada turno en `ISlotDisplay` con estados detallados (`AVAILABLE`, `TENTATIVE`, `CONFIRMED`, `BLOCKED_PERSONAL`) para que el frontend renderice el calendario semanal con precisión visual.
+   * Clasifica cada turno en `ISlotDisplay` con estados detallados (`AVAILABLE`, `TENTATIVE`, `CONFIRMED`, `BLOCKED_PERSONAL`) para que el frontend renderice el calendario semanal y diario con precisión visual.
 
 ### 4.2 Reserva de Cita y Resiliencia (`BookingService.bookAppointment`)
 Archivo: [`booking.service.ts`](file:///Users/usuario/Desktop/nx-boilerplate/libs/backend/scheduling-domain/src/lib/services/booking.service.ts)
