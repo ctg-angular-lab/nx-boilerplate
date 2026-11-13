@@ -16,6 +16,7 @@ describe('StepProfessionalInfoComponent', () => {
       email: new FormControl('', [Validators.required, Validators.email]),
       profesion: new FormControl('', Validators.required),
       specialtyCategory: new FormControl(null, Validators.required),
+      actoAdministrativo: new FormControl(''),
     });
 
     await TestBed.configureTestingModule({
@@ -57,6 +58,7 @@ describe('StepProfessionalInfoComponent', () => {
         name: 'Medicina Estética',
         slug: 'medicina-estetica',
       },
+      actoAdministrativo: 'Resolución No. 1234 de 2024',
     });
     fixture.detectChanges();
 

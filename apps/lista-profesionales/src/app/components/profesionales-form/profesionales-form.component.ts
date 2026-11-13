@@ -64,6 +64,7 @@ export class ProfesionalesFormComponent {
       email: ['', [Validators.required, Validators.email]],
       profesion: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(80)]],
       specialtyCategory: this.fb.control<ISpecialtyCategoryRef | null>(null, [Validators.required]),
+      actoAdministrativo: ['', [Validators.maxLength(100)]],
     }),
     step3: this.fb.group(
       {
@@ -143,6 +144,7 @@ export class ProfesionalesFormComponent {
       apellidos: raw.step2.apellidos?.trim() || '',
       email: raw.step2.email?.trim() || '',
       profesion: profesionDisplay,
+      actoAdministrativo: raw.step2.actoAdministrativo?.trim() || null,
       diasLaborales: raw.step3.diasLaborales || [],
       horaInicio: raw.step3.horaInicio || '',
       horaFin: raw.step3.horaFin || '',
@@ -186,6 +188,7 @@ export class ProfesionalesFormComponent {
       email: prof.email,
       profesion: specialtyCategory?.name || prof.profesion,
       specialtyCategory,
+      actoAdministrativo: prof.actoAdministrativo || '',
     });
 
     const tieneReceso = !!prof.horarioTrabajo.recesoAlmuerzo;
@@ -219,7 +222,14 @@ export class ProfesionalesFormComponent {
     this.form.controls.step1.controls.cedula.enable({ emitEvent: false });
     this.form.reset({
       step1: { cedula: '' },
-      step2: { nombres: '', apellidos: '', email: '', profesion: '', specialtyCategory: null },
+      step2: {
+        nombres: '',
+        apellidos: '',
+        email: '',
+        profesion: '',
+        specialtyCategory: null,
+        actoAdministrativo: '',
+      },
       step3: {
         diasLaborales: ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'],
         horaInicio: '08:00',
@@ -318,6 +328,9 @@ export class ProfesionalesFormComponent {
         email: raw.step2.email.trim(),
         profesion,
         ...(specialtyCategory ? { specialtyCategory } : {}),
+        ...(raw.step2.actoAdministrativo?.trim()
+          ? { actoAdministrativo: raw.step2.actoAdministrativo.trim() }
+          : {}),
         horarioTrabajo,
         ...(raw.step4.procedimientosRelacionados.length > 0
           ? { procedimientosRelacionados: raw.step4.procedimientosRelacionados }
@@ -337,6 +350,9 @@ export class ProfesionalesFormComponent {
         email: raw.step2.email.trim(),
         profesion,
         specialtyCategory,
+        ...(raw.step2.actoAdministrativo?.trim()
+          ? { actoAdministrativo: raw.step2.actoAdministrativo.trim() }
+          : {}),
         horarioTrabajo,
         ...(raw.step4.procedimientosRelacionados.length > 0
           ? { procedimientosRelacionados: raw.step4.procedimientosRelacionados }

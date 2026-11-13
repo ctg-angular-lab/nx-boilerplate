@@ -227,6 +227,7 @@ export class ProceduresDomainService {
       email: doc.email,
       profesion: doc.profesion,
       specialtyCategory: doc.specialtyCategory,
+      actoAdministrativo: doc.actoAdministrativo,
       horarioTrabajo: doc.horarioTrabajo,
     }));
   }

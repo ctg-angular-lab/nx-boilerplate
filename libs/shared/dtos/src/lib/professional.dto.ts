@@ -147,6 +147,10 @@ export class CreateProfessionalDto
   specialtyCategory?: SpecialtyCategoryRefDto;
 
   @IsOptional()
+  @IsString({ message: 'El acto administrativo debe ser una cadena de texto' })
+  actoAdministrativo?: string;
+
+  @IsOptional()
   @IsArray({ message: 'Los procedimientos relacionados deben ser un array de strings' })
   @IsString({ each: true, message: 'Cada procedimiento debe ser un string' })
   procedimientosRelacionados?: string[];
@@ -184,6 +188,10 @@ export class UpdateProfessionalDto {
   @ValidateNested()
   @Type(() => SpecialtyCategoryRefDto)
   specialtyCategory?: SpecialtyCategoryRefDto;
+
+  @IsOptional()
+  @IsString({ message: 'El acto administrativo debe ser una cadena de texto' })
+  actoAdministrativo?: string;
 
   @IsOptional()
   @IsArray({ message: 'Los procedimientos deben ser un array' })
@@ -235,6 +243,9 @@ export class PublicProfessionalDto {
   @Expose()
   @Type(() => SpecialtyCategoryRefDto)
   specialtyCategory?: SpecialtyCategoryRefDto;
+
+  @Expose()
+  actoAdministrativo?: string;
 
   @Expose()
   procedimientosRelacionados?: string[];

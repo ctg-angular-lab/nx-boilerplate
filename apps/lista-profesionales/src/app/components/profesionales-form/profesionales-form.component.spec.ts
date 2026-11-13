@@ -18,6 +18,7 @@ const mockProfessional: IActiveProfessional = {
     name: 'Médica General',
     slug: 'medica-general',
   },
+  actoAdministrativo: 'Resolución No. 5678 de 2023',
   isActive: true,
   horarioTrabajo: {
     diasLaborales: ['LUNES', 'MARTES'],
@@ -235,6 +236,7 @@ describe('ProfesionalesFormComponent', () => {
           name: 'Cirujano',
           slug: 'cirujano',
         },
+        actoAdministrativo: 'Acuerdo 045 de 2024',
       });
       component.form.controls.step3.patchValue({
         diasLaborales: ['LUNES', 'MIERCOLES'],
@@ -256,6 +258,7 @@ describe('ProfesionalesFormComponent', () => {
           name: 'Cirujano',
           slug: 'cirujano',
         },
+        actoAdministrativo: 'Acuerdo 045 de 2024',
         horarioTrabajo: {
           diasLaborales: ['LUNES', 'MIERCOLES'],
           horaInicio: '08:00',
@@ -276,6 +279,7 @@ describe('ProfesionalesFormComponent', () => {
           name: 'Cirujano',
           slug: 'cirujano',
         },
+        actoAdministrativo: 'Acuerdo 045 de 2024',
       });
       component.form.controls.step3.setValue({
         diasLaborales: ['LUNES'],
@@ -322,6 +326,7 @@ describe('ProfesionalesFormComponent', () => {
           apellidos: 'Gómez',
           email: 'laura@clinica.com',
           specialtyCategory: mockProfessional.specialtyCategory,
+          actoAdministrativo: 'Resolución No. 5678 de 2023',
         })
       );
     });

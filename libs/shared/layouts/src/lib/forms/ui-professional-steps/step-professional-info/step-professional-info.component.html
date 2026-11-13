@@ -79,6 +79,22 @@
         <mat-error>La profesión o especialidad es obligatoria</mat-error>
       }
     </mat-form-field>
+
+    <!-- Acto Administrativo -->
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Acto administrativo</mat-label>
+      <span matPrefix class="material-symbols-outlined prefix-icon">description</span>
+      <input
+        matInput
+        type="text"
+        formControlName="actoAdministrativo"
+        placeholder="Ej. Resolución No. 1234 de 2024"
+        maxlength="100"
+      />
+      @if (hasError('actoAdministrativo', 'maxlength')) {
+        <mat-error>El acto administrativo no debe superar los 100 caracteres</mat-error>
+      }
+    </mat-form-field>
   </div>
 
   <div class="stepper-actions">

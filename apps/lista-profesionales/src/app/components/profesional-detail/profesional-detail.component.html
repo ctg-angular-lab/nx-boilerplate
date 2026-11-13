@@ -27,6 +27,16 @@
           </span>
         </div>
       </div>
+
+      @if (professional().actoAdministrativo) {
+        <div class="contact-item">
+          <span class="material-symbols-outlined contact-icon">description</span>
+          <div class="contact-info">
+            <span class="contact-label">Acto administrativo</span>
+            <span class="contact-value">{{ professional().actoAdministrativo }}</span>
+          </div>
+        </div>
+      }
     </div>
   </section>
 

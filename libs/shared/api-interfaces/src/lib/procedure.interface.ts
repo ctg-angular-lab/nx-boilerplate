@@ -26,6 +26,7 @@ export interface IActiveProfessional {
   email: string;
   profesion: string;
   specialtyCategory?: ISpecialtyCategoryRef;
+  actoAdministrativo?: string;
   procedimientosRelacionados?: string[];
   horarioTrabajo: IWorkSchedule;
   isActive?: boolean;
@@ -58,6 +59,7 @@ export type IProfessionalSummary = Pick<
   | 'email'
   | 'profesion'
   | 'specialtyCategory'
+  | 'actoAdministrativo'
   | 'horarioTrabajo'
 >;
 

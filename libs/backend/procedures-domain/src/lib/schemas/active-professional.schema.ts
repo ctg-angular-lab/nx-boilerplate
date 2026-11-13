@@ -43,6 +43,9 @@ export class ActiveProfessional implements IActiveProfessional {
   @Prop({ type: ProfessionalSpecialtyCategorySchema, default: null })
   specialtyCategory?: ProfessionalSpecialtyCategory;
 
+  @Prop({ type: String, trim: true })
+  actoAdministrativo?: string;
+
   @Prop({ type: [String], default: [] })
   procedimientosRelacionados!: string[];
 

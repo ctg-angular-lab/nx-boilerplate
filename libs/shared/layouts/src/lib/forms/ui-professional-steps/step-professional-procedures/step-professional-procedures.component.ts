@@ -13,6 +13,7 @@ export interface ProfessionalSummaryData {
   apellidos: string;
   email: string;
   profesion: string;
+  actoAdministrativo?: string | null;
   diasLaborales: string[];
   horaInicio: string;
   horaFin: string;
