@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { IProcedure } from '@nx-boilerplate/api-interfaces';
+import { IMedicalCategory, IProcedure } from '@nx-boilerplate/api-interfaces';
 import { ProceduresRepository } from '../repositories/procedures.repository';
 
 @Injectable()
@@ -10,6 +10,7 @@ export class ProceduresSeeder implements OnModuleInit {
 
   async onModuleInit(): Promise<void> {
     await this.seedInitialProceduresIfEmpty();
+    await this.seedInitialCategoriesIfEmpty();
     try {
       await this.proceduresRepository.ensureProcedureCounter();
     } catch (error) {
@@ -76,6 +77,77 @@ export class ProceduresSeeder implements OnModuleInit {
     } catch (error) {
       this.logger.warn(
         `Aviso en auto-seeder Procedures (posible arranque sin conexión): ${
+          (error as Error).message
+        }`
+      );
+    }
+  }
+
+  async seedInitialCategoriesIfEmpty(): Promise<void> {
+    try {
+      const count = await this.proceduresRepository.countCategories();
+      if (count === 0) {
+        // Verificar si existen datos bajo 'categoriasMedicas' (plural) para migrarlos automáticamente
+        const db = this.proceduresRepository.getConnection().db;
+        if (db) {
+          try {
+            const oldDocs = await db.collection('categoriasMedicas').find({}).toArray();
+            if (oldDocs.length > 0) {
+              this.logger.log(
+                `Migrando ${oldDocs.length} documentos desde "categoriasMedicas" a "categoriaMedica"...`
+              );
+              const mapped: IMedicalCategory[] = oldDocs.map((d) => ({
+                categoryId: (d['categoryId'] as string) || `CAT-${d['_id']}`,
+                name: (d['name'] as string) || '',
+                slug: (d['slug'] as string) || '',
+                description: d['description'] as string | undefined,
+                isActive: d['isActive'] !== false,
+              }));
+              await this.proceduresRepository.insertManyCategories(mapped);
+              this.logger.log('Migración de categorías completada con éxito.');
+              return;
+            }
+          } catch {
+            // Ignorar si la colección no existe en Atlas
+          }
+        }
+
+        this.logger.log(
+          'Colección "categoriaMedica" vacía en MongoDB Atlas. Inicializando auto-seeder de categorías...'
+        );
+
+        const initialCategories: IMedicalCategory[] = [
+          {
+            categoryId: 'CAT-ESTETICA',
+            name: 'Médico Estético',
+            slug: 'medico-estetico',
+            description: 'Procedimientos de medicina estética y armonización facial',
+            isActive: true,
+          },
+          {
+            categoryId: 'CAT-COSMETOLOGIA',
+            name: 'Profesional Cosmetóloga',
+            slug: 'profesional-cosmetologa',
+            description: 'Tratamientos cosmetológicos y cuidado dérmico',
+            isActive: true,
+          },
+          {
+            categoryId: 'CAT-PSIQUIATRIA',
+            name: 'Médico Psiquiatra',
+            slug: 'medico-psiquiatra',
+            description: 'Atención en salud mental y psiquiatría clínica',
+            isActive: true,
+          },
+        ];
+
+        await this.proceduresRepository.insertManyCategories(initialCategories);
+        this.logger.log(
+          'Auto-seeder completado: 3 categorías médicas maestras insertadas con éxito.'
+        );
+      }
+    } catch (error) {
+      this.logger.warn(
+        `Aviso en auto-seeder Categorías (posible arranque sin conexión): ${
           (error as Error).message
         }`
       );

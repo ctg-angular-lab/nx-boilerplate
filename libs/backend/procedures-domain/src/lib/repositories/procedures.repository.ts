@@ -5,6 +5,8 @@ import {
   IActiveProfessional,
   IProcedure,
   IAreaCode,
+  IGetDoctorsQueryRequest,
+  IMedicalCategory,
 } from '@nx-boilerplate/api-interfaces';
 import { Procedure, ProcedureDocument } from '../schemas/procedure.schema';
 import { AreaCode, AreaCodeDocument } from '../schemas/area-code.schema';
@@ -13,6 +15,7 @@ import {
   ActiveProfessional,
   ActiveProfessionalDocument,
 } from '../schemas/active-professional.schema';
+import { Category, CategoryDocument } from '../schemas/category.schema';
 
 @Injectable()
 export class ProceduresRepository {
@@ -25,6 +28,8 @@ export class ProceduresRepository {
     private readonly areaCodeModel: Model<AreaCodeDocument>,
     @InjectModel(Counter.name)
     private readonly counterModel: Model<CounterDocument>,
+    @InjectModel(Category.name)
+    private readonly categoryModel: Model<CategoryDocument>,
     @InjectConnection()
     private readonly connection: Connection
   ) {}
@@ -146,10 +151,24 @@ export class ProceduresRepository {
       .exec();
   }
 
-  async findAllDoctors(includeInactive = false): Promise<IActiveProfessional[]> {
-    const filter = includeInactive ? {} : { isActive: { $ne: false } };
+  async findAllDoctors(
+    filter?: IGetDoctorsQueryRequest | boolean
+  ): Promise<IActiveProfessional[]> {
+    const options: IGetDoctorsQueryRequest =
+      typeof filter === 'boolean' ? { includeInactive: filter } : filter ?? {};
+
+    const query: Record<string, unknown> = {};
+
+    if (!options.includeInactive) {
+      query['isActive'] = { $ne: false };
+    }
+
+    if (options.categorySlug) {
+      query['specialtyCategory.slug'] = options.categorySlug;
+    }
+
     return this.professionalModel
-      .find(filter)
+      .find(query)
       .select('-_id -__v -createdAt -updatedAt')
       .lean<IActiveProfessional[]>()
       .exec();
@@ -241,5 +260,23 @@ export class ProceduresRepository {
       .sort({ country: 1 })
       .lean<IAreaCode[]>()
       .exec();
+  }
+
+  async findAllCategories(onlyActive = true): Promise<IMedicalCategory[]> {
+    const filter = onlyActive ? { isActive: true } : {};
+    return this.categoryModel
+      .find(filter)
+      .select('-_id -__v -createdAt -updatedAt')
+      .sort({ name: 1 })
+      .lean<IMedicalCategory[]>()
+      .exec();
+  }
+
+  async countCategories(): Promise<number> {
+    return this.categoryModel.countDocuments().exec();
+  }
+
+  async insertManyCategories(categories: IMedicalCategory[]): Promise<void> {
+    await this.categoryModel.insertMany(categories);
   }
 }

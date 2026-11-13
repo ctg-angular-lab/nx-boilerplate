@@ -21,8 +21,10 @@
       <div class="contact-item">
         <span class="material-symbols-outlined contact-icon">badge</span>
         <div class="contact-info">
-          <span class="contact-label">Cédula / Profesión</span>
-          <span class="contact-value">{{ professional().cedula }} — {{ professional().profesion }}</span>
+          <span class="contact-label">Cédula / Especialidad</span>
+          <span class="contact-value">
+            {{ professional().cedula }} — {{ professional().specialtyCategory?.name || professional().profesion }}
+          </span>
         </div>
       </div>
     </div>

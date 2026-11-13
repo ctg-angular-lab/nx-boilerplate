@@ -7,6 +7,7 @@ import {
 } from './schemas/active-professional.schema';
 import { AreaCode, AreaCodeSchema } from './schemas/area-code.schema';
 import { Counter, CounterSchema } from './schemas/counter.schema';
+import { Category, CategorySchema } from './schemas/category.schema';
 import { ProceduresRepository } from './repositories/procedures.repository';
 import { ProceduresSeeder } from './seeders/procedures.seeder';
 import { ProceduresDomainService } from './services/procedures-domain.service';
@@ -18,6 +19,7 @@ import { ProceduresDomainService } from './services/procedures-domain.service';
       { name: ActiveProfessional.name, schema: ActiveProfessionalSchema },
       { name: AreaCode.name, schema: AreaCodeSchema },
       { name: Counter.name, schema: CounterSchema },
+      { name: Category.name, schema: CategorySchema },
     ]),
   ],
   providers: [

@@ -4,6 +4,7 @@ import { Observable, catchError, defer, finalize, map, of, tap } from 'rxjs';
 import {
   IActiveProfessional,
   ICreateProfessionalRequest,
+  IMedicalCategory,
   IProcedure,
   IUpdateProfessionalRequest,
 } from '@nx-boilerplate/api-interfaces';
@@ -34,12 +35,14 @@ export class ProfesionalesAdminService {
   readonly #isSaving = signal<boolean>(false);
   readonly #saveError = signal<string | null>(null);
   readonly #procedures = signal<IProcedure[]>([]);
+  readonly #categories = signal<IMedicalCategory[]>([]);
 
   readonly activeTab = this.#activeTab.asReadonly();
   readonly editingProfessional = this.#editingProfessional.asReadonly();
   readonly isSaving = this.#isSaving.asReadonly();
   readonly saveError = this.#saveError.asReadonly();
   readonly procedures = this.#procedures.asReadonly();
+  readonly categories = this.#categories.asReadonly();
   readonly isEditMode = computed(() => this.#editingProfessional() !== null);
 
   /**
@@ -79,6 +82,22 @@ export class ProfesionalesAdminService {
         })
       )
       .subscribe((list) => this.#procedures.set(list));
+  }
+
+  /**
+   * Carga el catálogo de categorías médicas activas (GET /api/categories) para el selector de especialidad.
+   */
+  loadCategories(): void {
+    this.apiClient
+      .get<IMedicalCategory[]>('/api/categories')
+      .pipe(
+        map((response) => response.data ?? []),
+        catchError((error) => {
+          console.error('Error al cargar categorías médicas desde API Gateway:', error);
+          return of([] as IMedicalCategory[]);
+        })
+      )
+      .subscribe((list) => this.#categories.set(list));
   }
 
   /**

@@ -59,6 +59,7 @@ export class RemoteEntryComponent implements OnInit, OnDestroy {
     this.profesionalesService.goToList();
     this.profesionalesService.loadProfesionales();
     this.profesionalesService.loadProcedures();
+    this.profesionalesService.loadCategories();
   }
 
   ngOnDestroy(): void {

@@ -6,3 +6,4 @@ export * from './api-response.interface';
 export * from './calendar.interface';
 export * from './area-code.interface';
 export * from './control-appointment.constants';
+export * from './medical-category.interface';

@@ -39,6 +39,7 @@ describe('ProceduresMessageController', () => {
             getDoctorsByProcedureId: vi.fn().mockResolvedValue([]),
             getAllDoctors: vi.fn().mockResolvedValue([]),
             getAllAreaCodes: vi.fn().mockResolvedValue([]),
+            getAllCategories: vi.fn().mockResolvedValue([]),
             createProcedure: vi.fn().mockResolvedValue(mockProcedures[0]),
             updateProcedure: vi.fn().mockResolvedValue(mockProcedures[0]),
             softDeleteProcedure: vi.fn().mockResolvedValue({
@@ -176,7 +177,31 @@ describe('ProceduresMessageController', () => {
     const result = await controller.getAllDoctors({ includeInactive: true });
 
     expect(result).toEqual(mockAllDoctors);
-    expect(service.getAllDoctors).toHaveBeenCalledWith(true);
+    expect(service.getAllDoctors).toHaveBeenCalledWith({ includeInactive: true });
+  });
+
+  it('debe atender doctors.get-all delegando al servicio con categorySlug', async () => {
+    const mockAllDoctors = [
+      {
+        cedula: '52890123',
+        nombres: 'Dra. María',
+        apellidos: 'Gómez',
+        email: 'maria.gomez@clinica.com',
+        profesion: 'Dermatóloga Estética',
+        horarioTrabajo: {
+          diasLaborales: ['Lunes', 'Miércoles'],
+          horaInicio: '08:00',
+          horaFin: '17:00',
+        },
+      },
+    ];
+
+    vi.spyOn(service, 'getAllDoctors').mockResolvedValueOnce(mockAllDoctors as never);
+
+    const result = await controller.getAllDoctors({ categorySlug: 'medicina-estetica' });
+
+    expect(result).toEqual(mockAllDoctors);
+    expect(service.getAllDoctors).toHaveBeenCalledWith({ categorySlug: 'medicina-estetica' });
   });
 
   it('debe atender area-codes.get-all delegando al servicio', async () => {
@@ -203,5 +228,23 @@ describe('ProceduresMessageController', () => {
 
     expect(result).toEqual(mockAreaCodes);
     expect(service.getAllAreaCodes).toHaveBeenCalled();
+  });
+
+  it('debe atender categories.get-all delegando al servicio con onlyActive = true', async () => {
+    const mockCategories = [
+      {
+        categoryId: 'cat-01',
+        name: 'Medicina Estética',
+        slug: 'medicina-estetica',
+        isActive: true,
+      },
+    ];
+
+    vi.spyOn(service, 'getAllCategories').mockResolvedValueOnce(mockCategories as never);
+
+    const result = await controller.getAllCategories();
+
+    expect(result).toEqual(mockCategories);
+    expect(service.getAllCategories).toHaveBeenCalledWith(true);
   });
 });

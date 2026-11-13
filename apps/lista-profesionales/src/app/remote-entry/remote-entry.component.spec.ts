@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { signal, WritableSignal } from '@angular/core';
-import { IActiveProfessional, IProcedure } from '@nx-boilerplate/api-interfaces';
+import { IActiveProfessional, IMedicalCategory, IProcedure } from '@nx-boilerplate/api-interfaces';
 import { TabsCollectionComponent } from '@nx-boilerplate/layouts';
 import {
   PROFESIONALES_TABS,
@@ -37,15 +37,17 @@ describe('RemoteEntryComponent (Tab Host)', () => {
     isEditMode: () => boolean;
     loadProfesionales: ReturnType<typeof vi.fn>;
     loadProcedures: ReturnType<typeof vi.fn>;
+    loadCategories: ReturnType<typeof vi.fn>;
     goToList: ReturnType<typeof vi.fn>;
     setActiveTab: ReturnType<typeof vi.fn>;
-    goToEdit: ReturnType<typeof vi.fn>;
+    goToEdit: (prof: IActiveProfessional) => void;
     profesionalesList: WritableSignal<IActiveProfessional[]>;
     isLoading: WritableSignal<boolean>;
     isSaving: WritableSignal<boolean>;
     error: WritableSignal<string | null>;
     saveError: WritableSignal<string | null>;
     procedures: WritableSignal<IProcedure[]>;
+    categories: WritableSignal<IMedicalCategory[]>;
   };
 
   beforeEach(async () => {
@@ -58,6 +60,7 @@ describe('RemoteEntryComponent (Tab Host)', () => {
       isEditMode: () => mockEditingProfessionalSignal() !== null,
       loadProfesionales: vi.fn(),
       loadProcedures: vi.fn(),
+      loadCategories: vi.fn(),
       goToList: vi.fn(() => {
         mockEditingProfessionalSignal.set(null);
         mockActiveTabSignal.set(PROFESIONALES_TABS.LIST);
@@ -75,6 +78,7 @@ describe('RemoteEntryComponent (Tab Host)', () => {
       error: signal<string | null>(null),
       saveError: signal<string | null>(null),
       procedures: signal<IProcedure[]>([]),
+      categories: signal<IMedicalCategory[]>([]),
     };
 
     await TestBed.configureTestingModule({
@@ -93,10 +97,11 @@ describe('RemoteEntryComponent (Tab Host)', () => {
     fixture.detectChanges();
   });
 
-  it('debe crearse, invocar loadProfesionales() y loadProcedures() al inicializar y renderizar lib-tabs-collection', () => {
+  it('debe crearse, invocar loadProfesionales(), loadProcedures() y loadCategories() al inicializar y renderizar lib-tabs-collection', () => {
     expect(component).toBeTruthy();
     expect(mockService.loadProfesionales).toHaveBeenCalledTimes(1);
     expect(mockService.loadProcedures).toHaveBeenCalledTimes(1);
+    expect(mockService.loadCategories).toHaveBeenCalledTimes(1);
 
     const tabsCollectionDebug = fixture.debugElement.query(
       By.directive(TabsCollectionComponent)

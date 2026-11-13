@@ -17,6 +17,11 @@ describe('ProfesionalDetailComponent', () => {
     apellidos: 'Gómez',
     email: 'carlos.gomez@test.com',
     profesion: 'Cirujano Plástico',
+    specialtyCategory: {
+      categoryId: 'CAT-01',
+      name: 'Cirujano Plástico',
+      slug: 'cirujano-plastico',
+    },
     horarioTrabajo: {
       diasLaborales: ['Lunes', 'Miércoles', 'Viernes'],
       horaInicio: '08:00',

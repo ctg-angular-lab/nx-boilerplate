@@ -78,6 +78,7 @@
       <div class="stepper-step-content">
         <lib-step-professional-info
           [stepForm]="form.controls.step2"
+          [categories]="profesionalesService.categories()"
           (nextStep)="onStep2Next()"
           (prevStep)="onStepPrev()"
         />

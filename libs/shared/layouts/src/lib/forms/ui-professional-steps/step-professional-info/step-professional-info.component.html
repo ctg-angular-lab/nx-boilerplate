@@ -57,17 +57,25 @@
       }
     </mat-form-field>
 
-    <!-- Profesión / Especialidad -->
+    <!-- Profesión / Especialidad (Select de Categoría Médica) -->
     <mat-form-field appearance="outline" class="form-field">
       <mat-label>Profesión / Especialidad</mat-label>
       <span matPrefix class="material-symbols-outlined prefix-icon">medical_services</span>
-      <input
-        matInput
-        type="text"
-        formControlName="profesion"
-        placeholder="Ej. Cirujana Plástica y Reconstructiva"
-      />
-      @if (hasError('profesion', 'required')) {
+      <mat-select
+        formControlName="specialtyCategory"
+        placeholder="Seleccione la especialidad"
+        [compareWith]="compareCategories"
+        (selectionChange)="onCategoryChange($event)"
+      >
+        @for (cat of categories(); track cat.categoryId) {
+          <mat-option [value]="toCategoryRef(cat)">
+            {{ cat.name }}
+          </mat-option>
+        } @empty {
+          <mat-option disabled>No hay especialidades disponibles</mat-option>
+        }
+      </mat-select>
+      @if (hasError('specialtyCategory', 'required') || hasError('profesion', 'required')) {
         <mat-error>La profesión o especialidad es obligatoria</mat-error>
       }
     </mat-form-field>

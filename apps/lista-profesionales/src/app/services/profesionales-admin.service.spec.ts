@@ -110,6 +110,21 @@ describe('ProfesionalesAdminService', () => {
       service.loadProcedures();
       expect(service.procedures()).toEqual([]);
     });
+
+    it('loadCategories debe poblar el catálogo de categorías y tolerar errores', () => {
+      const categories = [
+        { categoryId: 'CAT-01', name: 'Medicina Estética', slug: 'medicina-estetica', isActive: true },
+      ];
+      apiClient.get.mockReturnValueOnce(of(ok(categories)));
+      service.loadCategories();
+      expect(apiClient.get).toHaveBeenCalledWith('/api/categories');
+      expect(service.categories()).toEqual(categories);
+
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      apiClient.get.mockReturnValueOnce(throwError(() => new Error('fail')));
+      service.loadCategories();
+      expect(service.categories()).toEqual([]);
+    });
   });
 
   describe('Navegación y modo dual', () => {
