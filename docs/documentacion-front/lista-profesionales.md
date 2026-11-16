@@ -69,7 +69,7 @@ graph TD
 * **Ubicación:** [`apps/lista-profesionales/src/app/components/profesionales-list/profesionales-list.component.ts`](file:///Users/usuario/Desktop/nx-boilerplate/apps/lista-profesionales/src/app/components/profesionales-list/profesionales-list.component.ts)
 * **Características Clave:**
   * **Filtro Reactivo (`viewFilter`):** Señal `'activos' | 'inactivos'` que alimenta la señal computada `displayedProfesionales`.
-  * **Vista de Detalle Lateral (`onViewProfessional`):** Invoca `AsideModalService.open()` de `@nx-boilerplate/layouts` proyectando [`ProfesionalDetailComponent`](file:///Users/usuario/Desktop/nx-boilerplate/apps/lista-profesionales/src/app/components/profesional-detail/profesional-detail.component.ts) (`width: '480px'`) y resolviendo los códigos `PROC-XXX` a sus nombres comerciales mediante `resolveProcedureNames()`.
+  * **Vista de Detalle Lateral (`onViewProfessional`):** Invoca `AsideModalService.open()` de `@nx-boilerplate/layouts` proyectando [`ProfesionalDetailComponent`](file:///Users/usuario/Desktop/nx-boilerplate/apps/lista-profesionales/src/app/components/profesional-detail/profesional-detail.component.ts) (`width: '480px'`) y resolviendo los códigos `PROC-XXX` a sus nombres comerciales mediante `resolveProcedureNames()`. Además, expone visualmente el **Acto Administrativo** o resolución médica del profesional si fue registrado.
   * **Edición (`onEdit`):** Carga el profesional en el SSOT (`goToEdit(prof)`) y conmuta automáticamente a la pestaña del formulario.
   * **Desactivación y Reactivación (`onDelete` / `onReactivate`):** Abre `ConfirmationModalComponent` y ejecuta la mutación con Optimistic UI.
 
@@ -78,13 +78,15 @@ graph TD
 * **Pasos del Formulario (Componentes Dumb en `@nx-boilerplate/layouts`):**
   1. **Paso 1 — Identificación (`StepCedulaComponent` con `subject="Profesional"`):**
      * En modo Alta, verifica localmente contra `profesionalesList()` que la cédula no esté duplicada antes de avanzar (`duplicateCedula`). En modo Edición, el campo cédula se deshabilita.
-  2. **Paso 2 — Datos Personales (`StepProfessionalInfoComponent`):**
-     * Captura `nombres`, `apellidos`, `email` y `profesion`.
+  2. **Paso 2 — Datos Personales y Especialidad (`StepProfessionalInfoComponent`):**
+     * Captura `nombres`, `apellidos`, `email`.
+     * **Selector de Especialidad Médica (`specialtyCategory`):** Desplegable `mat-select` conectado al catálogo oficial de categorías médicas (`GET /api/categories`). Al seleccionar una especialidad, se sincroniza bidireccionalmente el campo canónico `profesion` con su nombre oficial (`name`).
+     * **Acto Administrativo (`actoAdministrativo`):** Campo de texto con prefijo `description`, placeholder `"Ej. Resolución No. 1234 de 2024"` y validación de longitud máxima (100 caracteres) para soportar resoluciones ministeriales o acuerdos de habilitación.
   3. **Paso 3 — Horario Laboral (`StepProfessionalScheduleComponent`):**
      * Selección de días laborales (`LUNES` a `SABADO`), `horaInicio`, `horaFin` y switch opcional `tieneReceso` (`recesoAlmuerzo.inicio` y `fin`).
      * Validado por [`scheduleRangeValidator`](file:///Users/usuario/Desktop/nx-boilerplate/apps/lista-profesionales/src/app/utils/schedule.validator.ts) para garantizar que `horaInicio < horaFin` y que el receso de almuerzo esté estrictamente contenido dentro de la jornada laboral.
   4. **Paso 4 — Procedimientos y Confirmación (`StepProfessionalProceduresComponent`):**
-     * Selector múltiple alimentado por el catálogo real de procedimientos (`GET /api/procedures`) y tarjeta de resumen consolidado (`ProfessionalSummaryData`).
+     * Selector múltiple alimentado por el catálogo real de procedimientos (`GET /api/procedures`) y tarjeta de resumen consolidado (`ProfessionalSummaryData`) que previsualiza los datos personales, especialidad, acto administrativo registrado y jornada laboral.
 
 ---
 
@@ -94,13 +96,15 @@ graph TD
 * **Señales Expuestas (`asReadonly`):**
   * `profesionalesList`: Lista completa de profesionales (`includeInactive: 'true'`).
   * `procedures`: Catálogo de procedimientos para cruce de nombres y selector del paso 4.
+  * `categories`: Catálogo de especialidades médicas activas consultadas desde `GET /api/categories`.
   * `activeTab`: Pestaña activa (`PROFESIONALES_TABS.LIST` o `PROFESIONALES_TABS.FORM`).
-  * `editingProfessional` e `isEditMode`: Controlan si el formulario opera en modo creación (`POST /api/doctors`) o edición (`PATCH /api/doctors/:cedula`).
+  * `editingProfessional` e `isEditMode`: Controlan si el formulario opera en modo creación (`POST /api/doctors`) o edición (`PATCH /api/doctors/:cedula`), propagando `specialtyCategory` y `actoAdministrativo`.
   * `isLoading`, `error` (estado de la tabla) separados de `isSaving`, `saveError` (estado del formulario).
 * **Operaciones HTTP Conectadas al API Gateway ([`03-procedures-doctors-service.md`](../documentacion-back/03-procedures-doctors-service.md)):**
   * `GET /api/doctors?includeInactive=true`
+  * `GET /api/categories` (`loadCategories`)
   * `GET /api/procedures`
-  * `POST /api/doctors` (`createProfesional`)
+  * `POST /api/doctors` (`createProfesional` con `specialtyCategory` y `actoAdministrativo`)
   * `PATCH /api/doctors/:cedula` (`updateProfesional` y `reactivateProfesional`)
   * `DELETE /api/doctors/:cedula` (`deleteProfesional`)
 

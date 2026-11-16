@@ -29,6 +29,7 @@ import {
   CalendarDay,
   TimeSlot,
   SlotStatus,
+  CONTROL_PROCEDURE_ID,
 } from '@nx-boilerplate/api-interfaces';
 import {
   getColombiaToday,
@@ -269,6 +270,30 @@ export class AppointmentLogicService {
     const knownDoctor = this.#availableProfessionals().find((p) => p.cedula === ctx.doctor.cedula);
     this.selectProfessional(knownDoctor ?? ctx.doctor);
     this.setActiveTab(AGENDADOR_TABS.CALENDAR);
+  }
+
+  /**
+   * Resuelve la oferta de cita de control (PROC-EST-010) para un paciente con historia válida.
+   * - Retorna null si no hay historia válida (sin cédula de médico tratante) o si el
+   *   procedimiento de control no existe / está inactivo en el catálogo.
+   * - `doctor` es null si el último médico tratante no está activo en el catálogo o no está
+   *   asignado al procedimiento de control (en ese caso solo se preselecciona el procedimiento).
+   */
+  resolveControlBooking(
+    history: IPatientHistory | null
+  ): { procedure: IProcedure; doctor: IProfessionalSummary | null } | null {
+    const doctorCedula = history?.ultimoMedicoTratanteCedula?.trim();
+    if (!doctorCedula) return null;
+
+    const procedure = this._procedures().find(
+      (p) => p.idProcedimiento === CONTROL_PROCEDURE_ID && p.isActive !== false
+    );
+    if (!procedure) return null;
+
+    const doctor = this.#availableProfessionals().find((p) => p.cedula === doctorCedula);
+    const isAssigned = procedure.medicosRelacionados?.includes(doctorCedula) ?? false;
+
+    return { procedure, doctor: doctor && isAssigned ? doctor : null };
   }
 
   /**

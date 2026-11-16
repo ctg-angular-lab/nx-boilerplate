@@ -15,6 +15,8 @@ describe('StepProfessionalInfoComponent', () => {
       apellidos: new FormControl('', Validators.required),
       email: new FormControl('', [Validators.required, Validators.email]),
       profesion: new FormControl('', Validators.required),
+      specialtyCategory: new FormControl(null, Validators.required),
+      actoAdministrativo: new FormControl(''),
     });
 
     await TestBed.configureTestingModule({
@@ -25,6 +27,14 @@ describe('StepProfessionalInfoComponent', () => {
     fixture = TestBed.createComponent(StepProfessionalInfoComponent);
     component = fixture.componentInstance;
     fixture.componentRef.setInput('stepForm', form);
+    fixture.componentRef.setInput('categories', [
+      {
+        categoryId: 'CAT-01',
+        name: 'Medicina Estética',
+        slug: 'medicina-estetica',
+        isActive: true,
+      },
+    ]);
     fixture.detectChanges();
   });
 
@@ -43,6 +53,12 @@ describe('StepProfessionalInfoComponent', () => {
       apellidos: 'Botero Giraldo',
       email: 'mariana.botero@clinica.com',
       profesion: 'Medicina Estética',
+      specialtyCategory: {
+        categoryId: 'CAT-01',
+        name: 'Medicina Estética',
+        slug: 'medicina-estetica',
+      },
+      actoAdministrativo: 'Resolución No. 1234 de 2024',
     });
     fixture.detectChanges();
 
@@ -54,6 +70,32 @@ describe('StepProfessionalInfoComponent', () => {
 
     nextBtn.nativeElement.click();
     expect(nextSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('debe comparar categorías por categoryId con compareCategories', () => {
+    expect(
+      component.compareCategories(
+        { categoryId: 'CAT-01', name: 'Cat A', slug: 'cat-a' },
+        { categoryId: 'CAT-01', name: 'Cat B', slug: 'cat-b' }
+      )
+    ).toBe(true);
+    expect(
+      component.compareCategories(
+        { categoryId: 'CAT-01', name: 'Cat A', slug: 'cat-a' },
+        { categoryId: 'CAT-02', name: 'Cat B', slug: 'cat-b' }
+      )
+    ).toBe(false);
+  });
+
+  it('debe sincronizar el control profesion al invocar onCategoryChange', () => {
+    component.onCategoryChange({
+      value: {
+        categoryId: 'CAT-01',
+        name: 'Médico Estético',
+        slug: 'medico-estetico',
+      },
+    } as never);
+    expect(form.get('profesion')?.value).toBe('Médico Estético');
   });
 
   it('debe emitir prevStep al pulsar Anterior', () => {

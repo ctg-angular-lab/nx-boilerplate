@@ -16,6 +16,7 @@ import { MatStepper, MatStepperModule } from '@angular/material/stepper';
 import {
   IActiveProfessional,
   ICreateProfessionalRequest,
+  ISpecialtyCategoryRef,
   IUpdateProfessionalRequest,
 } from '@nx-boilerplate/api-interfaces';
 import {
@@ -62,6 +63,8 @@ export class ProfesionalesFormComponent {
       apellidos: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(60)]],
       email: ['', [Validators.required, Validators.email]],
       profesion: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(80)]],
+      specialtyCategory: this.fb.control<ISpecialtyCategoryRef | null>(null, [Validators.required]),
+      actoAdministrativo: ['', [Validators.maxLength(100)]],
     }),
     step3: this.fb.group(
       {
@@ -132,13 +135,16 @@ export class ProfesionalesFormComponent {
       tieneReceso && raw.step3.recesoAlmuerzo.inicio && raw.step3.recesoAlmuerzo.fin
         ? `${raw.step3.recesoAlmuerzo.inicio} – ${raw.step3.recesoAlmuerzo.fin}`
         : null;
+    const profesionDisplay =
+      raw.step2.specialtyCategory?.name || raw.step2.profesion?.trim() || '';
 
     this.summaryData.set({
       cedula: raw.step1.cedula?.trim() || '',
       nombres: raw.step2.nombres?.trim() || '',
       apellidos: raw.step2.apellidos?.trim() || '',
       email: raw.step2.email?.trim() || '',
-      profesion: raw.step2.profesion?.trim() || '',
+      profesion: profesionDisplay,
+      actoAdministrativo: raw.step2.actoAdministrativo?.trim() || null,
       diasLaborales: raw.step3.diasLaborales || [],
       horaInicio: raw.step3.horaInicio || '',
       horaFin: raw.step3.horaFin || '',
@@ -152,11 +158,37 @@ export class ProfesionalesFormComponent {
     this.form.controls.step1.patchValue({ cedula: prof.cedula });
     this.form.controls.step1.controls.cedula.disable({ emitEvent: false });
 
+    let specialtyCategory: ISpecialtyCategoryRef | null = null;
+    if (prof.specialtyCategory) {
+      specialtyCategory = {
+        categoryId: prof.specialtyCategory.categoryId,
+        name: prof.specialtyCategory.name,
+        slug: prof.specialtyCategory.slug,
+      };
+    } else if (prof.profesion) {
+      const match = this.profesionalesService
+        .categories()
+        .find(
+          (c) =>
+            c.name.trim().toLowerCase() === prof.profesion.trim().toLowerCase() ||
+            c.slug.trim().toLowerCase() === prof.profesion.trim().toLowerCase()
+        );
+      if (match) {
+        specialtyCategory = {
+          categoryId: match.categoryId,
+          name: match.name,
+          slug: match.slug,
+        };
+      }
+    }
+
     this.form.controls.step2.patchValue({
       nombres: prof.nombres,
       apellidos: prof.apellidos,
       email: prof.email,
-      profesion: prof.profesion,
+      profesion: specialtyCategory?.name || prof.profesion,
+      specialtyCategory,
+      actoAdministrativo: prof.actoAdministrativo || '',
     });
 
     const tieneReceso = !!prof.horarioTrabajo.recesoAlmuerzo;
@@ -190,7 +222,14 @@ export class ProfesionalesFormComponent {
     this.form.controls.step1.controls.cedula.enable({ emitEvent: false });
     this.form.reset({
       step1: { cedula: '' },
-      step2: { nombres: '', apellidos: '', email: '', profesion: '' },
+      step2: {
+        nombres: '',
+        apellidos: '',
+        email: '',
+        profesion: '',
+        specialtyCategory: null,
+        actoAdministrativo: '',
+      },
       step3: {
         diasLaborales: ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'],
         horaInicio: '08:00',
@@ -279,12 +318,19 @@ export class ProfesionalesFormComponent {
       ...(recesoAlmuerzo ? { recesoAlmuerzo } : {}),
     };
 
+    const specialtyCategory = raw.step2.specialtyCategory ?? undefined;
+    const profesion = (specialtyCategory?.name || raw.step2.profesion).trim();
+
     if (this.profesionalesService.isEditMode()) {
       const updatePayload: IUpdateProfessionalRequest = {
         nombres: raw.step2.nombres.trim(),
         apellidos: raw.step2.apellidos.trim(),
         email: raw.step2.email.trim(),
-        profesion: raw.step2.profesion.trim(),
+        profesion,
+        ...(specialtyCategory ? { specialtyCategory } : {}),
+        ...(raw.step2.actoAdministrativo?.trim()
+          ? { actoAdministrativo: raw.step2.actoAdministrativo.trim() }
+          : {}),
         horarioTrabajo,
         ...(raw.step4.procedimientosRelacionados.length > 0
           ? { procedimientosRelacionados: raw.step4.procedimientosRelacionados }
@@ -302,7 +348,11 @@ export class ProfesionalesFormComponent {
         nombres: raw.step2.nombres.trim(),
         apellidos: raw.step2.apellidos.trim(),
         email: raw.step2.email.trim(),
-        profesion: raw.step2.profesion.trim(),
+        profesion,
+        specialtyCategory,
+        ...(raw.step2.actoAdministrativo?.trim()
+          ? { actoAdministrativo: raw.step2.actoAdministrativo.trim() }
+          : {}),
         horarioTrabajo,
         ...(raw.step4.procedimientosRelacionados.length > 0
           ? { procedimientosRelacionados: raw.step4.procedimientosRelacionados }

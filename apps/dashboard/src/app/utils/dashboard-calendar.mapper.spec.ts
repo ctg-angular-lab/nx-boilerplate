@@ -9,6 +9,7 @@ import {
   computeWeeklyKpis,
   extractInitials,
   findNextAvailableDate,
+  findNextAvailableDates,
   formatTime12h,
   assignDoctorColorTheme,
 } from './dashboard-calendar.mapper';
@@ -256,6 +257,7 @@ describe('dashboard-calendar.mapper', () => {
           dayName: 'Viernes',
           isCalendarSynced: true,
           isWorkingDay: true,
+          cancelledCount: 1,
           slots: [
             { startTime: '11:00', endTime: '11:45', display: '11:00 - 11:45', title: 'Cita 3', colorId: null, isBookable: false, status: 'CONFIRMED' },
             { startTime: '14:00', endTime: '14:45', display: '14:00 - 14:45', title: 'Cita 4', colorId: null, isBookable: false, status: 'TENTATIVE' },
@@ -269,8 +271,10 @@ describe('dashboard-calendar.mapper', () => {
 
       expect(kpis.confirmedCount).toBe(2);
       expect(kpis.scheduledCount).toBe(3);
+      expect(kpis.cancelledCount).toBe(1);
       expect(kpis.monthName).toBe('Noviembre');
       expect(kpis.monthYearLabel).toBe('Noviembre 2026');
+      expect(kpis.reportTitle).toBe('Reporte de citas de Noviembre del 2026');
       expect(kpis.confirmedTitle).toBe('Citas de Noviembre Confirmadas');
       expect(kpis.scheduledTitle).toBe('Citas de Noviembre Agendadas');
     });
@@ -280,6 +284,7 @@ describe('dashboard-calendar.mapper', () => {
       const kpis = computeMonthlyKpis([], decDate);
 
       expect(kpis.monthName).toBe('Diciembre');
+      expect(kpis.reportTitle).toBe('Reporte de citas de Diciembre del 2026');
       expect(kpis.confirmedTitle).toBe('Citas de Diciembre Confirmadas');
       expect(kpis.scheduledTitle).toBe('Citas de Diciembre Agendadas');
       expect(kpis.confirmedCount).toBe(0);
@@ -330,6 +335,38 @@ describe('dashboard-calendar.mapper', () => {
     it('debe retornar "Sin Cupos este mes" si no hay slots disponibles o el arreglo es vacío', () => {
       expect(findNextAvailableDate([])).toBe('Sin Cupos este mes');
       expect(findNextAvailableDate(undefined)).toBe('Sin Cupos este mes');
+    });
+
+    it('debe retornar hasta 3 próximos turnos disponibles con findNextAvailableDates', () => {
+      const mockDays: IDayAvailability[] = [
+        {
+          date: '2026-11-10',
+          dayName: 'Martes',
+          isCalendarSynced: true,
+          isWorkingDay: true,
+          slots: [
+            { startTime: '08:00', endTime: '08:45', display: '08:00 - 08:45', title: 'Libre', colorId: null, isBookable: true, status: 'AVAILABLE' },
+            { startTime: '08:45', endTime: '09:30', display: '08:45 - 09:30', title: 'Libre', colorId: null, isBookable: true, status: 'AVAILABLE' },
+          ],
+        },
+        {
+          date: '2026-11-11',
+          dayName: 'Miércoles',
+          isCalendarSynced: true,
+          isWorkingDay: true,
+          slots: [
+            { startTime: '14:00', endTime: '14:45', display: '14:00 - 14:45', title: 'Libre', colorId: null, isBookable: true, status: 'AVAILABLE' },
+            { startTime: '15:00', endTime: '15:45', display: '15:00 - 15:45', title: 'Libre', colorId: null, isBookable: true, status: 'AVAILABLE' },
+          ],
+        },
+      ];
+
+      const refDate = new Date('2026-11-09T08:00:00');
+      expect(findNextAvailableDates(mockDays, refDate, 3)).toEqual([
+        '10/11/2026 - 8:00 am',
+        '10/11/2026 - 8:45 am',
+        '11/11/2026 - 2:00 pm',
+      ]);
     });
   });
 

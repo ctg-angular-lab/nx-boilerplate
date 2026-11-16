@@ -2,6 +2,7 @@ export type SlotStatusType =
   | 'AVAILABLE'          
   | 'TENTATIVE'          
   | 'CONFIRMED'          
+  | 'CANCELLED'
   | 'BLOCKED_PERSONAL';  
 
 export interface ISlotDisplay {
@@ -22,6 +23,7 @@ export interface IDayAvailability {
   dayName: string;
   isCalendarSynced: boolean;
   isWorkingDay: boolean;
+  cancelledCount?: number;
   slots: ISlotDisplay[];
 }
 

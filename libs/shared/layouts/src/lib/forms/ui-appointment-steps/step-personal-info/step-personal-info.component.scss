@@ -28,37 +28,12 @@
     color: var(--sys-color-on-surface);
   }
 
+  &__doctor,
   &__recommendations {
     font-size: 0.875rem;
     color: var(--sys-color-on-surface-variant);
-    margin: 0 0 16px 0;
+    margin: 0 0 12px 0;
     line-height: 1.4;
-  }
-}
-
-.history-table-container {
-  overflow-x: auto;
-}
-
-.history-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.8125rem;
-
-  th,
-  td {
-    padding: 8px 12px;
-    text-align: left;
-    border-bottom: 1px solid var(--sys-color-outline-variant, #e0e0e0);
-  }
-
-  th {
-    color: var(--sys-color-on-surface-variant);
-    font-weight: 600;
-  }
-
-  td {
-    color: var(--sys-color-on-surface);
   }
 }
 

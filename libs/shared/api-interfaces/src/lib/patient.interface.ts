@@ -41,6 +41,10 @@ export interface IPatientHistory {
   persona_responsable?: IPatientResponsible;
   ultimosProcedimientos?: IProcedureItem[];
   recomendaciones?: string;
+  /** Nombre (o cédula) del médico de la historia médica COMPLETADA más reciente */
+  ultimoMedicoTratante?: string;
+  /** Cédula profesional del médico de la historia médica COMPLETADA más reciente */
+  ultimoMedicoTratanteCedula?: string;
   createdAt?: string | Date | { $date: string };
   updatedAt?: string | Date | { $date: string };
 }

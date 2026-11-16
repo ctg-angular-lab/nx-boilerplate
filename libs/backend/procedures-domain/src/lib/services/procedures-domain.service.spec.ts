@@ -70,6 +70,7 @@ describe('ProceduresDomainService', () => {
             pullDoctorFromProcedures: vi.fn(),
             findAllDoctors: vi.fn(),
             findAllAreaCodes: vi.fn(),
+            findAllCategories: vi.fn(),
             getNextProcedureId: vi.fn().mockResolvedValue('PROC-EST-006'),
             findByNameNormalized: vi.fn().mockResolvedValue(null),
             createProcedure: vi.fn(),
@@ -510,6 +511,59 @@ describe('ProceduresDomainService', () => {
       expect(result.success).toBe(true);
       expect(result.isActive).toBe(false);
       expect(result.message).toContain('ya se encontraba inactivo');
+    });
+  });
+
+  describe('getAllDoctors / findAllDoctors', () => {
+    it('debe delegar la búsqueda al repositorio pasando el filtro de categoría', async () => {
+      const mockDoctors = [
+        {
+          cedula: '12345678',
+          nombres: 'Carlos',
+          apellidos: 'Pérez',
+          specialtyCategory: {
+            categoryId: 'cat-01',
+            name: 'Medicina Estética',
+            slug: 'medicina-estetica',
+          },
+        },
+      ];
+      vi.spyOn(repository, 'findAllDoctors').mockResolvedValue(mockDoctors as never);
+
+      const result = await service.getAllDoctors({ categorySlug: 'medicina-estetica' });
+
+      expect(result).toEqual(mockDoctors);
+      expect(repository.findAllDoctors).toHaveBeenCalledWith({
+        categorySlug: 'medicina-estetica',
+      });
+    });
+
+    it('debe soportar la invocación mediante findAllDoctors', async () => {
+      vi.spyOn(repository, 'findAllDoctors').mockResolvedValue([] as never);
+
+      const result = await service.findAllDoctors({ includeInactive: true });
+
+      expect(result).toEqual([]);
+      expect(repository.findAllDoctors).toHaveBeenCalledWith({ includeInactive: true });
+    });
+  });
+
+  describe('getAllCategories', () => {
+    it('debe delegar la consulta de categorías al repositorio', async () => {
+      const mockCategories = [
+        {
+          categoryId: 'cat-01',
+          name: 'Medicina Estética',
+          slug: 'medicina-estetica',
+          isActive: true,
+        },
+      ];
+      vi.spyOn(repository, 'findAllCategories').mockResolvedValue(mockCategories as never);
+
+      const result = await service.getAllCategories(true);
+
+      expect(result).toEqual(mockCategories);
+      expect(repository.findAllCategories).toHaveBeenCalledWith(true);
     });
   });
 });

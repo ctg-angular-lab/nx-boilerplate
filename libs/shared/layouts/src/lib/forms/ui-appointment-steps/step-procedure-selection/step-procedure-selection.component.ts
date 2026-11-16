@@ -1,9 +1,11 @@
 import {
   Component,
   ChangeDetectionStrategy,
+  effect,
   input,
   computed,
   output,
+  signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormGroup, ReactiveFormsModule, FormControl } from '@angular/forms';
@@ -90,10 +92,42 @@ export class StepProcedureSelectionComponent {
   readonly searchControl = new FormControl<string>('');
 
   /**
+   * Id del procedimiento seleccionado, sincronizado reactivamente con el control del formulario
+   * (incluye selecciones programáticas, p. ej. cita de control preseleccionada)
+   */
+  readonly #selectedProcedureId = signal<string | null>(null);
+
+  constructor() {
+    effect((onCleanup) => {
+      const control = this.form().get('procedimientoId');
+      if (!control) return;
+
+      const procedures = this.procedures();
+      const sync = (id: unknown): void => {
+        const procId = typeof id === 'string' && id ? id : null;
+        this.#selectedProcedureId.set(procId);
+        const found = procedures.find((p) => p.idProcedimiento === procId);
+        if (found && this.searchControl.value !== found.nombreProcedimiento) {
+          this.searchControl.setValue(found.nombreProcedimiento, { emitEvent: false });
+        }
+      };
+
+      sync(control.value);
+      const sub = control.valueChanges.subscribe((id) => {
+        sync(id);
+        if (!id && this.searchControl.value) {
+          this.searchControl.setValue('', { emitEvent: false });
+        }
+      });
+      onCleanup(() => sub.unsubscribe());
+    });
+  }
+
+  /**
    * Nombre del procedimiento seleccionado actualmente
    */
   readonly selectedProcedureName = computed(() => {
-    const procId = this.form().get('procedimientoId')?.value;
+    const procId = this.#selectedProcedureId();
     const found = this.procedures().find((p) => p.idProcedimiento === procId);
     return found ? found.nombreProcedimiento : (this.searchControl.value || '');
   });

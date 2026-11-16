@@ -44,6 +44,7 @@ describe('ProfesionalesListComponent', () => {
     goToEdit: ReturnType<typeof vi.fn>;
     deleteProfesional: ReturnType<typeof vi.fn>;
     reactivateProfesional: ReturnType<typeof vi.fn>;
+    resolveProcedureNames: ReturnType<typeof vi.fn>;
   };
 
   let mockDialog: {

@@ -266,7 +266,7 @@ export class AgendarCitaComponent {
     }
 
     if (!this.appointmentLogic.isNewPatient()) {
-      this.stepper().next();
+      this.offerControlAppointmentOrContinue();
       return;
     }
 
@@ -293,6 +293,74 @@ export class AgendarCitaComponent {
         console.error('Error al registrar nuevo paciente:', error);
       },
     });
+  }
+
+  /**
+   * Paciente existente con historia médica válida: ofrece una cita de control (PROC-EST-010)
+   * con su último médico tratante. Siempre pregunta (no se recuerda la decisión previa).
+   * - Confirmar: salta al calendario con el médico tratante y el procedimiento de control.
+   * - Cancelar: continúa al paso 3.
+   * - Médico no disponible para el procedimiento: paso 3 con el procedimiento preseleccionado.
+   */
+  private offerControlAppointmentOrContinue(): void {
+    const control = this.appointmentLogic.resolveControlBooking(this.patientHistory());
+
+    if (!control) {
+      this.stepper().next();
+      return;
+    }
+
+    const { procedure, doctor } = control;
+
+    if (!doctor) {
+      this.step3Group.patchValue({ procedimientoId: procedure.idProcedimiento });
+      this.stepper().next();
+      return;
+    }
+
+    const doctorName = `${doctor.nombres} ${doctor.apellidos}`.trim();
+    const modalData: ConfirmationModalData<boolean> = {
+      title: 'Cita de control',
+      text: `¿Deseas agendar cita de control con el profesional "${doctorName}"?`,
+      actions: [
+        { label: 'Cancelar', color: 'default', value: false },
+        { label: 'Confirmar', color: 'primary', value: true },
+      ],
+    };
+
+    const dialogRef = this.dialog.open<
+      ConfirmationModalComponent,
+      ConfirmationModalData<boolean>,
+      boolean
+    >(ConfirmationModalComponent, {
+      data: modalData,
+      width: '450px',
+      disableClose: true,
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.appointmentLogic.startBookingFlow({
+          patient: this.buildBookingPatient(),
+          procedure,
+          doctor,
+        });
+      } else {
+        this.stepper().next();
+      }
+    });
+  }
+
+  private buildBookingPatient(): IBookingPatient {
+    const step1 = this.step1Group.getRawValue();
+    const step2 = this.step2Group.getRawValue();
+    return {
+      cedula: step1.cedula?.trim() || '',
+      nombre: step2.nombre?.trim() || '',
+      apellidos: step2.apellidos?.trim() || '',
+      correo: step2.correo?.trim() || '',
+      celular: `${step2.indicativo?.trim() || ''}${step2.numeroCelular?.trim() || ''}`.trim(),
+    };
   }
 
   onWaitlistRequested(): void {
@@ -326,8 +394,6 @@ export class AgendarCitaComponent {
   }
 
   onViewCalendar(doctor: IProfessionalSummary): void {
-    const step1 = this.step1Group.getRawValue();
-    const step2 = this.step2Group.getRawValue();
     const step3 = this.step3Group.getRawValue();
     const procId = step3.procedimientoId;
 
@@ -336,16 +402,8 @@ export class AgendarCitaComponent {
     );
     if (!procedure) return;
 
-    const patient: IBookingPatient = {
-      cedula: step1.cedula?.trim() || '',
-      nombre: step2.nombre?.trim() || '',
-      apellidos: step2.apellidos?.trim() || '',
-      correo: step2.correo?.trim() || '',
-      celular: `${step2.indicativo?.trim() || ''}${step2.numeroCelular?.trim() || ''}`.trim(),
-    };
-
     this.appointmentLogic.startBookingFlow({
-      patient,
+      patient: this.buildBookingPatient(),
       procedure,
       doctor,
     });

@@ -3,10 +3,25 @@ import { HydratedDocument } from 'mongoose';
 import {
   IActiveProfessional,
   IExceptionSchedule,
+  ISpecialtyCategoryRef,
   IWorkSchedule,
 } from '@nx-boilerplate/api-interfaces';
 
 export type ActiveProfessionalDocument = HydratedDocument<ActiveProfessional>;
+
+@Schema({ _id: false })
+export class ProfessionalSpecialtyCategory implements ISpecialtyCategoryRef {
+  @Prop({ required: true })
+  categoryId!: string;
+
+  @Prop({ required: true })
+  name!: string;
+
+  @Prop({ required: true })
+  slug!: string;
+}
+export const ProfessionalSpecialtyCategorySchema =
+  SchemaFactory.createForClass(ProfessionalSpecialtyCategory);
 
 @Schema({ collection: 'profesionalesActivos', timestamps: true })
 export class ActiveProfessional implements IActiveProfessional {
@@ -24,6 +39,12 @@ export class ActiveProfessional implements IActiveProfessional {
 
   @Prop({ required: true })
   profesion!: string;
+
+  @Prop({ type: ProfessionalSpecialtyCategorySchema, default: null })
+  specialtyCategory?: ProfessionalSpecialtyCategory;
+
+  @Prop({ type: String, trim: true })
+  actoAdministrativo?: string;
 
   @Prop({ type: [String], default: [] })
   procedimientosRelacionados!: string[];
@@ -65,3 +86,5 @@ export class ActiveProfessional implements IActiveProfessional {
 }
 
 export const ActiveProfessionalSchema = SchemaFactory.createForClass(ActiveProfessional);
+
+ActiveProfessionalSchema.index({ 'specialtyCategory.slug': 1 });

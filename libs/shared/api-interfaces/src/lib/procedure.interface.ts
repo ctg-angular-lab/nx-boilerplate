@@ -1,3 +1,5 @@
+import { ISpecialtyCategoryRef } from './medical-category.interface';
+
 export type ExceptionScheduleType = 'EXTRA_SHIFT' | 'DAY_OFF';
 
 export interface IExceptionSchedule {
@@ -23,6 +25,8 @@ export interface IActiveProfessional {
   apellidos: string;
   email: string;
   profesion: string;
+  specialtyCategory?: ISpecialtyCategoryRef;
+  actoAdministrativo?: string;
   procedimientosRelacionados?: string[];
   horarioTrabajo: IWorkSchedule;
   isActive?: boolean;
@@ -44,12 +48,19 @@ export type IUpdateProfessionalRequest = Partial<
 
 export interface IGetDoctorsQueryRequest {
   includeInactive?: boolean;
+  categorySlug?: string;
 }
-
 
 export type IProfessionalSummary = Pick<
   IActiveProfessional,
-  'cedula' | 'nombres' | 'apellidos' | 'email' | 'profesion' | 'horarioTrabajo'
+  | 'cedula'
+  | 'nombres'
+  | 'apellidos'
+  | 'email'
+  | 'profesion'
+  | 'specialtyCategory'
+  | 'actoAdministrativo'
+  | 'horarioTrabajo'
 >;
 
 export interface IProcedureLaboratory {
@@ -63,6 +74,10 @@ export interface IProcedure {
   nombreProcedimiento: string;
   valorStandar: number;
   duracionStandar: number;
+  category?: {
+    categoryId: string;
+    name: string;
+  };
   medicosRelacionados: string[];
   isActive?: boolean;
   laboratorios?: IProcedureLaboratory[];

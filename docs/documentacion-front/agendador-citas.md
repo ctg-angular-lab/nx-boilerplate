@@ -125,18 +125,21 @@ graph TD
   2. `CALENDAR (2)`: Calendario Semanal.
   3. `CONFIRMATION (3)`: Confirmación de Citas (CRM Diario).
 
-### 4.2 `AgendarCitaComponent` (Formulario Stepper de 3 Pasos)
+### 4.2 `AgendarCitaComponent` (Formulario Stepper de 3 Pasos y Cita de Control)
 - **Ubicación:** `apps/agendador-citas/src/app/components/agendar-cita/`
-- **Paso 1 — Cédula:** El usuario ingresa su documento. El servicio consulta `GET /api/patients/:cedula`. Si existe, recibe la ficha de 20 campos del paciente junto con sus `ultimosProcedimientos` y `recomendaciones` hidratados automáticamente desde la colección `historialMedico`, auto-completando el paso 2; si no existe, activa la bandera `isNewPatient: true`.
-- **Paso 2 — Información Personal y Validación Telefónica Dinámica:**
+- **Paso 1 — Cédula:** El usuario ingresa su documento. El servicio consulta `GET /api/patients/:cedula`. Si existe, recibe la ficha de 20 campos del paciente junto con sus `ultimosProcedimientos`, `recomendaciones`, y la resolución de su último médico tratante (`ultimoMedicoTratante` y `ultimoMedicoTratanteCedula`), auto-completando el paso 2; si no existe, activa la bandera `isNewPatient: true`.
+- **Paso 2 — Información Personal y Oferta de Cita de Control:**
   - Si el paciente existe, `StepPersonalInfoComponent` muestra sus datos de contacto en modo lectura junto con la tarjeta de antecedentes clínicos (`ultimosProcedimientos` y última recomendación médica).
-  - Si el paciente es nuevo, captura nombres, apellidos, correo, indicativo internacional y celular.
-  - **Validación Dinámica:** Al cambiar el país en el selector de indicativos (`+57`, `+1`, `+34`), un suscriptor reactivo actualiza el validador `Validators.pattern` del campo `numeroCelular` con la expresión regular exacta del país seleccionado provista por `IAreaCode`.
-  - **Aislamiento de Errores:** Utiliza `PersonalInfoErrorStateMatcher` y resetea el formulario con `markAsPristine()` y `step.interacted = false` para evitar que un campo aparezca en rojo por validaciones de una cédula consultada anteriormente.
-  - **Auto-Creación:** Al pulsar "Guardar y Continuar", si el paciente no existía, envía automáticamente `POST /api/patients` (creación rápida de 5 campos con defaults `null` en los 15 campos demográficos restantes) antes de avanzar al paso 3.
+  - Si el paciente es nuevo, captura nombres, apellidos, correo, indicativo internacional y celular con validación dinámica por país.
+  - **Detección y Modal de Cita de Control:** Al completar el paso 2, si el paciente cuenta con antecedentes y se resuelve el código de cita de control (`CONTROL_APPOINTMENT_PROCEDURE_ID`) junto con su último médico tratante, el sistema abre automáticamente un modal de confirmación:
+    > *"¿Deseas agendar cita de control con el profesional '{doctorName}'?"*
+    - **Si confirma:** El sistema empaqueta directamente el contexto de reserva (`startBookingFlow`) con el procedimiento de control y el especialista tratante, saltando directamente a la pestaña del Calendario.
+    - **Si declina:** Continúa al paso 3 para permitir la libre elección de cualquier otro procedimiento y doctor.
 - **Paso 3 — Procedimiento y Especialista:**
   - El usuario selecciona el tratamiento médico deseado. El sistema consulta en tiempo real los médicos autorizados para dicho procedimiento (`GET /api/procedures/:id/doctors`).
   - Al pulsar "Ver Disponibilidad", empaqueta el contexto (`patient`, `procedure`, `doctor`) mediante `startBookingFlow()` y navega automáticamente a la pestaña del Calendario.
+- **Integración con Navegación Externa (Query Params):**
+  - Soporta parámetros de consulta en URL (`?date=YYYY-MM-DD&tab=confirmacion`), permitiendo que widgets de otros remotes (como la tarjeta de próximos espacios disponibles del Dashboard) redirijan a fechas y turnos específicos.
 
 ### 4.3 `CalendarioCitasComponent` (Grilla Semanal Dinámica)
 - **Ubicación:** `apps/agendador-citas/src/app/components/calendario-citas/`

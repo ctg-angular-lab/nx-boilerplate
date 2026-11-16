@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { computed, signal } from '@angular/core';
 import { of } from 'rxjs';
-import { IActiveProfessional, IProcedure } from '@nx-boilerplate/api-interfaces';
+import { IActiveProfessional, IMedicalCategory, IProcedure } from '@nx-boilerplate/api-interfaces';
 import { ProfesionalesAdminService } from '../../services/profesionales-admin.service';
 import { scheduleRangeValidator } from '../../utils/schedule.validator';
 import { ProfesionalesFormComponent } from './profesionales-form.component';
@@ -13,6 +13,12 @@ const mockProfessional: IActiveProfessional = {
   apellidos: 'Gómez',
   email: 'laura@clinica.com',
   profesion: 'Médica General',
+  specialtyCategory: {
+    categoryId: 'CAT-01',
+    name: 'Médica General',
+    slug: 'medica-general',
+  },
+  actoAdministrativo: 'Resolución No. 5678 de 2023',
   isActive: true,
   horarioTrabajo: {
     diasLaborales: ['LUNES', 'MARTES'],
@@ -32,6 +38,20 @@ describe('ProfesionalesFormComponent', () => {
   let mockIsSavingSignal = signal<boolean>(false);
   let mockSaveErrorSignal = signal<string | null>(null);
   let mockProceduresSignal = signal<IProcedure[]>([]);
+  let mockCategoriesSignal = signal<IMedicalCategory[]>([
+    {
+      categoryId: 'CAT-01',
+      name: 'Médica General',
+      slug: 'medica-general',
+      isActive: true,
+    },
+    {
+      categoryId: 'CAT-02',
+      name: 'Cirujano',
+      slug: 'cirujano',
+      isActive: true,
+    },
+  ]);
 
   let mockService: {
     editingProfessional: typeof mockEditingSignal;
@@ -39,6 +59,7 @@ describe('ProfesionalesFormComponent', () => {
     isSaving: typeof mockIsSavingSignal;
     saveError: typeof mockSaveErrorSignal;
     procedures: typeof mockProceduresSignal;
+    categories: typeof mockCategoriesSignal;
     isEditMode: ReturnType<typeof computed<boolean>>;
     createProfesional: ReturnType<typeof vi.fn>;
     updateProfesional: ReturnType<typeof vi.fn>;
@@ -51,6 +72,20 @@ describe('ProfesionalesFormComponent', () => {
     mockIsSavingSignal = signal<boolean>(false);
     mockSaveErrorSignal = signal<string | null>(null);
     mockProceduresSignal = signal<IProcedure[]>([]);
+    mockCategoriesSignal = signal<IMedicalCategory[]>([
+      {
+        categoryId: 'CAT-01',
+        name: 'Médica General',
+        slug: 'medica-general',
+        isActive: true,
+      },
+      {
+        categoryId: 'CAT-02',
+        name: 'Cirujano',
+        slug: 'cirujano',
+        isActive: true,
+      },
+    ]);
 
     mockService = {
       editingProfessional: mockEditingSignal,
@@ -58,6 +93,7 @@ describe('ProfesionalesFormComponent', () => {
       isSaving: mockIsSavingSignal,
       saveError: mockSaveErrorSignal,
       procedures: mockProceduresSignal,
+      categories: mockCategoriesSignal,
       isEditMode: computed(() => mockEditingSignal() !== null),
       createProfesional: vi.fn().mockReturnValue(of(mockProfessional)),
       updateProfesional: vi.fn().mockReturnValue(of(mockProfessional)),
@@ -188,13 +224,19 @@ describe('ProfesionalesFormComponent', () => {
   });
 
   describe('4. Guardado en Modo Creación (onSubmit)', () => {
-    it('debe construir un payload limpio sin tieneReceso y con recesoAlmuerzo undefined cuando el toggle está apagado', () => {
+    it('debe construir un payload limpio sin tieneReceso y con specialtyCategory mapeado cuando se completa el formulario', () => {
       component.form.controls.step1.setValue({ cedula: '87654321' });
       component.form.controls.step2.setValue({
         nombres: 'Andrés',
         apellidos: 'Restrepo',
         email: 'andres@clinica.com',
         profesion: 'Cirujano',
+        specialtyCategory: {
+          categoryId: 'CAT-02',
+          name: 'Cirujano',
+          slug: 'cirujano',
+        },
+        actoAdministrativo: 'Acuerdo 045 de 2024',
       });
       component.form.controls.step3.patchValue({
         diasLaborales: ['LUNES', 'MIERCOLES'],
@@ -211,6 +253,12 @@ describe('ProfesionalesFormComponent', () => {
         apellidos: 'Restrepo',
         email: 'andres@clinica.com',
         profesion: 'Cirujano',
+        specialtyCategory: {
+          categoryId: 'CAT-02',
+          name: 'Cirujano',
+          slug: 'cirujano',
+        },
+        actoAdministrativo: 'Acuerdo 045 de 2024',
         horarioTrabajo: {
           diasLaborales: ['LUNES', 'MIERCOLES'],
           horaInicio: '08:00',
@@ -226,6 +274,12 @@ describe('ProfesionalesFormComponent', () => {
         apellidos: 'Restrepo',
         email: 'andres@clinica.com',
         profesion: 'Cirujano',
+        specialtyCategory: {
+          categoryId: 'CAT-02',
+          name: 'Cirujano',
+          slug: 'cirujano',
+        },
+        actoAdministrativo: 'Acuerdo 045 de 2024',
       });
       component.form.controls.step3.setValue({
         diasLaborales: ['LUNES'],
@@ -251,13 +305,16 @@ describe('ProfesionalesFormComponent', () => {
   });
 
   describe('5. Modo Edición', () => {
-    it('debe poblar el formulario, deshabilitar cédula e invocar updateProfesional al guardar', () => {
+    it('debe poblar el formulario, deshabilitar cédula e invocar updateProfesional al guardar con specialtyCategory', () => {
       mockEditingSignal.set(mockProfessional);
       fixture.detectChanges();
 
       expect(component.form.controls.step1.controls.cedula.disabled).toBe(true);
       expect(component.form.controls.step1.controls.cedula.value).toBe(mockProfessional.cedula);
       expect(component.form.controls.step2.controls.nombres.value).toBe(mockProfessional.nombres);
+      expect(component.form.controls.step2.controls.specialtyCategory.value).toEqual(
+        mockProfessional.specialtyCategory
+      );
 
       component.form.controls.step2.controls.nombres.setValue('Laura Cristina');
       component.onSubmit();
@@ -268,8 +325,28 @@ describe('ProfesionalesFormComponent', () => {
           nombres: 'Laura Cristina',
           apellidos: 'Gómez',
           email: 'laura@clinica.com',
+          specialtyCategory: mockProfessional.specialtyCategory,
+          actoAdministrativo: 'Resolución No. 5678 de 2023',
         })
       );
+    });
+
+    it('debe inferir specialtyCategory si el profesional legacy no lo tiene pero coincide su profesion', () => {
+      const legacyProf: IActiveProfessional = {
+        ...mockProfessional,
+        cedula: '99887766',
+        profesion: 'Cirujano',
+        specialtyCategory: undefined,
+      };
+
+      mockEditingSignal.set(legacyProf);
+      fixture.detectChanges();
+
+      expect(component.form.controls.step2.controls.specialtyCategory.value).toEqual({
+        categoryId: 'CAT-02',
+        name: 'Cirujano',
+        slug: 'cirujano',
+      });
     });
   });
 

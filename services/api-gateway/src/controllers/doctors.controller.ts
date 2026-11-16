@@ -31,9 +31,7 @@ export class DoctorsController {
     @Query() query: GetDoctorsFilterDto
   ): Observable<IActiveProfessional[]> {
     return this.proceduresClient
-      .send<IActiveProfessional[]>('doctors.get-all', {
-        includeInactive: query?.includeInactive === true,
-      })
+      .send<IActiveProfessional[]>('doctors.get-all', query)
       .pipe(timeout(5000));
   }
 

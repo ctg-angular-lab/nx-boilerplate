@@ -15,6 +15,8 @@ import {
   ExceptionScheduleType,
   IActiveProfessional,
   IExceptionSchedule,
+  IGetDoctorsQueryRequest,
+  ISpecialtyCategoryRef,
   IWorkSchedule,
 } from '@nx-boilerplate/api-interfaces';
 
@@ -95,6 +97,26 @@ export class ExceptionScheduleDto implements IExceptionSchedule {
   tipo!: ExceptionScheduleType;
 }
 
+export class SpecialtyCategoryRefDto implements ISpecialtyCategoryRef {
+  @IsString({ message: 'El ID de la categoría debe ser una cadena de texto' })
+  @IsNotEmpty({ message: 'El ID de la categoría es requerido' })
+  @Expose()
+  categoryId!: string;
+
+  @IsString({ message: 'El nombre de la categoría debe ser una cadena de texto' })
+  @IsNotEmpty({ message: 'El nombre de la categoría es requerido' })
+  @Expose()
+  name!: string;
+
+  @IsString({ message: 'El slug de la categoría debe ser una cadena de texto' })
+  @IsNotEmpty({ message: 'El slug de la categoría es requerido' })
+  @Matches(/^[a-z0-9-]+$/, {
+    message: 'El slug solo puede contener letras minúsculas, números y guiones (-)',
+  })
+  @Expose()
+  slug!: string;
+}
+
 export class CreateProfessionalDto
   implements Omit<IActiveProfessional, 'isActive' | 'horariosExcepcionales'>
 {
@@ -117,6 +139,16 @@ export class CreateProfessionalDto
   @IsString({ message: 'La profesión debe ser una cadena de texto' })
   @IsNotEmpty({ message: 'La profesión es requerida' })
   profesion!: string;
+
+  @IsOptional()
+  @IsObject({ message: 'La categoría de especialidad debe ser un objeto válido' })
+  @ValidateNested()
+  @Type(() => SpecialtyCategoryRefDto)
+  specialtyCategory?: SpecialtyCategoryRefDto;
+
+  @IsOptional()
+  @IsString({ message: 'El acto administrativo debe ser una cadena de texto' })
+  actoAdministrativo?: string;
 
   @IsOptional()
   @IsArray({ message: 'Los procedimientos relacionados deben ser un array de strings' })
@@ -150,6 +182,16 @@ export class UpdateProfessionalDto {
   @IsOptional()
   @IsString({ message: 'La profesión debe ser un string' })
   profesion?: string;
+
+  @IsOptional()
+  @IsObject({ message: 'La categoría de especialidad debe ser un objeto válido' })
+  @ValidateNested()
+  @Type(() => SpecialtyCategoryRefDto)
+  specialtyCategory?: SpecialtyCategoryRefDto;
+
+  @IsOptional()
+  @IsString({ message: 'El acto administrativo debe ser una cadena de texto' })
+  actoAdministrativo?: string;
 
   @IsOptional()
   @IsArray({ message: 'Los procedimientos deben ser un array' })
@@ -199,6 +241,13 @@ export class PublicProfessionalDto {
   profesion!: string;
 
   @Expose()
+  @Type(() => SpecialtyCategoryRefDto)
+  specialtyCategory?: SpecialtyCategoryRefDto;
+
+  @Expose()
+  actoAdministrativo?: string;
+
+  @Expose()
   procedimientosRelacionados?: string[];
 
   @Expose()
@@ -235,16 +284,24 @@ export class UpdateDoctorScheduleMessageDto {
   exceptions!: ExceptionScheduleDto[];
 }
 
-export class GetDoctorsFilterDto {
+export class GetDoctorsFilterDto implements IGetDoctorsQueryRequest {
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
   @IsBoolean({ message: 'includeInactive debe ser booleano' })
   includeInactive?: boolean;
+
+  @IsOptional()
+  @IsString({ message: 'El categorySlug debe ser una cadena de texto' })
+  categorySlug?: string;
 }
 
-export class GetDoctorsMessageDto {
+export class GetDoctorsMessageDto implements IGetDoctorsQueryRequest {
   @IsOptional()
   @IsBoolean({ message: 'includeInactive debe ser booleano' })
   includeInactive?: boolean;
+
+  @IsOptional()
+  @IsString({ message: 'El categorySlug debe ser una cadena de texto' })
+  categorySlug?: string;
 }
 

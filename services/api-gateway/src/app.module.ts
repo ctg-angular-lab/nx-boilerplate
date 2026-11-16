@@ -7,6 +7,7 @@ import { AppointmentConfirmationController } from './controllers/appointment-con
 import { ProceduresController } from './controllers/procedures.controller';
 import { DoctorsController } from './controllers/doctors.controller';
 import { AreaCodesController } from './controllers/area-codes.controller';
+import { CategoriesController } from './controllers/categories.controller';
 import { ClinicalRecordsController } from './controllers/clinical-records.controller';
 
 @Module({
@@ -62,6 +63,7 @@ import { ClinicalRecordsController } from './controllers/clinical-records.contro
     ProceduresController,
     DoctorsController,
     AreaCodesController,
+    CategoriesController,
     ClinicalRecordsController,
   ],
 })

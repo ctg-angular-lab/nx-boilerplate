@@ -1,8 +1,9 @@
-import { Controller } from '@nestjs/common';
+import { Controller, UsePipes, ValidationPipe } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import {
   IActiveProfessional,
   IAreaCode,
+  IMedicalCategory,
   IProcedure,
   IProcedureSoftDeleteResponse,
   IProfessionalSummary,
@@ -11,6 +12,7 @@ import {
   CreateProcedureDto,
   FindProcedureByIdDto,
   FindProceduresByDoctorDto,
+  GetDoctorsFilterDto,
   GetDoctorsMessageDto,
   GetProceduresMessageDto,
   UpdateProcedureMessageDto,
@@ -79,17 +81,21 @@ export class ProceduresMessageController {
     );
   }
 
+  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
   @MessagePattern('doctors.get-all')
   async getAllDoctors(
-    @Payload() payload: GetDoctorsMessageDto
+    @Payload() payload?: GetDoctorsFilterDto
   ): Promise<IActiveProfessional[]> {
-    return this.proceduresDomainService.getAllDoctors(
-      payload?.includeInactive ?? false
-    );
+    return this.proceduresDomainService.getAllDoctors(payload);
   }
 
   @MessagePattern('area-codes.get-all')
   async getAllAreaCodes(): Promise<IAreaCode[]> {
     return this.proceduresDomainService.getAllAreaCodes();
+  }
+
+  @MessagePattern('categories.get-all')
+  async getAllCategories(): Promise<IMedicalCategory[]> {
+    return this.proceduresDomainService.getAllCategories(true);
   }
 }

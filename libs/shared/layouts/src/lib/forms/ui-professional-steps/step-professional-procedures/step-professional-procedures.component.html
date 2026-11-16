@@ -46,6 +46,13 @@
           <span class="summary-value">{{ summary.profesion }}</span>
         </div>
 
+        @if (summary.actoAdministrativo) {
+          <div class="summary-item">
+            <span class="summary-label">Acto Administrativo</span>
+            <span class="summary-value">{{ summary.actoAdministrativo }}</span>
+          </div>
+        }
+
         <div class="summary-item summary-item--full">
           <span class="summary-label">Jornada y Días de Atención</span>
           <span class="summary-value">

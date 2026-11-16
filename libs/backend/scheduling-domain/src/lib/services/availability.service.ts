@@ -107,7 +107,7 @@ export class AvailabilityService {
         isCalendarSynced = false;
         return [] as ICalendarEventItem[];
       }),
-      this.appointmentRepository.findByDoctorAndDateRange(doctorEmail, rangeStart, rangeEnd),
+      this.appointmentRepository.findByDoctorAndDateRange(doctorEmail, rangeStart, rangeEnd, true),
     ]);
 
     const result: IDayAvailability[] = [];
@@ -120,6 +120,9 @@ export class AvailabilityService {
       const dayName = DAY_NAMES_ES[dayOfWeek];
       const isDayWorking = isWorkingDay(currentDay, schedule.diasLaborales);
       const daySlots: ISlotDisplay[] = [];
+      const dayCancelledCount = mongoAppointments.filter(
+        (apt) => apt.status === 'CANCELLED' && getCotDateString(new Date(apt.startTime)) === dateStr
+      ).length;
 
       if (isDayWorking) {
         const { workStart, workEnd } = buildWorkWindow(dateStr, schedule);
@@ -128,8 +131,9 @@ export class AvailabilityService {
         const fixedBlocks: Array<{ start: Date; end: Date; slot: ISlotDisplay }> = [];
         const matchedGoogleIds = new Set<string>();
 
-        // 1. Citas registradas en MongoDB (conservando su duración y límites exactos)
+        // 1. Citas activas registradas en MongoDB (excluyendo CANCELLED para no bloquear el horario)
         const dayMongoAppointments = mongoAppointments.filter((apt) => {
+          if (apt.status === 'CANCELLED') return false;
           const aptStart = new Date(apt.startTime).getTime();
           const aptEnd = new Date(apt.endTime).getTime();
           return aptStart < workEnd.getTime() && aptEnd > workStart.getTime();
@@ -362,6 +366,7 @@ export class AvailabilityService {
         dayName,
         isCalendarSynced,
         isWorkingDay: isDayWorking,
+        cancelledCount: dayCancelledCount,
         slots: daySlots,
       });
 

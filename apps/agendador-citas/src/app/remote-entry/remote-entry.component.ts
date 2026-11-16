@@ -10,6 +10,7 @@ import {
   OnDestroy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import {
   TabsCollectionComponent,
   TabItemConfig,
@@ -19,6 +20,7 @@ import { CalendarioCitasComponent } from '../components/calendario-citas/calenda
 import { ConfirmacionCitasComponent } from '../components/confirmacion-citas/confirmacion-citas.component';
 import { AGENDADOR_TABS, AgendadorTabId } from '../models/booking.models';
 import { AppointmentLogicService } from '../services/appointment-logic.service';
+import { ConfirmacionCitasService } from '../services/confirmacion-citas.service';
 
 @Component({
   selector: 'app-agendador-citas-entry',
@@ -36,9 +38,23 @@ import { AppointmentLogicService } from '../services/appointment-logic.service';
 })
 export class RemoteEntryComponent implements OnInit, OnDestroy {
   protected readonly appointmentLogic = inject(AppointmentLogicService);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly confirmacionService = inject(ConfirmacionCitasService);
 
   ngOnInit(): void {
     this.resetBookingFlow();
+
+    const queryParamMap = this.route?.snapshot?.queryParamMap;
+    const dateParam = queryParamMap?.get('date');
+    const tabParam = queryParamMap?.get('tab');
+
+    if (dateParam) {
+      this.confirmacionService.setSelectedDate(dateParam);
+    }
+
+    if (tabParam === 'confirmacion') {
+      this.appointmentLogic.setActiveTab(AGENDADOR_TABS.CONFIRMATION);
+    }
   }
 
   ngOnDestroy(): void {

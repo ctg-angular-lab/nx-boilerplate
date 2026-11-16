@@ -5,3 +5,4 @@ export * from './clinical-record.dto';
 export * from './appointment.dto';
 export * from './procedure.dto';
 export * from './professional.dto';
+export * from './category.dto';

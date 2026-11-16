@@ -17,6 +17,12 @@ describe('ProfesionalDetailComponent', () => {
     apellidos: 'Gómez',
     email: 'carlos.gomez@test.com',
     profesion: 'Cirujano Plástico',
+    specialtyCategory: {
+      categoryId: 'CAT-01',
+      name: 'Cirujano Plástico',
+      slug: 'cirujano-plastico',
+    },
+    actoAdministrativo: 'Resolución No. 4321 de 2024',
     horarioTrabajo: {
       diasLaborales: ['Lunes', 'Miércoles', 'Viernes'],
       horaInicio: '08:00',
@@ -72,6 +78,7 @@ describe('ProfesionalDetailComponent', () => {
     expect(text).toContain('carlos.gomez@test.com');
     expect(text).toContain('No registrado (próxima versión)');
     expect(text).toContain('12345678 — Cirujano Plástico');
+    expect(text).toContain('Resolución No. 4321 de 2024');
     expect(text).toContain('Lunes');
     expect(text).toContain('Miércoles');
     expect(text).toContain('08:00 – 17:00');

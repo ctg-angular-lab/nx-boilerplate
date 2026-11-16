@@ -70,6 +70,18 @@
 
           <!-- Pista Derecha: Capas Superpuestas en Cascada -->
           <div class="slots-track" role="cell">
+            @if (isCurrentTimeInRow(row)) {
+              <div
+                class="current-time-indicator"
+                [style.top.%]="getCurrentTimeOffsetPercent(row)"
+                [attr.aria-label]="'Hora actual: ' + currentTimeLabel()"
+                [attr.title]="'Hora actual: ' + currentTimeLabel()"
+              >
+                <span class="current-time-indicator__dot"></span>
+                <span class="current-time-indicator__line"></span>
+              </div>
+            }
+
             @for (cell of row.layers; track cell.doctorCedula) {
               @if (!cell.isContinuation) {
                 <div
@@ -82,14 +94,19 @@
                   [class.slot-layer--available]="cell.status === 'AVAILABLE'"
                   [class.slot-layer--out]="cell.status === 'OUT_OF_HOURS'"
                   [class.slot-layer--spanned]="(cell.spanRatio ?? 1) > 1"
+                  [class.slot-layer--past]="isSlotInPast(row, cell)"
+                  [class.slot-layer--disabled]="isSlotDisabled(row, cell)"
                   [style.width.%]="cell.geometry.widthPercent"
                   [style.left.%]="cell.geometry.leftPercent"
                   [style.height]="getCellHeightStyle(cell)"
                   [style.bottom]="getCellHeightStyle(cell) ? 'auto' : '2px'"
                   [style.z-index]="getCellZIndex(cell)"
                   [style.border-left-color]="cell.colorCssVar"
-                  (click)="onSlotSelect(cell)"
-                  tabindex="0"
+                  (click)="onSlotSelect(cell, row)"
+                  (keydown.enter)="onSlotSelect(cell, row)"
+                  (keydown.space)="onSlotSelect(cell, row); $event.preventDefault()"
+                  [attr.tabindex]="isSlotDisabled(row, cell) ? -1 : 0"
+                  [attr.aria-disabled]="isSlotDisabled(row, cell)"
                   role="button"
                   [attr.aria-label]="cell.doctorName + ' - ' + cell.statusLabel + (cell.procedureTitle ? ' - ' + cell.procedureTitle : '') + (cell.durationMinutes ? ' (' + cell.durationMinutes + ' min)' : '')"
                 >

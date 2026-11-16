@@ -1,9 +1,9 @@
-import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MetricCardAction } from '../models/metric-card.models';
+import { MetricCardAction, MetricCardStatItem } from '../models/metric-card.models';
 
 @Component({
   selector: 'lib-metric-card',
@@ -15,7 +15,8 @@ import { MetricCardAction } from '../models/metric-card.models';
 })
 export class MetricCardComponent {
   readonly title = input.required<string>();
-  readonly value = input.required<string | number>();
+  readonly value = input<string | number | readonly string[]>('');
+  readonly stats = input<readonly MetricCardStatItem[]>([]);
   readonly subtitle = input<string>('');
   readonly icon = input<string>('');
   readonly variant = input<'surface' | 'primary' | 'secondary' | 'tertiary'>('surface');
@@ -23,4 +24,10 @@ export class MetricCardComponent {
   readonly actions = input<MetricCardAction[]>([]);
 
   readonly actionClick = output<string>();
+  readonly itemClick = output<string>();
+
+  readonly listValues = computed<readonly string[] | null>(() => {
+    const val = this.value();
+    return Array.isArray(val) ? val : null;
+  });
 }

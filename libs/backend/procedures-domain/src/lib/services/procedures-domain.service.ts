@@ -9,6 +9,8 @@ import {
   IAreaCode,
   IExceptionSchedule,
   IProcedureSoftDeleteResponse,
+  IGetDoctorsQueryRequest,
+  IMedicalCategory,
 } from '@nx-boilerplate/api-interfaces';
 import {
   CreateProcedureDto,
@@ -224,12 +226,32 @@ export class ProceduresDomainService {
       apellidos: doc.apellidos,
       email: doc.email,
       profesion: doc.profesion,
+      specialtyCategory: doc.specialtyCategory,
+      actoAdministrativo: doc.actoAdministrativo,
       horarioTrabajo: doc.horarioTrabajo,
     }));
   }
 
-  async getAllDoctors(includeInactive = false): Promise<IActiveProfessional[]> {
-    return this.proceduresRepository.findAllDoctors(includeInactive);
+  async getAllDoctors(
+    filter?: IGetDoctorsQueryRequest | boolean
+  ): Promise<IActiveProfessional[]> {
+    return this.proceduresRepository.findAllDoctors(filter);
+  }
+
+  async findAllDoctors(
+    filter?: IGetDoctorsQueryRequest | boolean
+  ): Promise<IActiveProfessional[]> {
+    return this.getAllDoctors(filter);
+  }
+
+  async findAll(
+    filter?: IGetDoctorsQueryRequest | boolean
+  ): Promise<IActiveProfessional[]> {
+    return this.getAllDoctors(filter);
+  }
+
+  async getAllCategories(onlyActive = true): Promise<IMedicalCategory[]> {
+    return this.proceduresRepository.findAllCategories(onlyActive);
   }
 
   async getAllAreaCodes(): Promise<IAreaCode[]> {

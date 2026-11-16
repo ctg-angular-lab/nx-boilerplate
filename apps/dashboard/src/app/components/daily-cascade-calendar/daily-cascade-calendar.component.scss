@@ -143,6 +143,31 @@
         background-color: var(--sys-color-surface-container-lowest, #ffffff);
       }
 
+      .current-time-indicator {
+        position: absolute;
+        left: 0;
+        right: 0;
+        z-index: 60;
+        display: flex;
+        align-items: center;
+        transform: translateY(-50%);
+        pointer-events: none;
+
+        &__dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background-color: var(--sys-color-error, #dc2626);
+          flex-shrink: 0;
+          margin-left: -4px;
+        }
+
+        &__line {
+          flex: 1;
+          border-top: 1px dashed var(--sys-color-error, #dc2626);
+        }
+      }
+
       .slot-layer {
         position: absolute;
         top: 2px;
@@ -253,6 +278,23 @@
         }
 
         &--out {
+          background-color: var(--sys-color-surface-container, #e7e8ee);
+          color: var(--sys-color-outline, #71777f);
+        }
+
+        &--past {
+          opacity: 0.55;
+          filter: grayscale(25%);
+          box-shadow: none;
+
+          &:hover {
+            transform: none;
+            box-shadow: none;
+          }
+        }
+
+        &--disabled {
+          cursor: not-allowed;
           background-color: var(--sys-color-surface-container, #e7e8ee);
           color: var(--sys-color-outline, #71777f);
         }
